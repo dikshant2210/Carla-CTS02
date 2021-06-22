@@ -21,6 +21,7 @@ class World(object):
             sys.exit(1)
         self.hud = hud
         self.player = None
+        self.walker = None
         self.player_max_speed = None
         self.player_max_speed_fast = None
         self.collision_sensor = None
@@ -56,6 +57,7 @@ class World(object):
     def restart(self):
         self.player_max_speed = 1.589
         self.player_max_speed_fast = 3.713
+        self.next_weather()
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
@@ -92,8 +94,35 @@ class World(object):
                 sys.exit(1)
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+
+            # Spawn location of ego vehicle for non T-intersection scenarios
+            spawn_point.location.x = 2.22
+            spawn_point.location.y = 289.0 - 75
+            spawn_point.location.z = 0.01
+            spawn_point.rotation.yaw = 270.0
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
+
+        # Set up walkers
+        walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.*")
+        controller_bp = self.world.get_blueprint_library().find("controller.ai.walker")
+        walker_spawn_point = carla.Transform()
+        walker_spawn_point.location.x = 5.2
+        walker_spawn_point.location.y = 235.0 - 45
+        walker_spawn_point.location.z += 1.0
+        walker_spawn_point.rotation.yaw = 270.0
+        bp = random.choice(walker_bp)
+        self.walker = self.world.try_spawn_actor(bp, walker_spawn_point)
+        self.world.wait_for_tick()
+        controller = self.world.try_spawn_actor(controller_bp, carla.Transform(), self.walker)
+        self.world.wait_for_tick()
+        walker_goal = self.world.get_random_location_from_navigation()
+        walker_goal.x = walker_spawn_point.location.x - 8
+        walker_goal.y = walker_spawn_point.location.y
+        print(walker_goal)
+        controller.start()
+        controller.go_to_location(walker_goal)
+
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
         self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
@@ -110,7 +139,7 @@ class World(object):
         self._weather_index %= len(self._weather_presets)
         preset = self._weather_presets[self._weather_index]
         self.hud.notification('Weather: %s' % preset[1])
-        self.player.get_world().set_weather(preset[0])
+        self.world.set_weather(preset[0])
 
     def next_map_layer(self, reverse=False):
         self.current_map_layer += -1 if reverse else 1

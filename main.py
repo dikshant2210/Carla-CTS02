@@ -8,11 +8,39 @@ import pygame
 import argparse
 import logging
 import time
-import subprocess, os
+import subprocess
+import random
 from multiprocessing import Process
 from world import World
-from control import KeyboardControl
+# from control import KeyboardControl
 from hud import HUD
+from agents.navigation.behavior_agent import BehaviorAgent
+
+from pygame.locals import KMOD_CTRL
+from pygame.locals import K_ESCAPE
+from pygame.locals import K_q
+from pygame.locals import K_TAB
+
+
+class KeyboardControl(object):
+    def __init__(self, world):
+        world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
+        self.world = world
+
+    def parse_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return True
+            if event.type == pygame.KEYUP:
+                if self._is_quit_shortcut(event.key):
+                    return True
+                elif event.key == K_TAB:
+                    self.world.camera_manager.toggle_camera()
+
+    @staticmethod
+    def _is_quit_shortcut(key):
+        """Shortcut for quitting"""
+        return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
 
 
 def game_loop(args):
@@ -32,17 +60,41 @@ def game_loop(args):
         pygame.display.flip()
 
         hud = HUD(args.width, args.height)
+        client.load_world('Town01')
         world = World(client.get_world(), hud, args)
-        controller = KeyboardControl(world, args.autopilot)
+        # controller = KeyboardControl(world, args.autopilot)
+        controller = KeyboardControl(world)
+
+        agent = BehaviorAgent(world.player, behavior='normal')
+        spawn_points = world.map.get_spawn_points()
+        random.shuffle(spawn_points)
+        if spawn_points[0].location != agent.vehicle.get_location():
+            destination = spawn_points[0].location
+        else:
+            destination = spawn_points[1].location
+        agent.set_destination(agent.vehicle.get_location(), destination, clean=True)
 
         clock = pygame.time.Clock()
         while True:
             clock.tick_busy_loop(60)
-            if controller.parse_events(client, world, clock):
+            # if controller.parse_events(client, world, clock):
+            #     return
+            if controller.parse_events():
                 return
+
+            agent.update_information()
             world.tick(clock)
             world.render(display)
             pygame.display.flip()
+
+            if len(agent.get_local_planner().waypoints_queue) == 0:
+                print("Target reached, mission accomplished...")
+
+            speed_limit = world.player.get_speed_limit()
+            agent.get_local_planner().set_speed(speed_limit)
+
+            control = agent.run_step()
+            world.player.apply_control(control)
 
     finally:
 
@@ -86,8 +138,8 @@ def main():
     argparser.add_argument(
         '--filter',
         metavar='PATTERN',
-        default='vehicle.*',
-        help='actor filter (default: "vehicle.*")')
+        default='vehicle.audi.*',
+        help='actor filter (default: "vehicle.audi.*")')
     argparser.add_argument(
         '--rolename',
         metavar='NAME',
@@ -114,6 +166,7 @@ def main():
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')
+        pygame.quit()
 
 
 def run_server():
