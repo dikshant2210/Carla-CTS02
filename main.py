@@ -15,10 +15,11 @@ from world import World
 # from control import KeyboardControl
 from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
+from agents.navigation.hylear_agent import HyLEAR
 
 from pygame.locals import KMOD_CTRL
 from pygame.locals import K_ESCAPE
-from pygame.locals import K_q
+from pygame.locals import K_q, K_r
 from pygame.locals import K_TAB
 
 
@@ -26,6 +27,8 @@ class KeyboardControl(object):
     def __init__(self, world):
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
         self.world = world
+        for i in range(3):
+            self.world.camera_manager.toggle_camera()
 
     def parse_events(self):
         for event in pygame.event.get():
@@ -36,6 +39,8 @@ class KeyboardControl(object):
                     return True
                 elif event.key == K_TAB:
                     self.world.camera_manager.toggle_camera()
+                elif event.key == K_r:
+                    self.world.camera_manager.toggle_recording()
 
     @staticmethod
     def _is_quit_shortcut(key):
@@ -61,7 +66,9 @@ def game_loop(args):
 
         hud = HUD(args.width, args.height)
         client.load_world('Town01')
-        world = World(client.get_world(), hud, args)
+        wld = client.get_world()
+        world = World(wld, hud, args)
+        print(wld.get_map())
         # controller = KeyboardControl(world, args.autopilot)
         controller = KeyboardControl(world)
 
@@ -92,6 +99,75 @@ def game_loop(args):
 
             speed_limit = world.player.get_speed_limit()
             agent.get_local_planner().set_speed(speed_limit)
+
+            control = agent.run_step()
+            world.player.apply_control(control)
+
+    finally:
+
+        if world and world.recording_enabled:
+            client.stop_recorder()
+
+        if world is not None:
+            world.destroy()
+
+        pygame.quit()
+
+
+def game_loop_hylear(args):
+    pygame.init()
+    pygame.font.init()
+    world = None
+    client = None
+
+    try:
+        client = carla.Client(args.host, args.port)
+        client.set_timeout(2.0)
+
+        display = pygame.display.set_mode(
+            (args.width, args.height),
+            pygame.HWSURFACE | pygame.DOUBLEBUF)
+        display.fill((0, 0, 0))
+        pygame.display.flip()
+
+        hud = HUD(args.width, args.height)
+        client.load_world('Town01')
+        wld = client.get_world()
+        world = World(wld, hud, args)
+        # print(wld.get_map())
+        # controller = KeyboardControl(world, args.autopilot)
+        controller = KeyboardControl(world)
+
+        # agent = BehaviorAgent(world.player, behavior='normal')
+        # spawn_points = world.map.get_spawn_points()
+        # random.shuffle(spawn_points)
+        # if spawn_points[0].location != agent.vehicle.get_location():
+        #     destination = spawn_points[0].location
+        # else:
+        #     destination = spawn_points[1].location
+        # agent.set_destination(agent.vehicle.get_location(), destination, clean=True)
+
+        wld_map = wld.get_map()
+        agent = HyLEAR(world, wld.get_map())
+
+        clock = pygame.time.Clock()
+        while True:
+            clock.tick_busy_loop(60)
+            # if controller.parse_events(client, world, clock):
+            #     return
+            if controller.parse_events():
+                return
+
+            # agent.update_information()
+            world.tick(clock)
+            world.render(display)
+            pygame.display.flip()
+
+            # if len(agent.get_local_planner().waypoints_queue) == 0:
+            #     print("Target reached, mission accomplished...")
+
+            # speed_limit = world.player.get_speed_limit()
+            # agent.get_local_planner().set_speed(speed_limit)
 
             control = agent.run_step()
             world.player.apply_control(control)
@@ -162,7 +238,8 @@ def main():
     print(__doc__)
 
     try:
-        game_loop(args)
+        # game_loop(args)
+        game_loop_hylear(args)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')

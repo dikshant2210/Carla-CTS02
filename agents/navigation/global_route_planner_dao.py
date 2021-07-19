@@ -8,6 +8,7 @@ This module provides implementation for GlobalRoutePlannerDAO
 """
 
 import numpy as np
+import sys
 
 
 class GlobalRoutePlannerDAO(object):
@@ -42,12 +43,24 @@ class GlobalRoutePlannerDAO(object):
                             to exit
         """
         topology = []
+        max_x = -sys.maxsize - 1
+        max_y = -sys.maxsize - 1
+        min_x = sys.maxsize
+        min_y = sys.maxsize
         # Retrieving waypoints to construct a detailed topology
         for segment in self._wmap.get_topology():
             wp1, wp2 = segment[0], segment[1]
             l1, l2 = wp1.transform.location, wp2.transform.location
             # Rounding off to avoid floating point imprecision
             x1, y1, z1, x2, y2, z2 = np.round([l1.x, l1.y, l1.z, l2.x, l2.y, l2.z], 0)
+
+            #################################################################
+            max_x = max([max_x, x1, x2])
+            max_y = max([max_y, y1, y2])
+            min_x = min([min_x, x1, x2])
+            min_y = min([min_y, y1, y2])
+            #################################################################
+
             wp1.transform.location, wp2.transform.location = l1, l2
             seg_dict = dict()
             seg_dict['entry'], seg_dict['exit'] = wp1, wp2
@@ -62,7 +75,7 @@ class GlobalRoutePlannerDAO(object):
             else:
                 seg_dict['path'].append(wp1.next(self._sampling_resolution)[0])
             topology.append(seg_dict)
-        return topology
+        return topology, max_x, max_y, min_x, min_y
 
     def get_waypoint(self, location):
         """
