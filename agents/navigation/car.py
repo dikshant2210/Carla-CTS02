@@ -7,9 +7,9 @@ from agents.navigation.reeds_shepp_path import ReedsSheppPath, draw_point
 
 
 class Car(object):
-    def __init__(self, l, w):
-        self._l = l
-        self._w = w
+    def __init__(self, length, width):
+        self._l = length
+        self._w = width
         self._pos = None
         self._outline_x = []
         self._outline_y = []

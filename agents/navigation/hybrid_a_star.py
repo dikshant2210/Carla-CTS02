@@ -4,11 +4,10 @@
 from agents.navigation.mapinfo import MapInfo
 import math
 from copy import deepcopy
-from agents.navigation.reeds_shepp_path import ReedsSheppPath, draw_point
+from agents.navigation.reeds_shepp_path import ReedsSheppPath
 from agents.navigation.car import Car
 from agents.navigation.a_star import AStar
 import matplotlib.pyplot as plt
-import time
 
 
 class HybridAStar(object):
@@ -41,7 +40,9 @@ class HybridAStar(object):
         return False
 
     def h_cost(self, s):
-        # return self.distance(s, self._e)
+        # Uncomment below to use euclidean distance as heuristic
+        return self.distance(s, self._e)
+        # Astar path length as heuristic
         plan = AStar((s[0], s[1]), (self._e[0], self._e[1]), self._map_info)
         if plan.run(display=False):
             path = plan.reconstruct_path()

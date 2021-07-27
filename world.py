@@ -97,14 +97,14 @@ class World(object):
 
             # Spawn location of ego vehicle for non T-intersection scenarios
             spawn_point.location.x = 2.22
-            spawn_point.location.y = 289.0 - 55
+            spawn_point.location.y = 289.0 - 55  # 289.0 - 55
             spawn_point.location.z = 0.01
             spawn_point.rotation.yaw = 270.0
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
         # Set up walkers
-        walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.*")
+        walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
         controller_bp = self.world.get_blueprint_library().find("controller.ai.walker")
         walker_spawn_point = carla.Transform()
         walker_spawn_point.location.x = 5.2

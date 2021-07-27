@@ -134,8 +134,6 @@ def game_loop_hylear(args):
         client.load_world('Town01')
         wld = client.get_world()
         world = World(wld, hud, args)
-        # print(wld.get_map())
-        # controller = KeyboardControl(world, args.autopilot)
         controller = KeyboardControl(world)
 
         # agent = BehaviorAgent(world.player, behavior='normal')
@@ -148,6 +146,7 @@ def game_loop_hylear(args):
         # agent.set_destination(agent.vehicle.get_location(), destination, clean=True)
 
         wld_map = wld.get_map()
+        # odr_world = client.generate_opendrive_world(wld_map.to_opendrive())
         agent = HyLEAR(world, wld.get_map())
 
         clock = pygame.time.Clock()
@@ -170,6 +169,8 @@ def game_loop_hylear(args):
             # agent.get_local_planner().set_speed(speed_limit)
 
             control = agent.run_step()
+            if control == "goal":
+                break
             world.player.apply_control(control)
 
     finally:
@@ -214,8 +215,8 @@ def main():
     argparser.add_argument(
         '--filter',
         metavar='PATTERN',
-        default='vehicle.audi.*',
-        help='actor filter (default: "vehicle.audi.*")')
+        default='vehicle.audi.tt',
+        help='actor filter (default: "vehicle.audi.tt")')
     argparser.add_argument(
         '--rolename',
         metavar='NAME',
