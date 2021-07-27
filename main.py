@@ -16,6 +16,7 @@ from world import World
 from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
 from agents.navigation.hylear_agent import HyLEAR
+from agents.tools.connector import Connector
 
 from pygame.locals import KMOD_CTRL
 from pygame.locals import K_ESCAPE
@@ -119,6 +120,7 @@ def game_loop_hylear(args):
     pygame.font.init()
     world = None
     client = None
+    despot_port = 1245
 
     try:
         client = carla.Client(args.host, args.port)
@@ -147,7 +149,9 @@ def game_loop_hylear(args):
 
         wld_map = wld.get_map()
         # odr_world = client.generate_opendrive_world(wld_map.to_opendrive())
-        agent = HyLEAR(world, wld.get_map())
+
+        conn = Connector(despot_port)
+        agent = HyLEAR(world, wld.get_map(), conn)
 
         clock = pygame.time.Clock()
         while True:
@@ -249,6 +253,7 @@ def main():
 
 def run_server():
     subprocess.run(['cd /opt/carla-simulator/ && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl'], shell=True)
+    # subprocess.run(['cd ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/ && ./car'], shell=True)
 
 
 if __name__ == '__main__':

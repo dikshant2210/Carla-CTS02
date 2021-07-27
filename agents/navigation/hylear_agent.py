@@ -32,6 +32,7 @@ class HyLEAR(Agent):
 
         wps = carla_map.generate_waypoints(Config.grid_size)
         print("Total no. of waypoints: {}".format(len(wps)))
+        self.conn.establish_connection()
 
         self.max_x = -sys.maxsize - 1
         self.max_y = -sys.maxsize - 1
@@ -149,6 +150,3 @@ class HyLEAR(Agent):
         costmap = np.flip(np.rot90(costmap, axes=(1, 0)), axis=1)
         plt.imsave("_out/{}/{}.jpg".format(self.folder, ts), costmap, cmap='gray')
         plt.close()
-
-    def update_information(self):
-        pass
