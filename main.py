@@ -17,6 +17,8 @@ from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
 from agents.navigation.hylear_agent import HyLEAR
 from agents.tools.connector import Connector
+from agents.navigation.segmentation_sensor import SegmentationSensor
+from agents.navigation.config import Config
 
 from pygame.locals import KMOD_CTRL
 from pygame.locals import K_ESCAPE
@@ -135,6 +137,11 @@ def game_loop_hylear(args):
         hud = HUD(args.width, args.height)
         client.load_world('Town01')
         wld = client.get_world()
+        settings = wld.get_settings()
+        settings.fixed_delta_seconds = Config.simulation_step
+        settings.synchronous_mode = Config.synchronous
+        wld.apply_settings(settings)
+
         world = World(wld, hud, args)
         controller = KeyboardControl(world)
 
@@ -148,10 +155,13 @@ def game_loop_hylear(args):
         # agent.set_destination(agent.vehicle.get_location(), destination, clean=True)
 
         wld_map = wld.get_map()
+        print(wld_map.name)
+        wld_map.save_to_disk()
         # odr_world = client.generate_opendrive_world(wld_map.to_opendrive())
 
         conn = Connector(despot_port)
         agent = HyLEAR(world, wld.get_map(), conn)
+        # sensor = SegmentationSensor(wld, world.player)
 
         clock = pygame.time.Clock()
         while True:

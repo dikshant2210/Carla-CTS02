@@ -52,7 +52,8 @@ if __name__ == '__main__':
     conn.establish_connection()
     conn.receive_message()
     for _ in range(10):
-        conn.send_message(False, 0.0, 0.0, [100.0, 100.0], 8.5, [[89.0, 92.0]], [[101.0, 101.0, 0.0], [102.0, 102.0, 0.0],
+        conn.send_message(False, 0.0, 0.0, [100.0, 100.0], 8.5, [[89.0, 92.0]], [[101.0, 101.0, 0.0],
+                                                                                 [102.0, 102.0, 0.0],
                                                                                  [103.0, 103.0, 0.0]])
         msg = conn.receive_message()
         print(msg)

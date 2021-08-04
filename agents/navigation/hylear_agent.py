@@ -32,7 +32,7 @@ class HyLEAR(Agent):
 
         wps = carla_map.generate_waypoints(Config.grid_size)
         print("Total no. of waypoints: {}".format(len(wps)))
-        self.conn.establish_connection()
+        # self.conn.establish_connection()
 
         self.max_x = -sys.maxsize - 1
         self.max_y = -sys.maxsize - 1
@@ -118,20 +118,20 @@ class HyLEAR(Agent):
         return minfo.path, steering, False
 
     def run_step(self, debug=False):
-        cmp = self.get_costmap()
-        path, yaws, flag = self.get_path(cmp)
-        if flag:
-            return "goal"
-
-        self.save_costmap(path, cmp)
-        del cmp
+        # cmp = self.get_costmap()
+        # path, yaws, flag = self.get_path(cmp)
+        # if flag:
+        #     return "goal"
+        #
+        # self.save_costmap(path, cmp)
+        # del cmp
 
         # print(self.vehicle.get_location())
-        steering = np.clip(yaws[1] / Config.max_steering_angle, -1, 1)
+        # steering = np.clip(yaws[1] / Config.max_steering_angle, -1, 1)
         # print(steering, yaws)
 
         control = carla.VehicleControl()
-        control.steer = steering
+        control.steer = 0.0
         control.throttle = 0.5
         control.brake = 0.0
         control.hand_brake = False
