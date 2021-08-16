@@ -19,10 +19,10 @@ try:
 except ImportError:
     raise RuntimeError('cannot import PIL, make sure pillow package is installed')
 
-from temp_check.planner.graph import Graph
-from temp_check.planner.graph import sldist
-from temp_check.planner.grid import Grid
-from temp_check.planner.converter import Converter
+from assets.graph import Graph
+from assets.graph import sldist
+from assets.grid import Grid
+from assets.converter import Converter
 
 
 def color_to_angle(color):
