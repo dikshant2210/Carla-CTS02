@@ -12,12 +12,10 @@ import subprocess
 import random
 from multiprocessing import Process
 from world import World
-# from control import KeyboardControl
 from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
 from agents.navigation.hylear_agent import HyLEAR
 from agents.tools.connector import Connector
-from agents.navigation.segmentation_sensor import SegmentationSensor
 from agents.navigation.config import Config
 
 from pygame.locals import KMOD_CTRL
@@ -128,11 +126,12 @@ def game_loop_hylear(args):
         client = carla.Client(args.host, args.port)
         client.set_timeout(2.0)
 
-        display = pygame.display.set_mode(
-            (args.width, args.height),
-            pygame.HWSURFACE | pygame.DOUBLEBUF)
-        display.fill((0, 0, 0))
-        pygame.display.flip()
+        if args.display:
+            display = pygame.display.set_mode(
+                (args.width, args.height),
+                pygame.HWSURFACE | pygame.DOUBLEBUF)
+            display.fill((0, 0, 0))
+            pygame.display.flip()
 
         hud = HUD(args.width, args.height)
         client.load_world('Town01')
@@ -144,24 +143,15 @@ def game_loop_hylear(args):
 
         world = World(wld, hud, args)
         controller = KeyboardControl(world)
-
-        # agent = BehaviorAgent(world.player, behavior='normal')
-        # spawn_points = world.map.get_spawn_points()
-        # random.shuffle(spawn_points)
-        # if spawn_points[0].location != agent.vehicle.get_location():
-        #     destination = spawn_points[0].location
-        # else:
-        #     destination = spawn_points[1].location
-        # agent.set_destination(agent.vehicle.get_location(), destination, clean=True)
+        world.camera_manager.toggle_recording()
 
         wld_map = wld.get_map()
         print(wld_map.name)
-        wld_map.save_to_disk()
+        # wld_map.save_to_disk()
         # odr_world = client.generate_opendrive_world(wld_map.to_opendrive())
 
         conn = Connector(despot_port)
         agent = HyLEAR(world, wld.get_map(), conn)
-        # sensor = SegmentationSensor(wld, world.player)
 
         clock = pygame.time.Clock()
         while True:
@@ -173,8 +163,9 @@ def game_loop_hylear(args):
 
             # agent.update_information()
             world.tick(clock)
-            world.render(display)
-            pygame.display.flip()
+            if args.display:
+                world.render(display)
+                pygame.display.flip()
 
             # if len(agent.get_local_planner().waypoints_queue) == 0:
             #     print("Target reached, mission accomplished...")
@@ -241,6 +232,11 @@ def main():
         default=2.2,
         type=float,
         help='Gamma correction of the camera (default: 2.2)')
+    argparser.add_argument(
+        '--display',
+        default=False,
+        type=bool,
+        help='Render the simulation window (default: False)')
     args = argparser.parse_args()
 
     args.width, args.height = [int(x) for x in args.res.split('x')]

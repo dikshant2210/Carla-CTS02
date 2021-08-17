@@ -56,4 +56,4 @@ if __name__ == '__main__':
                                                                                  [102.0, 102.0, 0.0],
                                                                                  [103.0, 103.0, 0.0]])
         msg = conn.receive_message()
-        print(msg)
+        print(msg[0] == '0', msg[0])
