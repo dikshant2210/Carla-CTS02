@@ -9,7 +9,7 @@ from sensors import *
 
 
 class World(object):
-    def __init__(self, carla_world, hud, args):
+    def __init__(self, carla_world, hud, scenario, args):
         self.world = carla_world
         self.actor_role_name = args.rolename
         try:
@@ -20,8 +20,10 @@ class World(object):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
         self.hud = hud
+        self.scenario = scenario
         self.player = None
         self.walker = None
+        self.incoming_car = None
         self.player_max_speed = None
         self.player_max_speed_fast = None
         self.collision_sensor = None
@@ -103,25 +105,18 @@ class World(object):
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
-        # Set up walkers
-        walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
-        controller_bp = self.world.get_blueprint_library().find("controller.ai.walker")
-        walker_spawn_point = carla.Transform()
-        walker_spawn_point.location.x = 5.2
-        walker_spawn_point.location.y = 235.0 - 45
-        walker_spawn_point.location.z += 1.0
-        walker_spawn_point.rotation.yaw = 270.0
-        bp = random.choice(walker_bp)
-        self.walker = self.world.try_spawn_actor(bp, walker_spawn_point)
-        self.world.wait_for_tick()
-        controller = self.world.try_spawn_actor(controller_bp, carla.Transform(), self.walker)
-        self.world.wait_for_tick()
-        walker_goal = self.world.get_random_location_from_navigation()
-        walker_goal.x = walker_spawn_point.location.x - 8
-        walker_goal.y = walker_spawn_point.location.y
-        print(walker_goal)
-        controller.start()
-        controller.go_to_location(walker_goal)
+        # Set up other agents
+        scenario_type = self.scenario[0]
+        obstacles = self.scenario[1]
+        if len(obstacles) == 1:
+            # Single pedestrian scenarios
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+        else:
+            # Single pedestrian with incoming car
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1, 0, 0), 1))
+            self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
+            self.incoming_car.set_target_velocity(carla.Vector3D(0, 5, 0))  # Set target velocity for experiment
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)

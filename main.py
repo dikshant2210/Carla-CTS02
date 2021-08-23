@@ -17,6 +17,7 @@ from agents.navigation.behavior_agent import BehaviorAgent
 from agents.navigation.hylear_agent import HyLEAR
 from agents.tools.connector import Connector
 from agents.navigation.config import Config
+from agents.tools.scenario import Scenario
 
 from pygame.locals import KMOD_CTRL
 from pygame.locals import K_ESCAPE
@@ -141,23 +142,22 @@ def game_loop_hylear(args):
         settings.synchronous_mode = Config.synchronous
         wld.apply_settings(settings)
 
-        world = World(wld, hud, args)
+        scene_generator = Scenario(wld)
+        scene = scene_generator.scenario10()
+        world = World(wld, hud, scene, args)
         controller = KeyboardControl(world)
-        world.camera_manager.toggle_recording()
+        # world.camera_manager.toggle_recording()
 
         wld_map = wld.get_map()
         print(wld_map.name)
-        # wld_map.save_to_disk()
-        # odr_world = client.generate_opendrive_world(wld_map.to_opendrive())
 
         conn = Connector(despot_port)
-        agent = HyLEAR(world, wld.get_map(), conn)
+        agent = HyLEAR(world, wld.get_map(), conn, scene)
 
         clock = pygame.time.Clock()
         while True:
             clock.tick_busy_loop(60)
-            # if controller.parse_events(client, world, clock):
-            #     return
+
             if controller.parse_events():
                 return
 
@@ -166,12 +166,6 @@ def game_loop_hylear(args):
             if args.display:
                 world.render(display)
                 pygame.display.flip()
-
-            # if len(agent.get_local_planner().waypoints_queue) == 0:
-            #     print("Target reached, mission accomplished...")
-
-            # speed_limit = world.player.get_speed_limit()
-            # agent.get_local_planner().set_speed(speed_limit)
 
             control = agent.run_step()
             if control == "goal":
@@ -234,7 +228,7 @@ def main():
         help='Gamma correction of the camera (default: 2.2)')
     argparser.add_argument(
         '--display',
-        default=False,
+        default=True,
         type=bool,
         help='Render the simulation window (default: False)')
     args = argparser.parse_args()
