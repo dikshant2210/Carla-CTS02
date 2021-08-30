@@ -146,7 +146,7 @@ def game_loop_hylear(args):
         scene = scene_generator.scenario10()
         world = World(wld, hud, scene, args)
         controller = KeyboardControl(world)
-        # world.camera_manager.toggle_recording()
+        world.camera_manager.toggle_recording()
 
         wld_map = wld.get_map()
         print(wld_map.name)
@@ -171,6 +171,7 @@ def game_loop_hylear(args):
             if control == "goal":
                 break
             world.player.apply_control(control)
+            # break
 
     finally:
 

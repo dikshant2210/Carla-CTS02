@@ -25,7 +25,7 @@ class OccupancyGrid:
         costmap = np.copy(self.static_map)
         for agent in agents:
             pass
-        return costmap
+        return self.ref
 
 
 if __name__ == '__main__':

@@ -114,9 +114,8 @@ class World(object):
         else:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1, 0, 0), 1))
+            # self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 1, 0), 1))
             self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
-            self.incoming_car.set_target_velocity(carla.Vector3D(0, 5, 0))  # Set target velocity for experiment
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -165,6 +164,11 @@ class World(object):
 
     def tick(self, clock):
         self.hud.tick(self, clock)
+        dist = abs(self.player.get_location().y - self.walker.get_location().y)
+        if dist < 20:
+            pass
+            # self.incoming_car.set_target_velocity(carla.Vector3D(0, 5, 0))  # Set target velocity for experiment
+            # self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1, 0, 0), 1))
 
     def render(self, display):
         self.camera_manager.render(display)

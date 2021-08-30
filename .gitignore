@@ -7,3 +7,8 @@ temp_check/
 ISDESPOT/isdespot-ped-pred/is-despot/.deps/
 ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/.settings/
 ISDESPOT/isdespot-ped-pred/is-despot/build/
+
+agents/path_planner/build/
+agents/path_planner/hybridastar.c
+agents/path_planner/hybridastar.cpython-36m-x86_64-linux-gnu.so
+agents/path_planner/hybridastar.py
