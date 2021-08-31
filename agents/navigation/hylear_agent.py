@@ -7,16 +7,15 @@ import carla
 import sys
 import os
 import datetime
-import math
-
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
 from agents.navigation.config import Config
 from assets.occupancy_grid import OccupancyGrid
-# from agents.navigation.hybridastar import HybridAStar
-from agents.path_planner.hybridastar import HybridAStar
+from agents.navigation.hybridastar import HybridAStar
+# from agents.path_planner.hybridastar import HybridAStar
 
 
 class HyLEAR(Agent):
@@ -31,6 +30,7 @@ class HyLEAR(Agent):
         self.scenario = scenario
         self.occupancy_grid = OccupancyGrid()
         self.fig = plt.figure()
+        self.display_costmap = False
         self.folder = datetime.datetime.now().timestamp()
         os.mkdir("_out/{}".format(self.folder))
 
@@ -56,19 +56,39 @@ class HyLEAR(Agent):
 
         self.max_x = int(self.max_x)
         self.max_y = int(self.max_y)
-        self.min_y = int(self.min_y)
-        self.min_x = int(self.min_x)
+        self.min_y = int(self.min_y) - 10
+        self.min_x = int(self.min_x) - 10
 
         obstacle = []
-        resolution = 1
-        vehicle_length = 3
+        # resolution = 1
+        vehicle_length = 2
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y,
-                                        obstacle, resolution, vehicle_length)
+                                        obstacle, vehicle_length)
+
+        x_range = self.max_x - self.min_x
+        y_range = self.max_y - self.min_y
+        self.grid_cost = np.ones((x_range, y_range))
+        for i in range(x_range):
+            for j in range(y_range):
+                loc = self.occupancy_grid.map.convert_to_pixel([i, j, 0])
+                x = loc[0] + 340
+                if x > 2199:
+                    x = 2199
+                val = self.occupancy_grid.static_map[x, loc[1]]
+                self.grid_cost[i, j] = val
 
     def get_reward(self):
         return -1
 
     def run_step(self, debug=False):
+        # control = carla.VehicleControl()
+        # control.steer = 0
+        # control.throttle = 1.0
+        # control.brake = 0.0
+        # control.hand_brake = False
+        # control.manual_gear_shift = False
+        # return control
+
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
@@ -89,39 +109,44 @@ class HyLEAR(Agent):
         # print(self.min_x, self.max_x, self.min_y, self.max_y, start, end)
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 10.0:
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 100.0:
             obstacles.append((int(walker_x), int(walker_y)))
 
-        # if self.scenario[0] > 9:
-        #     walker_extent = self.world.walker.bounding_box.extent
-        #     walker_wp = self.wmap.get_waypoint(self.world.walker.get_location())
-        #     for x in range(-math.ceil(walker_extent.x), math.ceil(walker_extent.x)):
-        #         for y in range(-math.ceil(walker_extent.y), math.ceil(walker_extent.y)):
-        #             obstacles.append((walker_wp.transform.location.x + x, walker_wp.transform.location.y + y))
-        #
-        #     car_extent = self.world.incoming_car.bounding_box.extent
-        #     car_wp = self.wmap.get_waypoint(self.world.incoming_car.get_location())
-        #     for x in range(-math.ceil(car_extent.x), math.ceil(car_extent.x)):
-        #         for y in range(-math.ceil(car_extent.y), math.ceil(car_extent.y)):
-        #             obstacles.append((car_wp.transform.location.x + x, car_wp.transform.location.y + y))
-        #
-        # else:
-        #     walker_extent = self.world.walker.bounding_box.extent
-        #     walker_wp = self.wmap.get_waypoint(self.world.walker.get_location())
-        #     for x in range(-math.ceil(walker_extent.x), math.ceil(walker_extent.x)):
-        #         for y in range(-math.ceil(walker_extent.y), math.ceil(walker_extent.y)):
-        #             obstacles.append((walker_wp.transform.location.x + x, walker_wp.transform.location.y + y))
-
-        path = self.path_planner.find_path(start, end, self.occupancy_grid, obstacles)
+        t0 = time.time()
+        path = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
         path.reverse()
 
+        if self.display_costmap:
+            self.plot_costmap(obstacles, path)
+
+        # self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
+        # m = self.conn.receive_message()
+        # acc = 0
+        # if m[0] == '0':
+        #     acc = 1.4
+        # elif m[0] == '2':
+        #     acc = -1.4
+        # print("Speed action: {}".format(acc))
+
+        control = carla.VehicleControl()
+        control.steer = (path[2][2] - start[2]) / 70.
+        control.throttle = 0.3
+        control.brake = 0.0
+        control.hand_brake = False
+        control.manual_gear_shift = False
+
+        # print(control.steer, path[2][2], start[2])
+
+        return control
+
+    def plot_costmap(self, obstacles, path):
         cp = self.occupancy_grid.get_costmap([])
         x, y = list(), list()
         for node in path:
             pixel_coord = self.occupancy_grid.map.convert_to_pixel(node)
             x.append(pixel_coord[0] + 340)
             y.append(pixel_coord[1])
-        # print(cp.max(), cp.min())
         plt.plot(x, y, "-r")
         if len(obstacles) > 0:
             obstacle_pixel = self.occupancy_grid.map.convert_to_pixel([obstacles[0][0], obstacles[0][1], 0])
@@ -132,44 +157,3 @@ class HyLEAR(Agent):
         plt.draw()
         plt.pause(0.1)
         self.fig.clear()
-
-        # rx1, ry1, ox1, oy1 = list(), list(), list(), list()
-        # for node in path:
-        #     rx1.append(node[0])
-        #     ry1.append(node[1])
-        # plt.plot(rx1, ry1, "-b")
-        # for loc in obstacles:
-        #     ox1.append(loc[0])
-        #     oy1.append(loc[1])
-        # plt.plot(ox1, oy1, ".k")
-        # plt.grid(True)
-        # plt.axis("equal")
-        # plt.savefig("_out/path_{}.png".format(len(path)))
-        # plt.close()
-
-        # self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
-        # m = self.conn.receive_message()
-        # acc = 0
-        # if m[0] == '0':
-        #     acc = 5
-        # elif m[0] == '2':
-        #     acc = -5
-        # print("Speed action: {}".format(acc))
-
-        control = carla.VehicleControl()
-        control.steer = (path[2][2] - start[2]) / 70.
-        control.throttle = 0.15
-        control.brake = 0.0
-        control.hand_brake = False
-        control.manual_gear_shift = False
-
-        print(control.steer, path[2][2], start[2])
-
-        # control = carla.VehicleControl()
-        # control.steer = 0
-        # control.throttle = 0.2
-        # control.brake = 0.0
-        # control.hand_brake = False
-        # control.manual_gear_shift = False
-
-        return control

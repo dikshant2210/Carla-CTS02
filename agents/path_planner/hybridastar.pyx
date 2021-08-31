@@ -7,9 +7,7 @@ Time: 16.08.21 23:55
 
 import heapq as hq
 import math
-import matplotlib.pyplot as plt
 import numpy as np
-from assets.occupancy_grid import OccupancyGrid
 
 
 # total cost f(n) = actual cost g(n) + heuristic cost h(n)
@@ -36,11 +34,6 @@ class HybridAStar:
         # print(float(output), occupancy_grid.static_map[grid_location[0] + 340, grid_location[1]])
         return float(output) + (occupancy_grid.static_map[grid_location[0] + 340, grid_location[1]] / 10.0)
 
-    # def costFunction(self, position, target):
-    #     ratioDelta = 1
-    #     output = ratioDelta * abs(position[2] - target[2])
-    #     return float(output)
-
     """
     For each node n, we need to store:
     (discrete_x, discrete_y, heading angle theta),
@@ -53,16 +46,15 @@ class HybridAStar:
     sol_path = [(x1,y1,theta1),(x2,y2,theta2), ...]
     """
 
-    def Sort_Tuple(self, tup):
-        # reverse = None (Sorts in Ascending order)
-        # key is set to sort using second element of
-        # sublist lambda has been used
-        tup.sort(key=lambda x: x[1])
-        return tup
-
     def find_path(self, start, end, occupancy_grid, agent_locations):
-        steering_inputs = [-50, 0, 50]
-        cost_steering_inputs = [0.1, 0, 0.1]
+        steering_inputs = []
+        cost_steering_inputs = []
+        for i in range(-25, 26, 25):
+            steering_inputs.append(i)
+            if i == 0:
+                cost_steering_inputs.append(0)
+            else:
+                cost_steering_inputs.append(0.1)
 
         speed_inputs = [1]
         cost_speed_inputs = [0]
@@ -190,76 +182,3 @@ class HybridAStar:
             # print(open_set_sorted)
         print("Did not find the goal - it's unattainable.")
         return []
-
-
-def main():
-    print(__file__ + " start!!")
-
-    # start and goal position
-    # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2, 210, -90
-    gx, gy, gtheta = 2, 180, -90  # 2,4,0 almost exact
-
-    # create obstacles
-    obstacle = [(2, 200)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
-
-    # ox, oy = [], []
-    # for (x, y) in obstacle:
-    #     ox.append(x)
-    #     oy.append(y)
-    #
-    # plt.plot(ox, oy, ".k")
-    # plt.plot(sx, sy, "xr")
-    # plt.plot(gx, gy, "xb")
-    # plt.grid(True)
-    # plt.axis("equal")
-
-    hy_a_star = HybridAStar(-2, 396, -2, 330, obstacle=[], resolution=1, vehicle_length=3)
-    print(len(hy_a_star.obstacle))
-    occupancy_grid = OccupancyGrid()
-    sloc = occupancy_grid.map.convert_to_pixel([sx, sy, stheta])
-    gloc = occupancy_grid.map.convert_to_pixel([gx, gy, gtheta])
-    print(occupancy_grid.static_map[sloc[0] + 340, sloc[1]])
-    print(occupancy_grid.static_map[gloc[0] + 340, gloc[1]])
-    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), occupancy_grid, obstacle)
-    print(path)
-
-    # rx, ry = [], []
-    # for node in path:
-    #     rx.append(node[0])
-    #     ry.append(node[1])
-    # plt.plot(rx, ry, "-r")
-
-    cp = occupancy_grid.get_costmap([])
-    x, y = list(), list()
-    for node in path:
-        pixel_coord = occupancy_grid.map.convert_to_pixel(node)
-        x.append(pixel_coord[0] + 340)
-        y.append(pixel_coord[1])
-    # print(cp.max(), cp.min())
-    plt.plot(x, y, "-r")
-    obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[0][0], obstacle[0][1], 0])
-    print(obstacle_pixel)
-    plt.scatter([obstacle_pixel[0] + 340], [obstacle_pixel[1]], c="k")
-    plt.imshow(cp)
-
-    # k = 5
-    # for _ in range(k):
-    #     for node in path[5:-5]:
-    #         obstacle.append((int(node[0]), int(node[1])))
-    #         # ox.append(int(node[0]))
-    #         # oy.append(int(node[1]))
-    #     print(len(obstacle))
-    #     path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), occupancy_grid, obstacle)
-    #     rx1, ry1 = [], []
-    #     for node in path:
-    #         rx1.append(node[0])
-    #         ry1.append(node[1])
-    #     plt.plot(rx1, ry1, "-b")
-
-    plt.show()
-
-
-if __name__ == '__main__':
-    main()
-

@@ -7,7 +7,7 @@ Time: 25.07.21 09:57
 class Config:
     PI = 3.14159
 
-    simulation_step = 0.2
+    simulation_step = 0.1
     sensor_simulation_step = '0.5'
     synchronous = False
 

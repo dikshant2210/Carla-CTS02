@@ -41,7 +41,7 @@ class GlobalRoutePlanner(object):
         Performs initial server data lookup for detailed topology
         and builds graph representation of the world map.
         """
-        self._topology = self._dao.get_topology()
+        self._topology, _, _, _, _ = self._dao.get_topology()
         self._graph, self._id_map, self._road_id_to_edge = self._build_graph()
         self._find_loose_ends()
         self._lane_change_link()

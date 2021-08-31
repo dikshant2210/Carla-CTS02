@@ -17,7 +17,7 @@ class Scenario:
 
         walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
         walker_spawn_point = carla.Transform()
-        walker_spawn_point.location.x = 2
+        walker_spawn_point.location.x = 2  # 2 For testing purposes
         walker_spawn_point.location.y = 230 - 30
         walker_spawn_point.location.z += 1.0
         walker_spawn_point.rotation.yaw = 270.0
