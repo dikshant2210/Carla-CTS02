@@ -14,6 +14,7 @@ class OccupancyGrid:
         self.ref = self.map.get_map()
         # extract green channel, invert, scale to range 0..100, convert to int8
         self.ref = (self.ref[..., 1] * 100.0 / 255).astype(np.int8)
+        self.ref = np.flip(self.ref, axis=1)
 
         self.static_map = np.zeros(self.ref.shape)
         self.static_map[:, :] = 10000

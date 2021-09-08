@@ -39,7 +39,10 @@ class Connector:
         message += temp + ";" + str(reward) + ";" + str(angle) + ";"
         message += str(car_pos[0]) + ";" + str(car_pos[1]) + ";" + str(car_speed) + ";"
         for pos in pedestrian_positions:
-            message += str(pos[0]) + ";" + str(pos[1]) + ";"  # Pedestrian position: (x, y)
+            if len(pos) == 0:
+                message += ";" + ";"
+            else:
+                message += str(pos[0]) + ";" + str(pos[1]) + ";"  # Pedestrian position: (x, y)
         for wp in path:
             message += str(wp[0]) + "," + str(wp[1]) + "," + str(wp[2]) + ","  # Waypoint: (x, y, theta)
         message = message[:-1] + "\n"

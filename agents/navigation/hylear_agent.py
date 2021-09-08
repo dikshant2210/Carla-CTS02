@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 from agents.navigation.agent import Agent
 from agents.navigation.config import Config
 from assets.occupancy_grid import OccupancyGrid
-from agents.navigation.hybridastar import HybridAStar
-# from agents.path_planner.hybridastar import HybridAStar
+# from agents.navigation.hybridastar import HybridAStar
+from agents.path_planner.hybridastar import HybridAStar
 
 
 class HyLEAR(Agent):
@@ -31,14 +31,15 @@ class HyLEAR(Agent):
         self.occupancy_grid = OccupancyGrid()
         self.fig = plt.figure()
         self.display_costmap = False
+        self.prev_action = None
         self.folder = datetime.datetime.now().timestamp()
         os.mkdir("_out/{}".format(self.folder))
 
         wps = carla_map.generate_waypoints(Config.grid_size)
         print("Total no. of waypoints: {}".format(len(wps)))
-        # self.conn.establish_connection()
-        # m = self.conn.receive_message()
-        # print(m)  # START
+        self.conn.establish_connection()
+        m = self.conn.receive_message()
+        print(m)  # START
 
         self.max_x = -sys.maxsize - 1
         self.max_y = -sys.maxsize - 1
@@ -60,8 +61,7 @@ class HyLEAR(Agent):
         self.min_x = int(self.min_x) - 10
 
         obstacle = []
-        # resolution = 1
-        vehicle_length = 2
+        vehicle_length = self.vehicle.bounding_box.extent.x * 2
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y,
                                         obstacle, vehicle_length)
 
@@ -78,7 +78,27 @@ class HyLEAR(Agent):
                 self.grid_cost[i, j] = val
 
     def get_reward(self):
-        return -1
+        transform = self.vehicle.get_transform()
+        start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
+        end = self.scenario[2]
+        goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+        if goal_dist < 3:
+            print("Goal reached!")
+            return 1000, True
+        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+        ped_dist = np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2)
+        if ped_dist < 0.5:
+            return -1000, True
+
+        reward = -0.1
+        # TODO: add sidewalk reward
+        if self.prev_action.throttle != 0:
+            reward += -0.1
+        if self.prev_action.steer != 0:
+            reward += -1
+        elif 0.5 < ped_dist < 1.5:
+            reward += -500
+        return -0.1, False
 
     def run_step(self, debug=False):
         # control = carla.VehicleControl()
@@ -93,51 +113,62 @@ class HyLEAR(Agent):
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
 
-        if self.vehicle.get_location().y < end[1]:
-            print("Goal reached!")
+        if self.prev_action is not None:
+            reward, terminal = self.get_reward()
+        else:
+            # handling first instance
+            reward = 0
+            terminal = False
+        if terminal:
             return "goal"
-
-        terminal = False
-        reward = self.get_reward()
         angle = transform.rotation.yaw
         car_pos = [self.vehicle.get_location().x, self.vehicle.get_location().y]
         car_velocity = self.vehicle.get_velocity()
-        car_speed = np.sqrt(car_velocity.x**2 + car_velocity.y**2)
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
         pedestrian_positions = [[self.world.walker.get_location().x, self.world.walker.get_location().y]]
         # print(terminal, reward, angle, car_pos, car_speed, pedestrian_positions)
 
         # print(self.min_x, self.max_x, self.min_y, self.max_y, start, end)
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 100.0:
+        car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
             obstacles.append((int(walker_x), int(walker_y)))
-
+            pedestrian_positions = [[walker_x, walker_y]]
+        if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+            obstacles.append((int(car_x), int(car_y)))
+        # print(obstacles)
         t0 = time.time()
         path = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
-        print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
+        # print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
         path.reverse()
 
         if self.display_costmap:
             self.plot_costmap(obstacles, path)
 
-        # self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
-        # m = self.conn.receive_message()
-        # acc = 0
-        # if m[0] == '0':
-        #     acc = 1.4
-        # elif m[0] == '2':
-        #     acc = -1.4
-        # print("Speed action: {}".format(acc))
-
         control = carla.VehicleControl()
-        control.steer = (path[2][2] - start[2]) / 70.
-        control.throttle = 0.3
+        if len(path) == 0:
+            control.throttle = -1
+            control.steer = 0
+        else:
+            t0 = time.time()
+            self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
+            m = self.conn.receive_message()
+            acc = 0
+            if m[0] == '0':
+                acc = 0.6
+            elif m[0] == '2':
+                acc = -0.6
+            # print("Time taken to generate speed action {:.4f}ms".format((time.time() - t0) * 1000))
+            # print("Speed action: {}".format(acc))
+            control.throttle = acc
+            control.steer = (path[2][2] - start[2]) / 70.
         control.brake = 0.0
         control.hand_brake = False
         control.manual_gear_shift = False
 
         # print(control.steer, path[2][2], start[2])
-
+        self.prev_action = control
         return control
 
     def plot_costmap(self, obstacles, path):

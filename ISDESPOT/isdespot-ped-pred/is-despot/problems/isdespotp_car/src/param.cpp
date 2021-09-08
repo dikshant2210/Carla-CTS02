@@ -34,7 +34,7 @@ namespace ModelParams {
 	bool debug = false;
 
 	double control_freq = 4;
-	double AccSpeed = 5 * 0.2778;
+	double AccSpeed = 0.5; // acceleration in ms
 
 	double GOAL_REWARD = 1.0;
 
