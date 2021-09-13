@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 from agents.navigation.agent import Agent
 from agents.navigation.config import Config
 from assets.occupancy_grid import OccupancyGrid
-# from agents.navigation.hybridastar import HybridAStar
-from agents.path_planner.hybridastar import HybridAStar
+from agents.navigation.hybridastar import HybridAStar
+# from agents.path_planner.hybridastar import HybridAStar
 
 
 class HyLEAR(Agent):
@@ -30,7 +30,7 @@ class HyLEAR(Agent):
         self.scenario = scenario
         self.occupancy_grid = OccupancyGrid()
         self.fig = plt.figure()
-        self.display_costmap = False
+        self.display_costmap = True
         self.prev_action = None
         self.folder = datetime.datetime.now().timestamp()
         os.mkdir("_out/{}".format(self.folder))
@@ -68,14 +68,19 @@ class HyLEAR(Agent):
         x_range = self.max_x - self.min_x
         y_range = self.max_y - self.min_y
         self.grid_cost = np.ones((x_range, y_range))
-        for i in range(x_range):
-            for j in range(y_range):
+        for i in range(self.min_x, self.max_x):
+            for j in range(self.min_y, self.max_y):
                 loc = self.occupancy_grid.map.convert_to_pixel([i, j, 0])
-                x = loc[0] + 340
+                x = loc[0]
+                y = loc[1]
                 if x > 2199:
                     x = 2199
-                val = self.occupancy_grid.static_map[x, loc[1]]
-                self.grid_cost[i, j] = val
+                if y > 2599:
+                    y = 2599
+                val = self.occupancy_grid.static_map[x, y]
+                if val == 50:
+                    val = 50.0
+                self.grid_cost[i - self.min_x, j - self.min_y] = val
 
     def get_reward(self):
         transform = self.vehicle.get_transform()
@@ -87,7 +92,7 @@ class HyLEAR(Agent):
             return 1000, True
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         ped_dist = np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2)
-        if ped_dist < 0.5:
+        if ped_dist < 0.5:  # accident
             return -1000, True
 
         reward = -0.1
@@ -96,7 +101,7 @@ class HyLEAR(Agent):
             reward += -0.1
         if self.prev_action.steer != 0:
             reward += -1
-        elif 0.5 < ped_dist < 1.5:
+        elif 0.5 < ped_dist < 1.5:  # near miss
             reward += -500
         return -0.1, False
 
@@ -139,7 +144,11 @@ class HyLEAR(Agent):
             obstacles.append((int(car_x), int(car_y)))
         # print(obstacles)
         t0 = time.time()
-        path = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        if len(paths):
+            path = paths[0]
+        else:
+            path = []
         # print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
         path.reverse()
 
@@ -176,15 +185,15 @@ class HyLEAR(Agent):
         x, y = list(), list()
         for node in path:
             pixel_coord = self.occupancy_grid.map.convert_to_pixel(node)
-            x.append(pixel_coord[0] + 340)
+            x.append(pixel_coord[0])
             y.append(pixel_coord[1])
         plt.plot(x, y, "-r")
         if len(obstacles) > 0:
             obstacle_pixel = self.occupancy_grid.map.convert_to_pixel([obstacles[0][0], obstacles[0][1], 0])
-            plt.scatter([obstacle_pixel[0] + 340], [obstacle_pixel[1]], c="k")
+            plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
         # print(obstacle_pixel)
         plt.imshow(cp, cmap="gray")
-        plt.axis([300, 600, 950, 1550])
+        plt.axis([0, 350, 950, 1550])
         plt.draw()
         plt.pause(0.1)
         self.fig.clear()

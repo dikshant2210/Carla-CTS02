@@ -167,7 +167,7 @@ class World(object):
         dist = abs(self.player.get_location().y - self.walker.get_location().y)
         if dist < 20:
             self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.2, 0, 0), 1))
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.5, 0, 0), 1))
 
     def render(self, display):
         self.camera_manager.render(display)

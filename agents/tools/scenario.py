@@ -26,7 +26,7 @@ class Scenario:
 
         car_spawn_point = carla.Transform()
         car_spawn_point.location.x = -1.5
-        car_spawn_point.location.y = 150
+        car_spawn_point.location.y = 180
         car_spawn_point.location.z = 0.01
         car_spawn_point.rotation.yaw = 90
         car_bp = self.world.get_blueprint_library().filter("vehicle.audi.tt")

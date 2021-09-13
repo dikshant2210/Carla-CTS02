@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from assets.occupancy_grid import OccupancyGrid
+import pickle as pkl
 
 
 # total cost f(n) = actual cost g(n) + heuristic cost h(n)
@@ -31,9 +32,9 @@ class HybridAStar:
         output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) + (
                 math.radians(position[2]) - math.radians(target[2])) ** 2)
 
-        cost = occupancy_grid[round(position[0] - self.min_x), round(position[1] - self.min_y)]
-        if cost != 10000:
-            print(cost)
+        cost = occupancy_grid[round(position[0] - self.min_x - 1), round(position[1] - self.min_y)]
+        # if cost != 10000:
+        #     print(cost)
         return float(output + cost)
 
     def dist(self, position, target):
@@ -188,11 +189,11 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2, 250, -90
-    gx, gy, gtheta = 2, 180, -90  # 2,4,0 almost exact
+    sx, sy, stheta = 2.22, 250, -90
+    gx, gy, gtheta = 2, 150, -90  # 2,4,0 almost exact
 
     # create obstacles
-    obstacle = [(2.5, 200), (0, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    obstacle = [(1.0, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
 
     hy_a_star = HybridAStar(-10, 396, -10, 330, obstacle=[], vehicle_length=4)
     occupancy_grid = OccupancyGrid()
@@ -204,8 +205,8 @@ def main():
     grid_cost = np.ones((396 + 10, 330 + 10))
     grid_cost_sidewalk = np.ones((396 + 10, 330 + 10))
     print(occupancy_grid.static_map.shape)
-    for i in range(396 + 10):
-        for j in range(330 + 10):
+    for i in range(-10, 396):
+        for j in range(-10, 330):
             loc = occupancy_grid.map.convert_to_pixel([i, j, 0])
             x = loc[0]
             y = loc[1]
@@ -214,17 +215,19 @@ def main():
             if y > 2599:
                 y = 2599
             val = occupancy_grid.static_map[x, y]
-            grid_cost[i, j] = val
+            grid_cost[i + 10, j + 10] = val
             if val == 50:
-                grid_cost_sidewalk[i, j] = -50
+                grid_cost_sidewalk[i + 10, j + 10] = 1
             else:
-                grid_cost_sidewalk[i, j] = val
+                grid_cost_sidewalk[i + 10, j + 10] = val
     # print(np.unique(grid_cost, return_counts=True))
-    print(grid_cost[12, 260], grid_cost_sidewalk[12, 260])
+    print(grid_cost[12 - 1, 260], grid_cost_sidewalk[12 - 1, 260])
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), grid_cost, obstacle)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), grid_cost_sidewalk, obstacle)
     path = paths[0]
     print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
+    # with open("cmp.pkl", 'wb') as file:
+    #     pkl.dump([grid_cost, grid_cost_sidewalk], file)
     # plt.imshow(grid_cost, cmap='gray')
 
     cp = occupancy_grid.get_costmap([])
