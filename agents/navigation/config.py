@@ -7,9 +7,9 @@ Time: 25.07.21 09:57
 class Config:
     PI = 3.14159
 
-    simulation_step = 0.008
+    simulation_step = 0.1  # 0.008
     sensor_simulation_step = '0.5'
-    synchronous = False
+    synchronous = True
 
     grid_size = 2  # grid size in meters
     speed_limit = 50

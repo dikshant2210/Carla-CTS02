@@ -170,6 +170,8 @@ def game_loop_hylear(args):
                 pygame.display.flip()
 
             control = agent.run_step()
+            if Config.synchronous:
+                frame_num = wld.tick()
             if control == "goal":
                 break
             world.player.apply_control(control)

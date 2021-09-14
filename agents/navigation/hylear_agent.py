@@ -30,7 +30,7 @@ class HyLEAR(Agent):
         self.scenario = scenario
         self.occupancy_grid = OccupancyGrid()
         self.fig = plt.figure()
-        self.display_costmap = True
+        self.display_costmap = False
         self.prev_action = None
         self.folder = datetime.datetime.now().timestamp()
         os.mkdir("_out/{}".format(self.folder))
