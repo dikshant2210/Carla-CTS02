@@ -67,7 +67,7 @@ class World(object):
         blueprint = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
         blueprint.set_attribute('role_name', self.actor_role_name)
         if blueprint.has_attribute('color'):
-            color = random.choice(blueprint.get_attribute('color').recommended_values)
+            color = blueprint.get_attribute('color').recommended_values[0]
             blueprint.set_attribute('color', color)
         if blueprint.has_attribute('driver_id'):
             driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
@@ -98,19 +98,20 @@ class World(object):
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
 
             # Spawn location of ego vehicle for non T-intersection scenarios
-            spawn_point.location.x = 2.22
-            spawn_point.location.y = 289.0 - 55  # 289.0 - 55
+            start = self.scenario[3]
+            spawn_point.location.x = start[0]
+            spawn_point.location.y = start[1]
             spawn_point.location.z = 0.01
-            spawn_point.rotation.yaw = 270.0
+            spawn_point.rotation.yaw = start[2]
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
         # Set up other agents
-        scenario_type = self.scenario[0]
         obstacles = self.scenario[1]
         if len(obstacles) == 1:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 1, 0), 1))
         else:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
@@ -165,9 +166,15 @@ class World(object):
     def tick(self, clock):
         self.hud.tick(self, clock)
         dist = abs(self.player.get_location().y - self.walker.get_location().y)
-        if dist < 20:
-            self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.5, 0, 0), 1))
+        if self.scenario[0] == 1:
+            if dist < 20:
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(1.5, 0, 0), 1))
+            return
+        if self.scenario[0] == 10:
+            if dist < 20:
+                self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.5, 0, 0), 1))
+            return
 
     def render(self, display):
         self.camera_manager.render(display)

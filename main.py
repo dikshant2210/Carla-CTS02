@@ -145,7 +145,7 @@ def game_loop_hylear(args):
         wld.apply_settings(settings)
 
         scene_generator = Scenario(wld)
-        scene = scene_generator.scenario10()
+        scene = scene_generator.scenario01()
         world = World(wld, hud, scene, args)
         controller = KeyboardControl(world)
         # world.camera_manager.toggle_recording()

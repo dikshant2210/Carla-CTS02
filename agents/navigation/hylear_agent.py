@@ -136,12 +136,13 @@ class HyLEAR(Agent):
         # print(self.min_x, self.max_x, self.min_y, self.max_y, start, end)
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
         if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
             obstacles.append((int(walker_x), int(walker_y)))
             pedestrian_positions = [[walker_x, walker_y]]
-        if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
-            obstacles.append((int(car_x), int(car_y)))
+        if self.scenario == 10:
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+                obstacles.append((int(car_x), int(car_y)))
         # print(obstacles)
         t0 = time.time()
         paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
@@ -149,7 +150,7 @@ class HyLEAR(Agent):
             path = paths[0]
         else:
             path = []
-        # print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
+        print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
         path.reverse()
 
         if self.display_costmap:

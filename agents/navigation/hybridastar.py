@@ -89,7 +89,7 @@ class HybridAStar:
 
         open_diction[start] = (cost_to_neighbour_from_start + heuristic_cost, start, (start, start))
 
-        m = 1
+        m = 2
         paths = list()
         while len(open_heap) > 0:
             while True:
@@ -189,11 +189,11 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2.22, 250, -90
+    sx, sy, stheta = 1.7, 220, -90
     gx, gy, gtheta = 2, 150, -90  # 2,4,0 almost exact
 
     # create obstacles
-    obstacle = [(1.0, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    obstacle = [(1.4, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
 
     hy_a_star = HybridAStar(-10, 396, -10, 330, obstacle=[], vehicle_length=4)
     occupancy_grid = OccupancyGrid()
@@ -238,11 +238,12 @@ def main():
             x.append(pixel_coord[0])
             y.append(pixel_coord[1])
         plt.plot(x, y, "-r")
-    obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[0][0], obstacle[0][1], 0])
-    plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
-    obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
-    plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
-    plt.imshow(cp)
+        obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[0][0], obstacle[0][1], 0])
+        plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
+        obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
+        plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
+        plt.imshow(cp, cmap='gray')
+        plt.show()
 
     # k = 1
     # for _ in range(k):
@@ -261,8 +262,6 @@ def main():
     #             x.append(pixel_coord[0] + 340)
     #             y.append(pixel_coord[1])
     #         plt.plot(x, y, "-b")
-
-    plt.show()
 
 
 if __name__ == '__main__':
