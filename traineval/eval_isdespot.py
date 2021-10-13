@@ -14,7 +14,7 @@ import numpy as np
 from world import World
 from hud import HUD
 from traineval.baseagent import BaseAgent
-from traineval.utils import KeyboardControl
+from traineval.traineval_utils import KeyboardControl
 from agents.tools.connector import Connector
 from agents.navigation.config import Config
 from agents.tools.scenario import Scenario

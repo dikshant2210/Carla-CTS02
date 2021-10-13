@@ -23,7 +23,7 @@ class HybridAStar:
         self.max_y = max_y
         self.obstacle = obstacle
         self.vehicle_length = vehicle_length
-        print("Vehicle length: {}".format(vehicle_length))
+        print("Vehicle length: {:.2f}".format(vehicle_length))
 
         self.obstacles = set(self.obstacle)
 
@@ -61,7 +61,7 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations):
+    def find_path(self, start, end, occupancy_grid, agent_locations, m=1):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
         steering_inputs = []
@@ -89,7 +89,6 @@ class HybridAStar:
 
         open_diction[start] = (cost_to_neighbour_from_start + heuristic_cost, start, (start, start))
 
-        m = 2
         paths = list()
         while len(open_heap) > 0:
             while True:
@@ -180,7 +179,7 @@ class HybridAStar:
                         if skip == 0:
                             hq.heappush(open_heap, (total_cost, neighbour[0]))
                             open_diction[neighbour[0]] = (total_cost, neighbour[1], (chosen_d_node, chosen_c_node))
-        print("Did not find the goal - it's unattainable.")
+        # print("Did not find the goal - it's unattainable.")
         return []
 
 

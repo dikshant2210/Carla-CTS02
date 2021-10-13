@@ -15,6 +15,7 @@ from world import World
 from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
 from agents.navigation.hylear_agent import HyLEAR
+from agents.navigation.rlagent import RLAgent
 from agents.tools.connector import Connector
 from agents.navigation.config import Config
 from agents.tools.scenario import Scenario
@@ -127,7 +128,7 @@ def game_loop_hylear(args):
 
     try:
         client = carla.Client(args.host, args.port)
-        client.set_timeout(2.0)
+        client.set_timeout(5.0)
 
         if args.display:
             display = pygame.display.set_mode(
@@ -154,7 +155,8 @@ def game_loop_hylear(args):
         print(wld_map.name)
 
         conn = Connector(despot_port)
-        agent = HyLEAR(world, wld.get_map(), conn, scene)
+        # agent = HyLEAR(world, wld.get_map(), conn, scene)
+        agent = RLAgent(world, wld.get_map(), conn, scene)
 
         clock = pygame.time.Clock()
         while True:
