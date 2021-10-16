@@ -20,7 +20,7 @@ class World(object):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
         self.hud = hud
-        self.scenario = scenario
+        self.scenario = None
         self.player = None
         self.walker = None
         self.incoming_car = None
@@ -36,8 +36,6 @@ class World(object):
         self._weather_index = 0
         self._actor_filter = args.filter
         self._gamma = args.gamma
-        self.restart(self.scenario)
-        self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
         self.constant_velocity_enabled = False
@@ -56,51 +54,40 @@ class World(object):
             carla.MapLayer.All
         ]
 
-        self.ped_speed = 1
-        self.ped_distance = 50
-        self.incoming_car_speed = 5
+        self.car_blueprint = self.get_car_blueprint()
+        self.restart(scenario)
+        self.world.on_tick(hud.on_world_tick)
+        for _ in range(2):
+            self.next_weather()
 
-    def restart(self, scenario, ped_speed=1, ped_distance=50, incoming_car_speed=5):
-        self.scenario = scenario
-        self.ped_distance = ped_distance
-        self.ped_speed = ped_speed
-        self.incoming_car_speed = incoming_car_speed
-
-        self.player_max_speed = 1.589
-        self.player_max_speed_fast = 3.713
-        self.next_weather()
-        # Keep same camera config if the camera manager exists.
-        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
-        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
-        # Get car blueprint.
+    def get_car_blueprint(self):
         blueprint = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
         blueprint.set_attribute('role_name', self.actor_role_name)
         if blueprint.has_attribute('color'):
-            color = blueprint.get_attribute('color').recommended_values[0]
+            color = blueprint.get_attribute('color').recommended_values[1]
             blueprint.set_attribute('color', color)
         if blueprint.has_attribute('driver_id'):
             driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
             blueprint.set_attribute('driver_id', driver_id)
         if blueprint.has_attribute('is_invincible'):
             blueprint.set_attribute('is_invincible', 'true')
-        # Spawn the player.
-        # if self.player is not None:
-        #     spawn_point = self.player.get_transform()
-        #     spawn_point.location.z += 2.0
-        #     spawn_point.rotation.roll = 0.0
-        #     spawn_point.rotation.pitch = 0.0
-        #     self.destroy()
-        #     self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-        #     self.modify_vehicle_physics(self.player)
-        # while self.player is None:
-        #     if not self.map.get_spawn_points():
-        #         print('There are no spawn points available in your map/town.')
-        #         print('Please add some Vehicle Spawn Point to your UE4 scene.')
-        #         sys.exit(1)
-        #     spawn_points = self.map.get_spawn_points()
-        #     spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+        # set the max speed
+        if blueprint.has_attribute('speed'):
+            self.player_max_speed = float(blueprint.get_attribute('speed').recommended_values[1])
+            self.player_max_speed_fast = float(blueprint.get_attribute('speed').recommended_values[2])
+        else:
+            print("No recommended values for 'speed' attribute")
+        return blueprint
 
-        # Spawn location of ego vehicle for non T-intersection scenarios
+    def restart(self, scenario):
+        self.scenario = scenario
+        self.player_max_speed = 1.589
+        self.player_max_speed_fast = 3.713
+        # Keep same camera config if the camera manager exists.
+        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
+        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
+
+        # Spawn the player.
         start = self.scenario[3]
         spawn_point = carla.Transform()
         spawn_point.location.x = start[0]
@@ -110,23 +97,22 @@ class World(object):
 
         if self.player is not None:
             self.destroy()
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
+            self.player = self.world.try_spawn_actor(self.car_blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
-
         while self.player is None:
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-            if self.player is None:
-                print("Cannot spawn player!")
+            if not self.map.get_spawn_points():
+                print('There are no spawn points available in your map/town.')
+                print('Please add some Vehicle Spawn Point to your UE4 scene.')
+                sys.exit(1)
+            self.player = self.world.try_spawn_actor(self.car_blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
-        # print("This is the created player: ", self.player)
 
         # Set up other agents
-        obstacles = self.scenario[1]
         scenario_type = self.scenario[0]
+        obstacles = self.scenario[1]
         if scenario_type == 1:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 1, 0), 1))
         elif scenario_type == 10:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
@@ -181,16 +167,9 @@ class World(object):
     def tick(self, clock):
         self.hud.tick(self, clock)
         dist = abs(self.player.get_location().y - self.walker.get_location().y)
-        if self.scenario[0] == 1:
-            if dist < self.ped_distance:
-                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
-            return
-        if self.scenario[0] == 10:
-            if dist < self.ped_distance:
-                # Set target velocity for experiment
-                self.incoming_car.set_target_velocity(carla.Vector3D(0, self.incoming_car_speed, 0))
-                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
-            return
+        if dist < 20:
+            self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.5, 0, 0), 1))
 
     def render(self, display):
         self.camera_manager.render(display)
