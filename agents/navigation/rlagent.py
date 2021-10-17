@@ -5,7 +5,6 @@ Time: 12.07.21 11:03
 
 import carla
 import sys
-import os
 import pickle as pkl
 import datetime
 import time
@@ -105,14 +104,20 @@ class RLAgent(Agent):
     def get_car_intention(self, obstacles, path, start):
         costmap = self.grid_cost.copy()
         for node in path:
-            i = round(node[0])
-            j = round(node[1])
-            costmap[i, j] = 0.0
+            i = round(node[0]) - self.min_x
+            j = round(node[1]) - self.min_y
+            costmap[j, i] = 0.0
 
         for obs in obstacles:
             i = round(obs[0])
             j = round(obs[1])
             costmap[i, j] = 10000
+
+        idx1 = np.where(costmap == 10000)
+        costmap[idx1] = 256.0
+        costmap = 256.0 - costmap
+        idx2 = np.where(costmap == 256)
+        costmap[idx2] = 100.0
 
         # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
         #     pkl.dump(costmap, file)
@@ -127,8 +132,8 @@ class RLAgent(Agent):
         pad_y = 100 - (y2 - y1)
         pad_x = 100 - (x2 - x1)
         # print(pad_x, pad_y)
-        return np.pad(costmap[x1:x2, y1:y2], ((round(pad_x / 2), pad_x - round(pad_x / 2)),
-                                              (round(pad_y / 2), pad_y - round(pad_y/2))), constant_values=10000)
+        return np.pad(costmap[y1:y2, x1:x2], ((round(pad_y / 2), pad_y - round(pad_y / 2)),
+                                              (round(pad_x / 2), pad_x - round(pad_x/2))), constant_values=0)
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player
