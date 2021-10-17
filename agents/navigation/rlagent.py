@@ -6,6 +6,7 @@ Time: 12.07.21 11:03
 import carla
 import sys
 import os
+import pickle as pkl
 import datetime
 import time
 import numpy as np
@@ -32,7 +33,7 @@ class RLAgent(Agent):
         self.display_costmap = False
         self.prev_action = None
         self.folder = datetime.datetime.now().timestamp()
-        os.mkdir("_out/{}".format(self.folder))
+        # os.mkdir("_out/{}".format(self.folder))
 
         wps = carla_map.generate_waypoints(Config.grid_size)
         print("Total no. of waypoints: {}".format(len(wps)))
@@ -112,6 +113,9 @@ class RLAgent(Agent):
             i = round(obs[0])
             j = round(obs[1])
             costmap[i, j] = 10000
+
+        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+        #     pkl.dump(costmap, file)
 
         x = round(start[0]) - self.min_x
         y = round(start[1]) - self.min_y

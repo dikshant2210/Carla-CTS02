@@ -15,6 +15,7 @@ import logging
 import subprocess
 import time
 import pickle as pkl
+import matplotlib.pyplot as plt
 import random
 import numpy as np
 from multiprocessing import Process
@@ -27,6 +28,8 @@ from traineval.traineval_utils import KeyboardControl
 
 
 def train_a2c(args):
+    ##############################################################
+    # Setting up simulator and world configuration #
     pygame.init()
     pygame.font.init()
 
@@ -55,18 +58,33 @@ def train_a2c(args):
 
     wld_map = wld.get_map()
     print(wld_map.name)
+    ##############################################################
 
+    ##############################################################
+    # Compiling all different combination of scenarios
     episodes = list()
     for scenario in Config.scenarios:
         for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
             for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
                 episodes.append((scenario, speed, distance))
-
     random.shuffle(episodes)
+    ##############################################################
 
+    ##############################################################
+    # Instantiating all the symbolic and RL agent
+    planner_agent = RLAgent(world, wld.get_map(), scene)
+    torch.manual_seed(100)
+    rl_agent = A2C(hidden_dim=256, num_actions=3).cuda()
+    optimizer = torch.optim.Adam(rl_agent.parameters(), lr=args.lr)
+    ##############################################################
+
+    ##############################################################
+    # Simulation loop
     current_episode = 0
-    max_episodes = 20
+    max_episodes = min(10, len(episodes))
     while current_episode < max_episodes:
+        ##############################################################
+        # Get the scenario id, parameters and instantiate the world
         scenario_id, ped_speed, ped_distance = episodes[current_episode]
         func = 'scene_generator.scenario' + "10"
         scenario = eval(func + '()')
@@ -74,9 +92,37 @@ def train_a2c(args):
               "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
         world.restart(scenario, ped_speed, ped_distance)
 
+        # Setup initial inputs for LSTM Cell
+        cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+        hx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+        ##############################################################
+
         clock = pygame.time.Clock()
         for _ in range(args.num_steps):
             clock.tick_busy_loop(60)
+            ##############################################################
+            # Get the current observation
+            control, observation = planner_agent.run_step()
+            # plt.imshow(observation)
+            # plt.show()
+            ##############################################################
+
+            ##############################################################
+            # Forward pass of the RL Agent
+            input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
+            cat_tensor = torch.from_numpy(np.array([0, 0, 0, 0])).cuda().type(torch.cuda.FloatTensor)
+            logit, value, (hx, cx) = rl_agent(input_tensor, (hx, cx), cat_tensor)
+
+            prob = F.softmax(logit, dim=-1)
+            action = prob.multinomial(num_samples=1).detach()
+            speed_action = action.cpu().numpy()[0][0]
+            if speed_action == 0:
+                control.throttle = 0.6
+            elif speed_action == 2:
+                control.throttle = -0.6
+            else:
+                control.throttle = 0
+            ##############################################################
 
             if controller.parse_events():
                 return
@@ -86,9 +132,9 @@ def train_a2c(args):
                 world.render(display)
                 pygame.display.flip()
 
-            control = carla.VehicleControl()
-            control.steer = 0
-            control.throttle = 0.5
+            # control = carla.VehicleControl()
+            # control.steer = 0
+            # control.throttle = 0.5
             if Config.synchronous:
                 frame_num = wld.tick()
             if control == "goal":
@@ -104,6 +150,7 @@ def train_a2c(args):
         world.destroy()
 
     pygame.quit()
+    ##############################################################
 
 
 def main():

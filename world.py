@@ -86,8 +86,6 @@ class World(object):
         self.ped_speed = ped_speed
         self.ped_distance = ped_distance
 
-        # self.player_max_speed = 1.589
-        # self.player_max_speed_fast = 3.713
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
@@ -118,6 +116,7 @@ class World(object):
         if scenario_type == 1:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, -self.ped_speed, 0), 1))
         elif scenario_type == 10:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
