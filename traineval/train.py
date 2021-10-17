@@ -26,73 +26,6 @@ from agents.tools.scenario import Scenario
 from traineval.traineval_utils import KeyboardControl
 
 
-def test_loop(args):
-    pygame.init()
-    pygame.font.init()
-    world = None
-    client = None
-
-    # try:
-    client = carla.Client(args.host, args.port)
-    client.set_timeout(2.0)
-
-    if args.display:
-        display = pygame.display.set_mode(
-            (args.width, args.height),
-            pygame.HWSURFACE | pygame.DOUBLEBUF)
-        # display.fill((0, 0, 0))
-        pygame.display.flip()
-
-    hud = HUD(args.width, args.height)
-    client.load_world('Town01')
-    wld = client.get_world()
-    settings = wld.get_settings()
-    settings.fixed_delta_seconds = Config.simulation_step
-    settings.synchronous_mode = Config.synchronous
-    wld.apply_settings(settings)
-
-    scene_generator = Scenario(wld)
-    scene = scene_generator.scenario10()
-    world = World(wld, hud, scene, args)
-    controller = KeyboardControl(world)
-    # world.camera_manager.toggle_recording()
-
-    wld_map = wld.get_map()
-    print(wld_map.name)
-
-    clock = pygame.time.Clock()
-    while True:
-        clock.tick_busy_loop(60)
-
-        if controller.parse_events():
-            return
-
-        # agent.update_information()
-        world.tick(clock)
-        if args.display:
-            world.render(display)
-            pygame.display.flip()
-
-        control = carla.VehicleControl()
-        control.steer = 0
-        control.throttle = 0.5
-        if Config.synchronous:
-            frame_num = wld.tick()
-        if control == "goal":
-            break
-        world.player.apply_control(control)
-
-    # finally:
-
-    if world and world.recording_enabled:
-        client.stop_recorder()
-
-    if world is not None:
-        world.destroy()
-
-    pygame.quit()
-
-
 def train_a2c(args):
     pygame.init()
     pygame.font.init()
@@ -116,18 +49,31 @@ def train_a2c(args):
     wld.apply_settings(settings)
 
     scene_generator = Scenario(wld)
-    scene = scene_generator.scenario10()
+    scene = scene_generator.scenario01()
     world = World(wld, hud, scene, args)
     controller = KeyboardControl(world)
 
     wld_map = wld.get_map()
     print(wld_map.name)
 
+    episodes = list()
+    for scenario in Config.scenarios:
+        for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
+            for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
+                episodes.append((scenario, speed, distance))
+
+    random.shuffle(episodes)
+
     current_episode = 0
-    max_episodes = 2
+    max_episodes = 20
     while current_episode < max_episodes:
-        print("Episode: {}".format(current_episode + 1))
-        world.restart(scene)
+        scenario_id, ped_speed, ped_distance = episodes[current_episode]
+        func = 'scene_generator.scenario' + "10"
+        scenario = eval(func + '()')
+        print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
+              "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
+        world.restart(scenario, ped_speed, ped_distance)
+
         clock = pygame.time.Clock()
         for _ in range(args.num_steps):
             clock.tick_busy_loop(60)
@@ -237,7 +183,7 @@ def main():
         help='how many training processes to use (default: 4)')
     argparser.add_argument(
         '--num-steps', type=int,
-        default=300,
+        default=150,
         help='number of forward steps in A3C (default: 20)')
     argparser.add_argument(
         '--max-episode-length', type=int,

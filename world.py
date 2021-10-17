@@ -55,6 +55,8 @@ class World(object):
         ]
 
         self.car_blueprint = self.get_car_blueprint()
+        self.ped_speed = None
+        self.ped_distance = None
         self.restart(scenario)
         self.world.on_tick(hud.on_world_tick)
         for _ in range(2):
@@ -79,10 +81,13 @@ class World(object):
             print("No recommended values for 'speed' attribute")
         return blueprint
 
-    def restart(self, scenario):
+    def restart(self, scenario, ped_speed=1, ped_distance=30):
         self.scenario = scenario
-        self.player_max_speed = 1.589
-        self.player_max_speed_fast = 3.713
+        self.ped_speed = ped_speed
+        self.ped_distance = ped_distance
+
+        # self.player_max_speed = 1.589
+        # self.player_max_speed_fast = 3.713
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
@@ -116,7 +121,7 @@ class World(object):
         elif scenario_type == 10:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 1, 0), 1))
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, -self.ped_speed, 0), 1))
             self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
 
         # Set up the sensors.
@@ -166,10 +171,15 @@ class World(object):
 
     def tick(self, clock):
         self.hud.tick(self, clock)
-        dist = abs(self.player.get_location().y - self.walker.get_location().y)
-        if dist < 20:
-            self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-1.5, 0, 0), 1))
+        dist_walker = abs(self.player.get_location().y - self.walker.get_location().y)
+        car_velocity = self.player.get_velocity()
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
+        if dist_walker < self.ped_distance and car_speed > 0:
+            if self.scenario[0] == 1:
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
+            if self.scenario[0] == 10:
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
+                self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
 
     def render(self, display):
         self.camera_manager.render(display)
