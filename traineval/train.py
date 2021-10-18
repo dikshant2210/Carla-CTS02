@@ -81,12 +81,13 @@ def train_a2c(args):
     ##############################################################
     # Simulation loop
     current_episode = 0
-    max_episodes = min(10, len(episodes))
+    max_episodes = min(10000, len(episodes))
+    print("Total training episodes: {}".format(max_episodes))
     while current_episode < max_episodes:
         ##############################################################
         # Get the scenario id, parameters and instantiate the world
         scenario_id, ped_speed, ped_distance = episodes[current_episode]
-        func = 'scene_generator.scenario' + "10"
+        func = 'scene_generator.scenario' + scenario_id
         scenario = eval(func + '()')
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
               "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
@@ -95,6 +96,19 @@ def train_a2c(args):
         # Setup initial inputs for LSTM Cell
         cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
         hx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+
+        # Setup placeholders for training value logs
+        values = []
+        log_probs = []
+        rewards = []
+        entropies = []
+
+        reward = 0
+        speed_action = 1
+        velocity_x = 0
+        velocity_y = 0
+        episode_length = 0
+        observation = None
         ##############################################################
 
         clock = pygame.time.Clock()
@@ -110,7 +124,8 @@ def train_a2c(args):
             ##############################################################
             # Forward pass of the RL Agent
             input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
-            cat_tensor = torch.from_numpy(np.array([0, 0, 0, 0])).cuda().type(torch.cuda.FloatTensor)
+            cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
+                torch.cuda.FloatTensor)
             logit, value, (hx, cx) = rl_agent(input_tensor, (hx, cx), cat_tensor)
 
             prob = F.softmax(logit, dim=-1)
@@ -137,10 +152,62 @@ def train_a2c(args):
             # control.throttle = 0.5
             if Config.synchronous:
                 frame_num = wld.tick()
-            if control == "goal":
-                break
             world.player.apply_control(control)
 
+            ##############################################################
+            # Logging value for loss calculation and backprop training
+            log_prob = F.log_softmax(logit, dim=-1)
+            entropy = -(log_prob * prob).sum(1, keepdim=True)
+            entropies.append(entropy)
+            log_prob = log_prob.gather(1, action)
+
+            _, observation = planner_agent.run_step()
+            velocity = planner_agent.vehicle.get_velocity()
+            velocity_x = velocity.x
+            velocity_y = velocity.y
+            reward, goal = planner_agent.get_reward()
+            observation = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
+            values.append(value)
+            log_probs.append(log_prob)
+            rewards.append(reward)
+
+            if goal:
+                episode_length = 0
+                break
+            episode_length += 1
+            ##############################################################
+
+        ##############################################################
+        # Update the parameters(Gradient Descent)
+        R = torch.zeros(1, 1).cuda().type(torch.cuda.FloatTensor)
+        if not goal:
+            cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
+                torch.cuda.FloatTensor)
+            _, value, _ = rl_agent(observation, (hx, cx), cat_tensor)
+            R = value.detach()
+
+        values.append(R)
+        policy_loss = 0
+        value_loss = 0
+        gae = torch.zeros(1, 1).cuda().type(torch.cuda.FloatTensor)
+        for i in reversed(range(len(rewards))):
+            R = args.gamma * R + rewards[i]
+            advantage = R - values[i]
+            value_loss = value_loss + 0.5 * advantage.pow(2)
+
+            # Generalized Advantage Estimation
+            delta_t = rewards[i] + args.gamma * values[i + 1] - values[i]
+            gae = gae * args.gamma * args.gae_lambda + delta_t
+
+            policy_loss = policy_loss - log_probs[i] * gae.detach() - args.entropy_coef * entropies[i]
+
+        optimizer.zero_grad()
+        (policy_loss + args.value_loss_coef * value_loss).backward()
+        print("Goal reached: {}, Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
+            goal, policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
+        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
+        optimizer.step()
+        ##############################################################
         current_episode += 1
 
     if world and world.recording_enabled:
@@ -230,7 +297,7 @@ def main():
         help='how many training processes to use (default: 4)')
     argparser.add_argument(
         '--num-steps', type=int,
-        default=150,
+        default=300,
         help='number of forward steps in A3C (default: 20)')
     argparser.add_argument(
         '--max-episode-length', type=int,

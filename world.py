@@ -116,7 +116,7 @@ class World(object):
         if scenario_type == 1:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, -self.ped_speed, 0), 1))
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
         elif scenario_type == 10:
             # Single pedestrian with incoming car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])

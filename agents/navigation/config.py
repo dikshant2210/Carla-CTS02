@@ -22,4 +22,4 @@ class Config:
     ped_speed_range = [0.6, 3.3]
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    scenarios = ['01', '10']
+    scenarios = ['01']
