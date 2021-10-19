@@ -7,13 +7,16 @@
 import math
 import numpy as np
 
-from temp_check.planner.graph import string_to_floats
-
 # Constant definition enumeration
 
 PIXEL = 0
 WORLD = 1
 NODE = 2
+
+
+def string_to_floats(string):
+    vec = string.split(',')
+    return float(vec[0]), float(vec[1]), float(vec[2])
 
 
 class Converter(object):
