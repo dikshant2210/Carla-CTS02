@@ -336,10 +336,9 @@ def run_server():
 
 
 if __name__ == '__main__':
-    # os.chdir()
-    # p = Process(target=run_server)
-    # p.start()
-    # time.sleep(5)  # wait for the server to start
+    p = Process(target=run_server)
+    p.start()
+    time.sleep(5)  # wait for the server to start
 
     main()
     # p.terminate()
