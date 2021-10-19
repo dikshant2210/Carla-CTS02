@@ -4,7 +4,7 @@ Time: 03.08.21 13:22
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from assets.map import CarlaMap
 
 
