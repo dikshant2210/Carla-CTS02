@@ -3,11 +3,6 @@ Author: Dikshant Gupta
 Time: 16.10.21 09:31
 """
 
-import torch
-# import torch.functional as F
-import torch.nn.functional as F
-from agents.rl.a2c.model import A2C
-
 import carla
 import pygame
 import argparse
@@ -19,8 +14,12 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 from multiprocessing import Process
+import torch
+import torch.nn.functional as F
+
 from world import World
 from hud import HUD
+from agents.rl.a2c.model import A2C
 from agents.navigation.rlagent import RLAgent
 from agents.navigation.config import Config
 from agents.tools.scenario import Scenario
@@ -297,7 +296,7 @@ def main():
         help='how many training processes to use (default: 4)')
     argparser.add_argument(
         '--num-steps', type=int,
-        default=300,
+        default=500,
         help='number of forward steps in A3C (default: 20)')
     argparser.add_argument(
         '--max-episode-length', type=int,
@@ -337,6 +336,7 @@ def run_server():
 
 
 if __name__ == '__main__':
+    # os.chdir()
     # p = Process(target=run_server)
     # p.start()
     # time.sleep(5)  # wait for the server to start

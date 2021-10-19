@@ -1,11 +1,7 @@
 """
 Author: Dikshant Gupta
-Time: 06.10.21 04:51
+Time: 16.10.21 09:31
 """
-import torch
-# import torch.functional as F
-import torch.nn.functional as F
-from agents.rl.a2c.model import A2C
 
 import carla
 import pygame
@@ -14,11 +10,16 @@ import logging
 import subprocess
 import time
 import pickle as pkl
+import matplotlib.pyplot as plt
 import random
 import numpy as np
 from multiprocessing import Process
+import torch
+import torch.nn.functional as F
+
 from world import World
 from hud import HUD
+from agents.rl.a2c.model import A2C
 from agents.navigation.rlagent import RLAgent
 from agents.navigation.config import Config
 from agents.tools.scenario import Scenario
@@ -26,13 +27,14 @@ from traineval.traineval_utils import KeyboardControl
 
 
 def train_a2c(args):
+    ##############################################################
+    # Setting up simulator and world configuration #
     pygame.init()
     pygame.font.init()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(5.0)
+    client.set_timeout(2.0)
 
-    display = None
     if args.display:
         display = pygame.display.set_mode(
             (args.width, args.height),
@@ -55,82 +57,78 @@ def train_a2c(args):
 
     wld_map = wld.get_map()
     print(wld_map.name)
-    agent = RLAgent(world, wld.get_map(), scene)
+    ##############################################################
 
+    ##############################################################
+    # Compiling all different combination of scenarios
     episodes = list()
     for scenario in Config.scenarios:
         for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
             for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
                 episodes.append((scenario, speed, distance))
-
     random.shuffle(episodes)
+    ##############################################################
 
+    ##############################################################
+    # Instantiating all the symbolic and RL agent
+    planner_agent = RLAgent(world, wld.get_map(), scene)
     torch.manual_seed(100)
-    model = A2C(hidden_dim=256, num_actions=3).cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    rl_agent = A2C(hidden_dim=256, num_actions=3).cuda()
+    optimizer = torch.optim.Adam(rl_agent.parameters(), lr=args.lr)
+    ##############################################################
 
-    episode_length, current_episode = 0, 0
-    done = False
+    ##############################################################
+    # Simulation loop
+    current_episode = 0
     max_episodes = min(10000, len(episodes))
-    print("Total number of episodes: {}".format(max_episodes))
+    print("Total training episodes: {}".format(max_episodes))
     while current_episode < max_episodes:
-        # TODO: Select scenario and instance, reset the world
+        ##############################################################
+        # Get the scenario id, parameters and instantiate the world
         scenario_id, ped_speed, ped_distance = episodes[current_episode]
         func = 'scene_generator.scenario' + scenario_id
-        scenario = eval(func+'()')
+        scenario = eval(func + '()')
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
-              "Ped_distance: {:.2f}m".format(current_episode+1, scenario_id, ped_speed, ped_distance))
+              "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
         world.restart(scenario, ped_speed, ped_distance)
 
+        # Setup initial inputs for LSTM Cell
         cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
         hx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
-        if not done:
-            hx = hx.detach()
-            cx = cx.detach()
 
+        # Setup placeholders for training value logs
         values = []
         log_probs = []
         rewards = []
         entropies = []
 
-        clock = pygame.time.Clock()
-        clock.tick_busy_loop(60)
-
-        if controller.parse_events():
-            return
-
-        world.tick(clock)
-        if args.display:
-            world.render(display)
-            pygame.display.flip()
-
-        # Simulating the scenario instance
         reward = 0
         speed_action = 1
         velocity_x = 0
         velocity_y = 0
+        episode_length = 0
         observation = None
-        for step in range(args.num_steps):
-            # TODO: get observation
-            control, observation = agent.run_step()
-            # with open("temp_check/obs.pkl", "wb") as file:
-            #     pkl.dump(observation, file)
-            # print(observation.shape)
-            episode_length += 1
+        ##############################################################
+
+        clock = pygame.time.Clock()
+        for _ in range(args.num_steps):
+            clock.tick_busy_loop(60)
+            ##############################################################
+            # Get the current observation
+            control, observation = planner_agent.run_step()
+            # plt.imshow(observation)
+            # plt.show()
+            ##############################################################
+
+            ##############################################################
+            # Forward pass of the RL Agent
             input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
             cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
                 torch.cuda.FloatTensor)
-            logit, value, (hx, cx) = model(input_tensor, (hx, cx), cat_tensor)
+            logit, value, (hx, cx) = rl_agent(input_tensor, (hx, cx), cat_tensor)
 
             prob = F.softmax(logit, dim=-1)
-            log_prob = F.log_softmax(logit, dim=-1)
-            entropy = -(log_prob * prob).sum(1, keepdim=True)
-            entropies.append(entropy)
-
             action = prob.multinomial(num_samples=1).detach()
-            log_prob = log_prob.gather(1, action)
-
-            # TODO: Replace final action with output from network
             speed_action = action.cpu().numpy()[0][0]
             if speed_action == 0:
                 control.throttle = 0.6
@@ -138,39 +136,53 @@ def train_a2c(args):
                 control.throttle = -0.6
             else:
                 control.throttle = 0
+            ##############################################################
+
+            if controller.parse_events():
+                return
+
+            world.tick(clock)
+            if args.display:
+                world.render(display)
+                pygame.display.flip()
+
+            # control = carla.VehicleControl()
+            # control.steer = 0
+            # control.throttle = 0.5
             if Config.synchronous:
                 frame_num = wld.tick()
-            if control == "goal":
-                done = True
             world.player.apply_control(control)
-            # TODO: get the next observation
-            _, observation = agent.run_step()
-            velocity = agent.vehicle.get_velocity()
+
+            ##############################################################
+            # Logging value for loss calculation and backprop training
+            log_prob = F.log_softmax(logit, dim=-1)
+            entropy = -(log_prob * prob).sum(1, keepdim=True)
+            entropies.append(entropy)
+            log_prob = log_prob.gather(1, action)
+
+            _, observation = planner_agent.run_step()
+            velocity = planner_agent.vehicle.get_velocity()
             velocity_x = velocity.x
             velocity_y = velocity.y
-            reward, goal = agent.get_reward()
-            # print(step, speed_action, reward)
-            # observation, reward, done, _ = env.step(action.numpy())
-            done = done or episode_length >= args.max_episode_length or goal
-            # reward = max(min(reward, 1), -1)
-
-            if done:
-                episode_length = 0
-                # observation = env.reset()
-
+            reward, goal = planner_agent.get_reward()
             observation = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
             values.append(value)
             log_probs.append(log_prob)
             rewards.append(reward)
 
-            if done:
+            if goal:
+                episode_length = 0
                 break
+            episode_length += 1
+            ##############################################################
 
+        ##############################################################
+        # Update the parameters(Gradient Descent)
         R = torch.zeros(1, 1).cuda().type(torch.cuda.FloatTensor)
-        if not done:
+        if not goal:
             cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
                 torch.cuda.FloatTensor)
-            _, value, _ = model(observation, (hx, cx), cat_tensor)
+            _, value, _ = rl_agent(observation, (hx, cx), cat_tensor)
             R = value.detach()
 
         values.append(R)
@@ -190,9 +202,12 @@ def train_a2c(args):
 
         optimizer.zero_grad()
         (policy_loss + args.value_loss_coef * value_loss).backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+        print("Goal reached: {}, Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
+            goal, policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
+        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
         optimizer.step()
-        current_episode = current_episode + 1
+        ##############################################################
+        current_episode += 1
 
     if world and world.recording_enabled:
         client.stop_recorder()
@@ -201,6 +216,7 @@ def train_a2c(args):
         world.destroy()
 
     pygame.quit()
+    ##############################################################
 
 
 def main():
@@ -280,7 +296,7 @@ def main():
         help='how many training processes to use (default: 4)')
     argparser.add_argument(
         '--num-steps', type=int,
-        default=40,
+        default=500,
         help='number of forward steps in A3C (default: 20)')
     argparser.add_argument(
         '--max-episode-length', type=int,
@@ -307,6 +323,7 @@ def main():
 
     try:
         train_a2c(args)
+        # test_loop(args)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')
@@ -319,8 +336,10 @@ def run_server():
 
 
 if __name__ == '__main__':
+    # os.chdir()
     # p = Process(target=run_server)
     # p.start()
     # time.sleep(5)  # wait for the server to start
 
     main()
+    # p.terminate()

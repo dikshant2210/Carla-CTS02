@@ -84,7 +84,7 @@ class RLAgent(Agent):
         end = self.scenario[2]
         goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
         if goal_dist < 3:
-            print("Goal reached!")
+            # print("Goal reached!")
             return 1000, True
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         ped_dist = np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2)
