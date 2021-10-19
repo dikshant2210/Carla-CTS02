@@ -10,7 +10,7 @@ import logging
 import subprocess
 import time
 import pickle as pkl
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import random
 import numpy as np
 from multiprocessing import Process
@@ -259,7 +259,7 @@ def main():
         help='actor role name (default: "hero")')
     argparser.add_argument(
         '--display',
-        default=True,
+        default=False,
         type=bool,
         help='Render the simulation window (default: False)')
     argparser.add_argument(

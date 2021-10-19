@@ -9,7 +9,7 @@ import pickle as pkl
 import datetime
 import time
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
 from agents.navigation.config import Config
