@@ -53,7 +53,7 @@ def train_a2c(args):
     scene_generator = Scenario(wld)
     scene = scene_generator.scenario01()
     world = World(wld, hud, scene, args)
-    controller = KeyboardControl(world)
+    # controller = KeyboardControl(world)
 
     wld_map = wld.get_map()
     print(wld_map.name)
@@ -138,8 +138,8 @@ def train_a2c(args):
                 control.throttle = 0
             ##############################################################
 
-            if controller.parse_events():
-                return
+            # if controller.parse_events():
+            #     return
 
             world.tick(clock)
             if args.display:
