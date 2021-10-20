@@ -32,7 +32,9 @@ class HybridAStar:
         output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) + (
                 math.radians(position[2]) - math.radians(target[2])) ** 2)
 
-        cost = occupancy_grid[round(position[0] - self.min_x - 1), round(position[1] - self.min_y)]
+        location = [min(round(position[0] - self.min_x - 1), occupancy_grid.shape[0] - 1),
+                    min(round(position[1] - self.min_y), occupancy_grid.shape[1] - 1)]
+        cost = occupancy_grid[location[0], location[1]]
         # if cost != 10000:
         #     print(cost)
         return float(output + cost)
