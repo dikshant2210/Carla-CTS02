@@ -31,7 +31,7 @@ def train_a2c(args):
     pygame.font.init()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(2.0)
+    client.set_timeout(10.0)
 
     if args.display:
         display = pygame.display.set_mode(
@@ -338,6 +338,7 @@ def main():
 
 def run_server():
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl'], shell=True)
+    # subprocess.run(['cd /opt/carla-simulator && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl'], shell=True)
     # subprocess.run(['cd ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/ && ./car'], shell=True)
 
 
