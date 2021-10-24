@@ -27,12 +27,16 @@ class HybridAStar:
 
         self.obstacles = set(self.obstacle)
 
-    def hgcost(self, position, target, occupancy_grid):
+    def hgcost(self, position, target, occupancy_grid, car_lane):
         # Euclidean distance
         output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) + (
                 math.radians(position[2]) - math.radians(target[2])) ** 2)
 
-        location = [min(round(position[0] - self.min_x - 1), occupancy_grid.shape[0] - 1),
+        if car_lane == "right":
+            x = round(position[0] - self.min_x - 1)
+        else:
+            x = round(position[0] - self.min_x)
+        location = [min(x, occupancy_grid.shape[0] - 1),
                     min(round(position[1] - self.min_y), occupancy_grid.shape[1] - 1)]
         cost = occupancy_grid[location[0], location[1]]
         # if cost != 10000:
@@ -63,7 +67,7 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations, m=1):
+    def find_path(self, start, end, occupancy_grid, agent_locations, m=1, car_lane="right"):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
         steering_inputs = []
@@ -86,7 +90,7 @@ class HybridAStar:
         obstacles = agent_locations
         cost_to_neighbour_from_start = 0
 
-        heuristic_cost = self.hgcost(start, end, occupancy_grid)
+        heuristic_cost = self.hgcost(start, end, occupancy_grid, car_lane)
         hq.heappush(open_heap, (cost_to_neighbour_from_start + heuristic_cost, start))
 
         open_diction[start] = (cost_to_neighbour_from_start + heuristic_cost, start, (start, start))
@@ -125,7 +129,7 @@ class HybridAStar:
                     return paths
                 open_heap = []
                 visited_diction = {}
-                heuristic_cost = self.hgcost(start, end, occupancy_grid)
+                heuristic_cost = self.hgcost(start, end, occupancy_grid, car_lane)
                 hq.heappush(open_heap, (cost_to_neighbour_from_start + heuristic_cost, start))
                 for p in rev_final_path_d[:-1]:
                     visited_diction[p] = open_diction[p]
@@ -141,7 +145,7 @@ class HybridAStar:
                     velocity = speed_inputs[j]
 
                     cost_to_neighbour_from_start = chosen_node_total_cost - self.hgcost(chosen_d_node, end,
-                                                                                        occupancy_grid)
+                                                                                        occupancy_grid, car_lane)
                     neighbour_x_cts, neighbour_y_cts, neighbour_theta_cts = self.next_node(chosen_c_node,
                                                                                            delta, velocity)
                     neighbour_theta_cts = math.degrees(neighbour_theta_cts)
@@ -162,7 +166,8 @@ class HybridAStar:
                             and (neighbour_x_d <= self.max_x) and (neighbour_y_d >= self.min_y) and
                             (neighbour_y_d <= self.max_y)):
 
-                        heurestic = self.hgcost((neighbour_x_d, neighbour_y_d, neighbour_theta_d), end, occupancy_grid)
+                        heurestic = self.hgcost((neighbour_x_d, neighbour_y_d, neighbour_theta_d), end,
+                                                occupancy_grid, car_lane)
                         # adding the unit action cost and distance travelled
                         action_cost = 1.0
                         cost_to_neighbour_from_start = action_cost + cost_to_neighbour_from_start
@@ -190,8 +195,8 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 1.7, 220, -90
-    gx, gy, gtheta = 2, 150, -90  # 2,4,0 almost exact
+    sx, sy, stheta = -2, 270, -90
+    gx, gy, gtheta = -2, 150, -90  # 2,4,0 almost exact
 
     # create obstacles
     obstacle = [(1.4, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]

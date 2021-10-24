@@ -14,8 +14,6 @@ from agents.navigation.agent import Agent
 from config import Config
 from assets.occupancy_grid import OccupancyGrid
 from agents.navigation.hybridastar import HybridAStar
-
-
 # from agents.path_planner.hybridastar import HybridAStar
 
 
@@ -79,6 +77,9 @@ class RLAgent(Agent):
                 if val == 50:
                     val = 50.0
                 self.grid_cost[i - self.min_x, j - self.min_y] = val
+
+    def update_scenario(self, scenario):
+        self.scenario = scenario
 
     def in_hit_area(self, x, y, theta, ped_x, ped_y):
         # TOP RIGHT VERTEX:
@@ -159,6 +160,7 @@ class RLAgent(Agent):
         near_miss = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y)
 
         # Cost of collision with obstacles
+        # TODO: Update grid cost with current obstacles
         location = [min(round(start[0] - self.min_x - 1), self.grid_cost.shape[0] - 1),
                     min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
         reward = -self.grid_cost[location[0], location[1]]
@@ -215,13 +217,22 @@ class RLAgent(Agent):
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
-            obstacles.append((int(walker_x), int(walker_y)))
-        if self.scenario == 10:
+            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [1, 4, 10]:
+                obstacles.append((int(walker_x), int(walker_y)))
+        if self.scenario[0] in [3, 7, 8, 10]:
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
                 obstacles.append((int(car_x), int(car_y)))
         t0 = time.time()
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
+            car_lane = "right"
+        else:
+            car_lane = "left"
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles, car_lane=car_lane)
         if len(paths):
             path = paths[0]
         else:
