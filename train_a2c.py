@@ -328,7 +328,9 @@ def main():
     print(__doc__)
 
     try:
+        t0 = time.time()
         train_a2c(args)
+        print("Training time: {:.4f}hrs".format((time.time() - t0) / 3600))
         # test_loop(args)
 
     except KeyboardInterrupt:
