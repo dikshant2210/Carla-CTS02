@@ -24,6 +24,8 @@ class Config:
     car_speed_range = [6, 9]
     scenarios = ['01', '03', '04', '07', '08']
 
+    save_freq = 5000
+
     # Setting the SAC training parameters
     batch_size = 32  # How many experience traces to use for each training step.
     trace_length = 8  # How long each experience trace will be when training

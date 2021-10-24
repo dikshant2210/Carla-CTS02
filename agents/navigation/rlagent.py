@@ -144,7 +144,6 @@ class RLAgent(Agent):
         goal = False
         near_miss = False
         hit = False
-        # TODO: Check against goal condition in HyLEAP
         if goal_dist < 3:
             goal = True
             return 1000, goal, hit, near_miss
@@ -159,11 +158,17 @@ class RLAgent(Agent):
         # in near miss area
         near_miss = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y)
 
+        # TODO: Collision with incoming or static car
+
         # Cost of collision with obstacles
-        # TODO: Update grid cost with current obstacles
+        grid = self.grid_cost.copy()
+        if self.scenario[0] in [3, 7, 8, 10]:
+            x = self.world.incoming_car.get_location().x
+            y = self.world.incoming_car.get_location().y
+            grid[round(x), round(y)] = 100
         location = [min(round(start[0] - self.min_x - 1), self.grid_cost.shape[0] - 1),
                     min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
-        reward = -self.grid_cost[location[0], location[1]]
+        reward = -grid[location[0], location[1]]
 
         reward += -0.1
         if self.prev_action.throttle != 0:

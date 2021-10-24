@@ -9,6 +9,7 @@ import argparse
 import logging
 import subprocess
 import time
+import os
 import random
 import numpy as np
 from multiprocessing import Process
@@ -57,6 +58,11 @@ def train_a2c(args):
     ##############################################################
 
     ##############################################################
+    # Path to save model
+    path = "_out/a2c/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
     # Compiling all different combination of scenarios
     episodes = list()
     for scenario in Config.scenarios:
@@ -77,17 +83,19 @@ def train_a2c(args):
     ##############################################################
     # Simulation loop
     current_episode = 0
-    max_episodes = min(10000, len(episodes))
+    max_episodes = len(episodes) * 2
     print("Total training episodes: {}".format(max_episodes))
     while current_episode < max_episodes:
         ##############################################################
         # Get the scenario id, parameters and instantiate the world
-        scenario_id, ped_speed, ped_distance = episodes[current_episode]
+        idx = current_episode % len(episodes)
+        scenario_id, ped_speed, ped_distance = episodes[idx]
         func = 'scene_generator.scenario' + scenario_id
         scenario = eval(func + '()')
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
               "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
         world.restart(scenario, ped_speed, ped_distance)
+        planner_agent.update_scenario(scenario)
 
         # Setup initial inputs for LSTM Cell
         cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
@@ -203,7 +211,10 @@ def train_a2c(args):
         optimizer.step()
         ##############################################################
         current_episode += 1
+        if current_episode % Config.save_freq == 0:
+            torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
 
+    torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
     if world and world.recording_enabled:
         client.stop_recorder()
 
