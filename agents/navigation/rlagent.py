@@ -14,6 +14,8 @@ from agents.navigation.agent import Agent
 from config import Config
 from assets.occupancy_grid import OccupancyGrid
 from agents.navigation.hybridastar import HybridAStar
+
+
 # from agents.path_planner.hybridastar import HybridAStar
 
 
@@ -56,9 +58,10 @@ class RLAgent(Agent):
         self.min_x = int(self.min_x) - 10
 
         obstacle = []
-        vehicle_length = self.vehicle.bounding_box.extent.x * 2
+        self.vehicle_length = self.vehicle.bounding_box.extent.x * 2
+        self.vehicle_width = self.vehicle.bounding_box.extent.y * 2
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y,
-                                        obstacle, vehicle_length)
+                                        obstacle, self.vehicle_length)
 
         x_range = self.max_x - self.min_x
         y_range = self.max_y - self.min_y
@@ -77,34 +80,97 @@ class RLAgent(Agent):
                     val = 50.0
                 self.grid_cost[i - self.min_x, j - self.min_y] = val
 
+    def in_hit_area(self, x, y, theta, ped_x, ped_y):
+        # TOP RIGHT VERTEX:
+        top_right_x = x + ((self.vehicle_width / 2) * np.cos(theta)) - ((self.vehicle_length / 2) * np.sin(theta))
+        top_right_y = y + ((self.vehicle_width / 2) * np.sin(theta)) + ((self.vehicle_length / 2) * np.cos(theta))
+
+        # TOP LEFT VERTEX:
+        top_left_x = x - ((self.vehicle_width / 2) * np.cos(theta)) - ((self.vehicle_length / 2) * np.sin(theta))
+        top_left_y = y - ((self.vehicle_width / 2) * np.sin(theta)) + ((self.vehicle_length / 2) * np.cos(theta))
+
+        # BOTTOM LEFT VERTEX:
+        bot_left_x = x - ((self.vehicle_width / 2) * np.cos(theta)) + ((self.vehicle_length / 2) * np.sin(theta))
+        bot_left_y = y - ((self.vehicle_width / 2) * np.sin(theta)) - ((self.vehicle_length / 2) * np.cos(theta))
+
+        # BOTTOM RIGHT VERTEX:
+        bot_right_x = x + ((self.vehicle_width / 2) * np.cos(theta)) + ((self.vehicle_length / 2) * np.sin(theta))
+        bot_right_y = y + ((self.vehicle_width / 2) * np.sin(theta)) - ((self.vehicle_length / 2) * np.cos(theta))
+
+        ab = [top_right_x - top_left_x, top_right_y - top_left_y]
+        am = [ped_x - top_left_x, ped_y - top_left_y]
+        bc = [bot_right_x - top_right_x, bot_right_y - top_right_y]
+        bm = [ped_x - top_right_x, ped_y - top_right_y]
+        return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
+
+    def in_near_miss(self, x, y, theta, ped_x, ped_y):
+        # TOP RIGHT VERTEX:
+        top_right_x = x + ((0.5 + self.vehicle_width / 2) * np.cos(theta)) - \
+                      ((1.5 + self.vehicle_length / 2) * np.sin(theta))
+        top_right_y = y + ((0.5 + self.vehicle_width / 2) * np.sin(theta)) + \
+                      ((1.5 + self.vehicle_length / 2) * np.cos(theta))
+
+        # TOP LEFT VERTEX:
+        top_left_x = x - ((0.5 + self.vehicle_width / 2) * np.cos(theta)) - \
+                     ((1.5 + self.vehicle_length / 2) * np.sin(theta))
+        top_left_y = y - ((0.5 + self.vehicle_width / 2) * np.sin(theta)) + \
+                     ((1.5 + self.vehicle_length / 2) * np.cos(theta))
+
+        # BOTTOM LEFT VERTEX:
+        bot_left_x = x - ((0.5 + self.vehicle_width / 2) * np.cos(theta)) + \
+                     ((0.5 + self.vehicle_length / 2) * np.sin(theta))
+        bot_left_y = y - ((0.5 + self.vehicle_width / 2) * np.sin(theta)) - \
+                     ((0.5 + self.vehicle_length / 2) * np.cos(theta))
+
+        # BOTTOM RIGHT VERTEX:
+        bot_right_x = x + ((0.5 + self.vehicle_width / 2) * np.cos(theta)) + \
+                      ((0.5 + self.vehicle_length / 2) * np.sin(theta))
+        bot_right_y = y + ((0.5 + self.vehicle_width / 2) * np.sin(theta)) - \
+                      ((0.5 + self.vehicle_length / 2) * np.cos(theta))
+
+        ab = [top_right_x - top_left_x, top_right_y - top_left_y]
+        am = [ped_x - top_left_x, ped_y - top_left_y]
+        bc = [bot_right_x - top_right_x, bot_right_y - top_right_y]
+        bm = [ped_x - top_right_x, ped_y - top_right_y]
+        return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
+
     def get_reward(self):
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
         goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+
+        goal = False
+        near_miss = False
+        hit = False
         # TODO: Check against goal condition in HyLEAP
         if goal_dist < 3:
-            return 1000, True, False
+            goal = True
+            return 1000, goal, hit, near_miss
 
-        # TODO: Pedestrian hit and near miss section
+        # Pedestrian hit and near miss section
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        ped_dist = np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2)
-        if ped_dist < 0.5:  # accident
-            return -1000, False, True
-        elif ped_dist < 1.0:
-            return -500, False, True
+        # In hit area
+        hit = self.in_hit_area(start[0], start[1], start[2], walker_x, walker_y)
+        if hit:  # accident
+            hit = True
+            return -1000, goal, hit, near_miss
+        # in near miss area
+        near_miss = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y)
 
-        # TODO: Obstacle Cost
         # Cost of collision with obstacles
+        location = [min(round(start[0] - self.min_x - 1), self.grid_cost.shape[0] - 1),
+                    min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
+        reward = -self.grid_cost[location[0], location[1]]
 
-        reward = -0.1
+        reward += -0.1
         if self.prev_action.throttle != 0:
             reward += -0.1
         if self.prev_action.steer != 0:
             reward += -1
-        elif 0.5 < ped_dist < 1.5:  # near miss
+        if near_miss:  # near miss
             reward += -500
-        return reward, False, False
+        return reward, goal, hit, near_miss
 
     def get_car_intention(self, obstacles, path, start):
         costmap = self.grid_cost.copy()
@@ -138,7 +204,7 @@ class RLAgent(Agent):
         pad_x = 100 - (x2 - x1)
         # print(pad_x, pad_y)
         return np.pad(costmap[y1:y2, x1:x2], ((round(pad_y / 2), pad_y - round(pad_y / 2)),
-                                              (round(pad_x / 2), pad_x - round(pad_x/2))), constant_values=0)
+                                              (round(pad_x / 2), pad_x - round(pad_x / 2))), constant_values=0)
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player

@@ -160,7 +160,7 @@ def train_a2c(args):
             velocity = planner_agent.vehicle.get_velocity()
             velocity_x = velocity.x
             velocity_y = velocity.y
-            reward, goal, accident = planner_agent.get_reward()
+            reward, goal, accident, near_miss = planner_agent.get_reward()
             observation = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
             values.append(value)
             log_probs.append(log_prob)
@@ -196,8 +196,9 @@ def train_a2c(args):
 
         optimizer.zero_grad()
         (policy_loss + args.value_loss_coef * value_loss).backward()
-        print("Goal reached: {}, Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
-            goal, policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
+        print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
+        print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
+            policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
         torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
         optimizer.step()
         ##############################################################
@@ -330,9 +331,9 @@ def run_server():
 
 
 if __name__ == '__main__':
-    p = Process(target=run_server)
-    p.start()
-    time.sleep(5)  # wait for the server to start
+    # p = Process(target=run_server)
+    # p.start()
+    # time.sleep(5)  # wait for the server to start
 
     main()
     # p.terminate()
