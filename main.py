@@ -14,10 +14,9 @@ from multiprocessing import Process
 from world import World
 from hud import HUD
 from agents.navigation.behavior_agent import BehaviorAgent
-from agents.navigation.hylear_agent import HyLEAR
 from agents.navigation.rlagent import RLAgent
 from agents.tools.connector import Connector
-from agents.navigation.config import Config
+from config import Config
 from agents.tools.scenario import Scenario
 
 from pygame.locals import KMOD_CTRL

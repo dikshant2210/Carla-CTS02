@@ -9,8 +9,6 @@ import argparse
 import logging
 import subprocess
 import time
-import pickle as pkl
-import matplotlib.pyplot as plt
 import random
 import numpy as np
 from multiprocessing import Process
@@ -21,9 +19,8 @@ from world import World
 from hud import HUD
 from agents.rl.a2c.model import A2C
 from agents.navigation.rlagent import RLAgent
-from agents.navigation.config import Config
+from config import Config
 from agents.tools.scenario import Scenario
-from traineval.traineval_utils import KeyboardControl
 
 
 def train_a2c(args):
@@ -106,7 +103,6 @@ def train_a2c(args):
         speed_action = 1
         velocity_x = 0
         velocity_y = 0
-        episode_length = 0
         observation = None
         ##############################################################
 
@@ -164,16 +160,14 @@ def train_a2c(args):
             velocity = planner_agent.vehicle.get_velocity()
             velocity_x = velocity.x
             velocity_y = velocity.y
-            reward, goal = planner_agent.get_reward()
+            reward, goal, accident = planner_agent.get_reward()
             observation = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
             values.append(value)
             log_probs.append(log_prob)
             rewards.append(reward)
 
-            if goal:
-                episode_length = 0
+            if goal or accident:
                 break
-            episode_length += 1
             ##############################################################
 
         ##############################################################

@@ -8,12 +8,8 @@ import pygame
 import argparse
 import logging
 import subprocess
-import time
-import pickle as pkl
-import matplotlib.pyplot as plt
 import random
 import numpy as np
-from multiprocessing import Process
 import torch
 import torch.nn.functional as F
 
@@ -21,7 +17,7 @@ from world import World
 from hud import HUD
 from agents.rl.a2c.model import A2C
 from agents.navigation.rlagent import RLAgent
-from agents.navigation.config import Config
+from config import Config
 from agents.tools.scenario import Scenario
 from traineval.traineval_utils import KeyboardControl
 

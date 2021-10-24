@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
-from agents.navigation.config import Config
+from config import Config
 from assets.occupancy_grid import OccupancyGrid
 from agents.navigation.hybridastar import HybridAStar
 # from agents.path_planner.hybridastar import HybridAStar

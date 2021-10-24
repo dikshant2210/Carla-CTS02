@@ -16,7 +16,7 @@ from hud import HUD
 from traineval.baseagent import BaseAgent
 from traineval.traineval_utils import KeyboardControl
 from agents.tools.connector import Connector
-from agents.navigation.config import Config
+from config import Config
 from agents.tools.scenario import Scenario
 
 

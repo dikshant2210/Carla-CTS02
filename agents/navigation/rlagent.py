@@ -5,14 +5,13 @@ Time: 12.07.21 11:03
 
 import carla
 import sys
-import pickle as pkl
 import datetime
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
-from agents.navigation.config import Config
+from config import Config
 from assets.occupancy_grid import OccupancyGrid
 from agents.navigation.hybridastar import HybridAStar
 # from agents.path_planner.hybridastar import HybridAStar
@@ -83,23 +82,29 @@ class RLAgent(Agent):
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
         goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+        # TODO: Check against goal condition in HyLEAP
         if goal_dist < 3:
-            # print("Goal reached!")
-            return 1000, True
+            return 1000, True, False
+
+        # TODO: Pedestrian hit and near miss section
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         ped_dist = np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2)
         if ped_dist < 0.5:  # accident
-            return -1000, True
+            return -1000, False, True
+        elif ped_dist < 1.0:
+            return -500, False, True
+
+        # TODO: Obstacle Cost
+        # Cost of collision with obstacles
 
         reward = -0.1
-        # TODO: add sidewalk reward
         if self.prev_action.throttle != 0:
             reward += -0.1
         if self.prev_action.steer != 0:
             reward += -1
         elif 0.5 < ped_dist < 1.5:  # near miss
             reward += -500
-        return -0.1, False
+        return reward, False, False
 
     def get_car_intention(self, obstacles, path, start):
         costmap = self.grid_cost.copy()
