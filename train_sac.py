@@ -248,7 +248,7 @@ def train_sac(args):
                     policy_optim.step()
 
                     soft_update(critic_target, rl_agent.q_network, tau)
-                    print("Updating Network Weight!")
+                    # print("Updating Network Weight!")
 
             rAll += r
             hx = state1[0]
