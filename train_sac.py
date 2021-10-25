@@ -248,6 +248,8 @@ def train_sac(args):
                     policy_optim.step()
 
                     soft_update(critic_target, rl_agent.q_network, tau)
+                    print("Q-loss: {:.4f}, Policy loss: {:.4f}".format(qf_loss.detach().cpu(),
+                                                                       policy_loss.detach().cpu()))
                     # print("Updating Network Weight!")
 
             rAll += r

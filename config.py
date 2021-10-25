@@ -29,7 +29,7 @@ class Config:
     # Setting the SAC training parameters
     batch_size = 32  # 32  # How many experience traces to use for each training step.
     trace_length = 8  # How long each experience trace will be when training
-    update_freq = 10  # How often to perform a training step.
+    update_freq = 200  # How often to perform a training step.
     y = .995  # Discount factor on the target Q-values
     startE = 1  # Starting chance of random action
     endE = 0.1  # Final chance of random action
