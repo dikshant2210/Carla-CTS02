@@ -35,7 +35,7 @@ class Config:
     endE = 0.1  # Final chance of random action
     anneling_steps = 200000  # 10000 # How many steps of training to reduce startE to endE.
     num_episodes = 100000  # How many episodes of game environment to train network with.
-    pre_train_steps = 10000  # 10000  # How many steps of random actions before training begins.
+    pre_train_steps = 100  # 10000  # How many steps of random actions before training begins.
     load_model = True  # Whether to load a saved model.
     path = "_out/sac/"  # The path to save our model to.
     hidden_size = 256
