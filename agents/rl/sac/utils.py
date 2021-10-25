@@ -29,7 +29,7 @@ class ExperienceBuffer:
             point = np.random.randint(0, len(episode) + 1 - trace_length)
             sampled_traces.append(episode[point:point + trace_length])
         sampled_traces = np.array(sampled_traces)
-        sampled_traces = np.reshape(sampled_traces, [batch_size * trace_length, 7])
+        sampled_traces = np.reshape(sampled_traces, [batch_size * trace_length, 10])
         indices = [i for i in range(len(sampled_traces))]
         random.shuffle(indices)
         return sampled_traces[indices]

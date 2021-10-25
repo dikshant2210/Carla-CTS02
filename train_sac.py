@@ -11,6 +11,7 @@ import pygame
 import carla
 import argparse
 import time
+import logging
 import torch
 from datetime import datetime
 from torch.optim import Adam
@@ -32,7 +33,7 @@ def train_sac(args):
     pygame.font.init()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(2.0)
+    client.set_timeout(10.0)
 
     if args.display:
         display = pygame.display.set_mode(
@@ -73,11 +74,11 @@ def train_sac(args):
     planner_agent = RLAgent(world, wld.get_map(), scene)
     torch.manual_seed(100)
     rl_agent = SAC(Config.num_actions).cuda()
-    device = torch.device("cuda" if args.cuda else "cpu")
     critic_optim = Adam(list(rl_agent.q_network.parameters()) + list(rl_agent.shared_network.parameters()), lr=args.lr)
-    critic_target = QNetwork(Config.num_actions).to(device)
+    critic_target = QNetwork(Config.num_actions).cuda()
     hard_update(critic_target, rl_agent.q_network)
-    policy_optim = Adam(list(rl_agent.action_policy.parameters()) + list(rl_agent.shared_network.parameters()), lr=args.lr)
+    policy_optim = Adam(list(rl_agent.action_policy.parameters()) + list(rl_agent.shared_network.parameters()),
+                        lr=args.lr)
     ##############################################################
 
     ##############################################################
@@ -100,27 +101,32 @@ def train_sac(args):
 
     ##############################################################
     # Simulation loop
-    for current_episode in range(Config.num_episodes):
+    total_episodes = min(len(episodes) * 2, Config.num_episodes)
+    print("Total training episodes: {}".format(total_episodes))
+    for current_episode in range(total_episodes):
         ##############################################################
         # Get the scenario id, parameters and instantiate the world
-        scenario_id, ped_speed, ped_distance = episodes[current_episode]
+        idx = current_episode % len(episodes)
+        scenario_id, ped_speed, ped_distance = episodes[idx]
         func = 'scene_generator.scenario' + scenario_id
         scenario = eval(func + '()')
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
               "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
         world.restart(scenario, ped_speed, ped_distance)
-
-        # Reset environment and get first new observation
-        control, m = planner_agent.run_step()
-        m = torch.from_numpy(m).cuda().type(torch.cuda.FloatTensor)
+        planner_agent.update_scenario(scenario)
 
         d = False
         rAll = 0
         j = 0
         episode_buffer = []
         total_episode_reward = 0
-        state = (np.zeros([1, Config.hidden_size]),
-                 np.zeros([1, Config.hidden_size]))  # Reset the recurrent layer's hidden state
+        cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+        hx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+
+        reward = 0
+        speed_action = 1
+        velocity_x = 0
+        velocity_y = 0
         ##############################################################
 
         ##############################################################
@@ -134,12 +140,18 @@ def train_sac(args):
 
             ##############################################################
             # Forward pass of the RL Agent
+            control, m = planner_agent.run_step()
+            m = torch.from_numpy(m).cuda().type(torch.cuda.FloatTensor)
+            cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
+                torch.cuda.FloatTensor)
+            m = torch.reshape(m, (-1, 1, 100, 100))
+            cat_tensor = torch.reshape(cat_tensor, (-1, 4))
             with torch.no_grad():
-                state1 = rl_agent.shared_network((m, torch.FloatTensor(torch.from_numpy(state)).to(device)))
+                state1 = rl_agent.shared_network(m, hx, cx, cat_tensor)
                 a, _, _ = rl_agent.action_policy.sample(state1[0])
 
-            a = a.detach().numpy()
-            speed_action = np.argmax(a, axis=-1)
+            a = a.cpu().numpy()
+            speed_action = np.argmax(a, axis=-1)[0]
             if speed_action == 0:
                 control.throttle = 0.6
             elif speed_action == 2:
@@ -157,56 +169,63 @@ def train_sac(args):
 
             _, m1 = planner_agent.run_step()
             m1 = torch.from_numpy(m1).cuda().type(torch.cuda.FloatTensor)
+            m1 = torch.reshape(m1, (-1, 1, 100, 100))
             velocity = planner_agent.vehicle.get_velocity()
             velocity_x = velocity.x
             velocity_y = velocity.y
-            r, goal, accident = planner_agent.get_reward()
+            r, goal, accident, near_miss = planner_agent.get_reward()
+            reward = r
             d = goal or accident
 
             total_episode_reward += r * (Config.y ** j)
             total_steps += 1
 
-            episode_buffer.append(np.reshape(np.array([m, a, r, m1, state, state1, not d]), [1, 7]))
+            episode_buffer.append(np.reshape(np.array([m.cpu(), a, r, m1.cpu(), hx.cpu(), cx.cpu(),
+                                                       state1[0].cpu(), state1[1].cpu(), not d,
+                                                       cat_tensor.cpu()]), [1, 10]))
 
-            if total_steps > Config.pre_train_steps and current_episode > Config.batch_size + 4:
+            if total_steps > Config.pre_train_steps and current_episode + 1 > Config.batch_size + 4:
                 if e > Config.endE:
                     e -= step_drop
 
                 if total_steps % Config.update_freq == 0:
-                    # Reset the recurrent layer's hidden state
-                    state_train = (np.zeros([Config.batch_size, Config.hidden_size]),
-                                   np.zeros([Config.batch_size, Config.hidden_size]))
-
-                    start_time = datetime.now()
-                    if total_steps % (Config.update_freq * 5) == 0:
-                        start_time = datetime.now()
 
                     # Get a random batch of experiences.
-                    trainBatch = my_buffer.sample(Config.batch_size, Config.trace_length)
+                    train_batch = my_buffer.sample(Config.batch_size, Config.trace_length)
 
-                    if total_steps % (Config.update_freq * 100) == 0:
-                        time_elapsed = datetime.now() - start_time
-                        print('Time elapsed for sampling from buffer (hh:mm:ss.ms) {}'.format(time_elapsed))
-                        start_time = datetime.now()
-
-                    # TODO: Run a forward pass of rl_agent and update parameters
-                    state_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 0] / 1.0))).to(device)
-                    action_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 1] / 1.0))).to(device)
-                    reward_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 2] / 1.0))).to(device)
-                    next_state_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 3] / 1.0))).to(device)
-                    lstm_state_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 4] / 1.0))).to(device)
-                    next_lstm_state_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 5] / 1.0))).to(device)
-                    mask_batch = torch.FloatTensor(torch.from_numpy(np.vstack(trainBatch[:, 6] / 1.0))).to(device)
+                    # Run a forward pass of rl_agent and update parameters
+                    state_batch = torch.from_numpy(np.vstack(train_batch[:, 0] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
+                    action_batch = torch.from_numpy(np.vstack(train_batch[:, 1] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
+                    reward_batch = torch.from_numpy(np.vstack(train_batch[:, 2] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
+                    next_state_batch = torch.from_numpy(np.vstack(train_batch[:, 3] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
+                    lstm_state_batch_hx = torch.from_numpy(np.vstack(train_batch[:, 4])).cuda().type(
+                        torch.cuda.FloatTensor)
+                    lstm_state_batch_cx = torch.from_numpy(np.vstack(train_batch[:, 5])).cuda().type(
+                        torch.cuda.FloatTensor)
+                    next_lstm_state_batch_hx = torch.from_numpy(np.vstack(train_batch[:, 6])).cuda().type(
+                        torch.cuda.FloatTensor)
+                    next_lstm_state_batch_cx = torch.from_numpy(np.vstack(train_batch[:, 7])).cuda().type(
+                        torch.cuda.FloatTensor)
+                    mask_batch = torch.from_numpy(np.vstack(train_batch[:, 8] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
+                    cat_batch = torch.from_numpy(np.vstack(train_batch[:, 9] / 1.0)).cuda().type(
+                        torch.cuda.FloatTensor)
 
                     with torch.no_grad():
-                        features, _ = rl_agent.shared_network((next_state_batch, next_lstm_state_batch))
+                        features, _ = rl_agent.shared_network(next_state_batch, next_lstm_state_batch_hx,
+                                                              next_lstm_state_batch_cx, cat_batch)
                         next_state_action, next_state_log_pi, _ = rl_agent.action_policy.sample(features)
                         qf1_next_target, qf2_next_target = critic_target(features, next_state_action)
                         min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - alpha * next_state_log_pi
                         next_q_value = reward_batch + mask_batch * gamma * min_qf_next_target
 
                     # Two Q-functions to mitigate positive bias in the policy improvement step
-                    qf1, qf2 = rl_agent.q_network(state_batch, action_batch)
+                    f, _ = rl_agent.shared_network(state_batch, lstm_state_batch_hx, lstm_state_batch_cx, cat_batch)
+                    qf1, qf2 = rl_agent.q_network(f, action_batch)
 
                     # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
                     qf1_loss = F.mse_loss(qf1, next_q_value)
@@ -214,33 +233,26 @@ def train_sac(args):
                     qf2_loss = F.mse_loss(qf2, next_q_value)
                     qf_loss = qf1_loss + qf2_loss
 
-                    critic_optim.zero_grad()
-                    qf_loss.backward()
-                    critic_optim.step()
-
-                    f, _ = rl_agent.shared_network((state_batch, lstm_state_batch))
                     pi, log_pi, _ = rl_agent.action_policy.sample(f)
-
                     qf1_pi, qf2_pi = rl_agent.q_network(f, pi)
                     min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
                     # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
                     policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
 
+                    loss = qf_loss + policy_loss
+                    loss.backward()
+                    critic_optim.zero_grad()
+                    critic_optim.step()
                     policy_optim.zero_grad()
-                    policy_loss.backward()
                     policy_optim.step()
 
                     soft_update(critic_target, rl_agent.q_network, tau)
 
-                    if total_steps % (Config.update_freq * 100) == 0:
-                        time_elapsed = datetime.now() - start_time
-                        print('Time elapsed for updating rl_agent (hh:mm:ss.ms) {}'.format(time_elapsed))
-
             rAll += r
-            state = state1
+            hx = state1[0]
+            cx = state1[1]
             m = m1
-
             if d:
                 break
 
@@ -252,9 +264,53 @@ def train_sac(args):
             j_list.append(j)
             r_list.append(rAll)
 
+        print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
+        if current_episode + 1 % Config.save_freq:
+            torch.save(rl_agent.state_dict(), "{}sac_{}.pth".format(Config.path, current_episode))
+
 
 def main():
     parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        dest='debug',
+        help='print debug information')
+    parser.add_argument(
+        '--host',
+        metavar='H',
+        default='127.0.0.1',
+        help='IP of the host server (default: 127.0.0.1)')
+    parser.add_argument(
+        '-p', '--port',
+        metavar='P',
+        default=2000,
+        type=int,
+        help='TCP port to listen to (default: 2000)')
+    parser.add_argument(
+        '-a', '--autopilot',
+        action='store_true',
+        help='enable autopilot')
+    parser.add_argument(
+        '--res',
+        metavar='WIDTHxHEIGHT',
+        default='1280x720',
+        help='window resolution (default: 1280x720)')
+    parser.add_argument(
+        '--filter',
+        metavar='PATTERN',
+        default='vehicle.audi.tt',
+        help='actor filter (default: "vehicle.audi.tt")')
+    parser.add_argument(
+        '--rolename',
+        metavar='NAME',
+        default='hero',
+        help='actor role name (default: "hero")')
+    parser.add_argument(
+        '--display',
+        default=False,
+        type=bool,
+        help='Render the simulation window (default: False)')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                         help='discount factor for reward (default: 0.99)')
     parser.add_argument('--tau', type=float, default=0.005, metavar='G',
@@ -281,6 +337,13 @@ def main():
     parser.add_argument('--cuda', action="store_true",
                         help='run on CUDA (default: False)')
     args = parser.parse_args()
+
+    args.width, args.height = [int(x) for x in args.res.split('x')]
+
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
+
+    logging.info('listening to server %s:%s', args.host, args.port)
 
     train_sac(args)
 
