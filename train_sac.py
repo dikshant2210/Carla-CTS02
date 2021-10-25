@@ -268,6 +268,9 @@ def train_sac(args):
         if current_episode + 1 % Config.save_freq == 0:
             torch.save(rl_agent.state_dict(), "{}sac_{}.pth".format(Config.path, current_episode))
 
+    if current_episode + 1 % Config.save_freq == 0:
+        torch.save(rl_agent.state_dict(), "{}sac_{}.pth".format(Config.path, current_episode))
+
 
 def main():
     parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
