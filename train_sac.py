@@ -265,7 +265,7 @@ def train_sac(args):
             r_list.append(rAll)
 
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
-        if current_episode + 1 % Config.save_freq:
+        if current_episode + 1 % Config.save_freq == 0:
             torch.save(rl_agent.state_dict(), "{}sac_{}.pth".format(Config.path, current_episode))
 
 
