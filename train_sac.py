@@ -33,7 +33,7 @@ def train_sac(args):
     pygame.font.init()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(10.0)
+    client.set_timeout(20.0)
 
     if args.display:
         display = pygame.display.set_mode(
