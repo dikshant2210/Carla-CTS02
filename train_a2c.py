@@ -31,7 +31,7 @@ def train_a2c(args):
     pygame.font.init()
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(10.0)
+    client.set_timeout(60.0)
 
     if args.display:
         display = pygame.display.set_mode(
@@ -204,11 +204,11 @@ def train_a2c(args):
 
         optimizer.zero_grad()
         (policy_loss + args.value_loss_coef * value_loss).backward()
+        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
+        optimizer.step()
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
         print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
             policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
-        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
-        optimizer.step()
         ##############################################################
         current_episode += 1
         if current_episode % Config.save_freq == 0:
