@@ -193,7 +193,7 @@ def train_a2c(args):
         gae = torch.zeros(1, 1).cuda().type(torch.cuda.FloatTensor)
         for i in reversed(range(len(rewards))):
             R = args.gamma * R + rewards[i]
-            advantage = R - values[i]
+            advantage = (R - values[i]) / 10.0
             value_loss = value_loss + 0.5 * advantage.pow(2)
 
             # Generalized Advantage Estimation
@@ -207,7 +207,7 @@ def train_a2c(args):
         policy_loss = policy_loss / len(rewards)
         value_loss = value_loss / len(rewards)
         ((1 - args.value_loss_coef) * policy_loss + args.value_loss_coef * value_loss).backward()
-        # torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
+        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
         optimizer.step()
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
         print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
