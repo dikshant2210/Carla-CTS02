@@ -197,10 +197,11 @@ def train_a2c(args):
             value_loss = value_loss + 0.5 * advantage.pow(2)
 
             # Generalized Advantage Estimation
-            delta_t = rewards[i] + args.gamma * values[i + 1] - values[i]
-            gae = gae * args.gamma * args.gae_lambda + delta_t
+            # delta_t = rewards[i] + args.gamma * values[i + 1] - values[i]
+            # gae = gae * args.gamma * args.gae_lambda + delta_t
 
-            policy_loss = policy_loss - log_probs[i] * gae.detach() - args.entropy_coef * entropies[i]
+            # policy_loss = policy_loss - log_probs[i] * gae.detach() - args.entropy_coef * entropies[i]
+            policy_loss = policy_loss - (log_probs[i] * (R - values[i].detach()) + args.entropy_coef * entropies[i])
 
         optimizer.zero_grad()
         (policy_loss + args.value_loss_coef * value_loss).backward()
