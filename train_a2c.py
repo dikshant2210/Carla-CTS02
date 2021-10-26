@@ -204,12 +204,14 @@ def train_a2c(args):
             policy_loss = policy_loss - (log_probs[i] * (R - values[i].detach()) + args.entropy_coef * entropies[i])
 
         optimizer.zero_grad()
+        policy_loss = policy_loss / len(rewards)
+        value_loss = value_loss / len(rewards)
         (policy_loss + args.value_loss_coef * value_loss).backward()
         torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
         optimizer.step()
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
         print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
-            policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
+            policy_loss.detach().cpu(), value_loss.detach().cpu()))
         ##############################################################
         current_episode += 1
         if current_episode % Config.save_freq == 0:
