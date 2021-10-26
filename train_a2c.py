@@ -207,7 +207,7 @@ def train_a2c(args):
         policy_loss = policy_loss / len(rewards)
         value_loss = value_loss / len(rewards)
         ((1 - args.value_loss_coef) * policy_loss + args.value_loss_coef * value_loss).backward()
-        torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
+        # torch.nn.utils.clip_grad_norm_(rl_agent.parameters(), args.max_grad_norm)
         optimizer.step()
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
         print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
