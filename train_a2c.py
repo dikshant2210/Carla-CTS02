@@ -211,7 +211,7 @@ def train_a2c(args):
         optimizer.step()
         print("Goal reached: {}, Near miss: {}, Crash: {}".format(goal, near_miss, accident))
         print("Policy Loss: {:.4f}, Value Loss: {:.4f}".format(
-            policy_loss.detach().cpu().numpy(), value_loss.detach().cpu().numpy()))
+            policy_loss.detach().cpu().numpy()[0][0], value_loss.detach().cpu().numpy()[0][0]))
         ##############################################################
         current_episode += 1
         if current_episode % Config.save_freq == 0:
