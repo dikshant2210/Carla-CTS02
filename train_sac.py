@@ -240,11 +240,11 @@ def train_sac(args):
                     # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
                     policy_loss = ((alpha * log_pi) - min_qf_pi).mean()
 
+                    critic_optim.zero_grad()
+                    policy_optim.zero_grad()
                     loss = qf_loss + policy_loss
                     loss.backward()
-                    critic_optim.zero_grad()
                     critic_optim.step()
-                    policy_optim.zero_grad()
                     policy_optim.step()
 
                     soft_update(critic_target, rl_agent.q_network, tau)
