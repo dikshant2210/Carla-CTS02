@@ -8,6 +8,7 @@ import sys
 import datetime
 import time
 import numpy as np
+import pickle as pkl
 import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
@@ -191,14 +192,17 @@ class RLAgent(Agent):
             j = round(obs[1])
             costmap[i, j] = 10000
 
+        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+            pkl.dump(costmap, file)
+
         idx1 = np.where(costmap == 10000)
         costmap[idx1] = 256.0
         costmap = 256.0 - costmap
         idx2 = np.where(costmap == 256)
         costmap[idx2] = 100.0
 
-        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-        #     pkl.dump(costmap, file)
+        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+            pkl.dump(costmap, file)
 
         x = round(start[0]) - self.min_x
         y = round(start[1]) - self.min_y

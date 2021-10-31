@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class SharedNetwork(nn.Module):
@@ -72,3 +73,19 @@ class A2C(nn.Module):
         value = self.value_network(features)
         action = self.action_policy(features)
         return action, value, (features, cx)
+
+
+class A2CGym(nn.Module):
+    def __init__(self, input_dim, num_actions, hidden_dim):
+        super(A2CGym, self).__init__()
+        self.fc1 = nn.Linear(input_dim, 128)
+        self.relu = nn.ReLU()
+        self.value_network = nn.Linear(128, 1)
+        self.action_policy = nn.Linear(128, 2)
+
+    def forward(self, x):
+        x = torch.reshape(x, (-1, 4))
+        x = F.relu(self.fc1(x))
+        value = self.value_network(x)
+        action = self.action_policy(x)
+        return action, value

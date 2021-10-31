@@ -249,6 +249,7 @@ def main():
         obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
         plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
         plt.imshow(cp, cmap='gray')
+        plt.imshow(cp[x[0]-50:x[0]+50, y[0]-200:y[0]+500], cmap="gray")
         plt.show()
 
     # k = 1
