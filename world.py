@@ -35,7 +35,7 @@ class World(object):
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
-        self._gamma = args.gamma
+        self._gamma = args.gama
         self.recording_enabled = False
         self.recording_start = 0
         self.constant_velocity_enabled = False

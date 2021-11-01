@@ -22,7 +22,8 @@ class Config:
     ped_speed_range = [0.6, 3.3]
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    scenarios = ['01', '03', '04', '07', '08']
+    # scenarios = ['01', '03', '04', '07', '08']
+    scenarios = ['07']
 
     save_freq = 5000
 
@@ -54,3 +55,22 @@ class Config:
     targetUpdateInterval = 10000
 
     use_dueling = False
+
+    # Simulator Parameters
+    host = '127.0.0.1'
+    port = 2000
+    width = 1280
+    height = 720
+    display = True
+    filter = 'vehicle.audi.tt'
+    rolename = 'hero'
+    gama = 1.7
+
+    # A2C training parameters
+    a2c_lr = 0.0001
+    a2c_gamma = 0.99
+    a2c_gae_lambda = 1.0
+    a2c_entropy_coef = 0.01
+    a2c_value_loss_coef = 0.5
+    max_grad_norm = 50
+    num_steps = 500
