@@ -5,7 +5,6 @@ Time: 05.10.21 10:47
 
 import carla
 import pygame
-import argparse
 import logging
 import subprocess
 import time
@@ -13,6 +12,7 @@ import os
 import random
 import numpy as np
 from multiprocessing import Process
+from datetime import datetime
 import torch
 import torch.nn.functional as F
 from torch.distributions import Categorical
@@ -83,6 +83,13 @@ class Environment:
 
 def train_a2c():
     ##############################################################
+    t0 = time.time()
+    # Logging file
+    filename = "_out/a2c/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+    print(filename)
+    file = open(filename, "w")
+    file.write(str(vars(Config)) + "\n")
+
     # Path to save model
     path = "_out/a2c/"
     if not os.path.exists(path):
@@ -112,6 +119,7 @@ def train_a2c():
     current_episode = 0
     max_episodes = len(episodes) * 2
     print("Total training episodes: {}".format(max_episodes))
+    file.write("Total training episodes: {}\n".format(max_episodes))
     while current_episode < max_episodes:
         ##############################################################
         # Get the scenario id, parameters and instantiate the world
@@ -119,8 +127,10 @@ def train_a2c():
         idx = current_episode % len(episodes)
         scenario_id, ped_speed, ped_distance = episodes[idx]
         env.reset(scenario_id, ped_speed, ped_distance)
-        print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, "
-              "Ped_distance: {:.2f}m".format(current_episode + 1, scenario_id, ped_speed, ped_distance))
+        print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
+            current_episode + 1, scenario_id, ped_speed, ped_distance))
+        file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
+            current_episode + 1, scenario_id, ped_speed, ped_distance))
 
         # Setup initial inputs for LSTM Cell
         cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
@@ -136,7 +146,6 @@ def train_a2c():
         speed_action = 1
         velocity_x = 0
         velocity_y = 0
-        observation = None
         goal = False
         accident = False
         nearmiss = False
@@ -197,6 +206,7 @@ def train_a2c():
                 break
             ##############################################################
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(goal, accident, nearmiss))
 
         ##############################################################
         # Update weights of the model
@@ -228,24 +238,25 @@ def train_a2c():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print("Policy Loss: {:.4f}, Value Loss: {:.4f}, Reward: {:.4f}".format(torch.stack(policy_losses).sum().item(),
-                                                                               torch.stack(value_losses).sum().item(),
-                                                                               total_episode_reward))
+        print("Policy Loss: {:.4f}, Value Loss: {:.4f}, Reward: {:.4f}".format(
+            torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(), total_episode_reward))
+        file.write("Policy Loss: {:.4f}, Value Loss: {:.4f}, Reward: {:.4f}\n".format(
+            torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(), total_episode_reward))
         current_episode += 1
         if current_episode % Config.save_freq == 0:
             torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
 
+    print("Training time: {:.4f}hrs".format((time.time() - t0) / 3600))
+    file.write("Training time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
     torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
+    file.close()
 
 
 def main():
     print(__doc__)
 
     try:
-        t0 = time.time()
         train_a2c()
-        print("Training time: {:.4f}hrs".format((time.time() - t0) / 3600))
-        # test_loop(args)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')

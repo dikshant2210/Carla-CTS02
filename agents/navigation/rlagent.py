@@ -207,8 +207,8 @@ class RLAgent(Agent):
         idx2 = np.where(costmap == 256)
         costmap[idx2] = 100.0
 
-        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-            pkl.dump(costmap, file)
+        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+        #     pkl.dump(costmap, file)
 
         x = round(start[0]) - self.min_x
         y = round(start[1]) - self.min_y
