@@ -232,6 +232,10 @@ def train_a2c():
                                                                                torch.stack(value_losses).sum().item(),
                                                                                total_episode_reward))
         current_episode += 1
+        if current_episode % Config.save_freq == 0:
+            torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
+
+    torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
 
 
 def main():
@@ -256,8 +260,8 @@ def run_server():
 
 if __name__ == '__main__':
     p = Process(target=run_server)
-    # p.start()
-    # time.sleep(5)  # wait for the server to start
+    p.start()
+    time.sleep(5)  # wait for the server to start
 
     main()
     # p.terminate()

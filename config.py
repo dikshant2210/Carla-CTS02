@@ -23,9 +23,9 @@ class Config:
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
     # scenarios = ['01', '03', '04', '07', '08']
-    scenarios = ['07']
+    scenarios = ['01']
 
-    save_freq = 5000
+    save_freq = 500
 
     # Setting the SAC training parameters
     batch_size = 64  # 32  # How many experience traces to use for each training step.
@@ -61,7 +61,7 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = True
+    display = False
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7

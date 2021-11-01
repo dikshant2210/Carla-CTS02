@@ -167,7 +167,13 @@ class RLAgent(Agent):
             x = self.world.incoming_car.get_location().x
             y = self.world.incoming_car.get_location().y
             grid[round(x), round(y)] = 100
-        location = [min(round(start[0] - self.min_x - 1), self.grid_cost.shape[0] - 1),
+
+        # cost of occupying road/non-road tile
+        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
+            x = round(start[0] - self.min_x - 1)
+        else:
+            x = round(start[0] - self.min_x)
+        location = [min(x, self.grid_cost.shape[0] - 1),
                     min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
         reward = -grid[location[0], location[1]]
 
@@ -192,8 +198,8 @@ class RLAgent(Agent):
             j = round(obs[1])
             costmap[i, j] = 10000
 
-        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-            pkl.dump(costmap, file)
+        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+        #     pkl.dump(costmap, file)
 
         idx1 = np.where(costmap == 10000)
         costmap[idx1] = 256.0
