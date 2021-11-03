@@ -10,6 +10,7 @@ class Config:
     simulation_step = 0.1  # 0.008
     sensor_simulation_step = '0.5'
     synchronous = True
+    segcam_fov = '90'
 
     grid_size = 2  # grid size in meters
     speed_limit = 50
@@ -24,6 +25,16 @@ class Config:
     car_speed_range = [6, 9]
     # scenarios = ['01', '03', '04', '07', '08']
     scenarios = ['01']
+
+    val_scenarios = ['01']
+    val_ped_speed_range = [0., 3.3]
+    val_ped_distance_range = [0, 40]
+    val_car_speed_range = [6, 9]
+
+    test_scenarios = ['01']
+    test_ped_speed_range = [0., 3.3]
+    test_ped_distance_range = [0, 40]
+    test_car_speed_range = [6, 9]
 
     save_freq = 500
 
@@ -61,7 +72,7 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = False
+    display = True
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
