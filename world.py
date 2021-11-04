@@ -32,6 +32,7 @@ class World(object):
         self.imu_sensor = None
         self.radar_sensor = None
         self.camera_manager = None
+        self.semseg_sensor = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         self._actor_filter = args.filter
@@ -88,7 +89,9 @@ class World(object):
 
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
+        semseg_index = self.semseg_sensor.index if self.semseg_sensor is not None else 5
         cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
+        semseg_pos_index = self.semseg_sensor.transform_index if self.semseg_sensor is not None else 5
 
         # Spawn the player.
         start = self.scenario[3]
@@ -136,6 +139,10 @@ class World(object):
         self.camera_manager.set_sensor(cam_index, notify=False)
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
+
+        self.semseg_sensor = CameraManager(self.player, self.hud, self._gamma)
+        self.semseg_sensor.transform_index = semseg_pos_index
+        self.semseg_sensor.set_sensor(semseg_index, notify=False)
 
     def tick(self, clock):
         self.hud.tick(self, clock)
@@ -187,6 +194,7 @@ class World(object):
 
     def render(self, display):
         self.camera_manager.render(display)
+        self.semseg_sensor.render(display)
         self.hud.render(display)
 
     def destroy_sensors(self):
@@ -194,11 +202,16 @@ class World(object):
         self.camera_manager.sensor = None
         self.camera_manager.index = None
 
+        self.semseg_sensor.sensor.destroy()
+        self.semseg_sensor.sensor = None
+        self.semseg_sensor.index = None
+
     def destroy(self):
         if self.radar_sensor is not None:
             self.toggle_radar()
         sensors = [
             self.camera_manager.sensor,
+            self.semseg_sensor.sensor,
             self.collision_sensor.sensor,
             self.lane_invasion_sensor.sensor,
             self.gnss_sensor.sensor,

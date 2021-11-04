@@ -187,6 +187,9 @@ class RLAgent(Agent):
         return reward, goal, hit, near_miss
 
     def get_car_intention(self, obstacles, path, start):
+        return self.world.semseg_sensor.array.copy()
+        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+        #     pkl.dump(self.world.semseg_sensor.array, file)
         costmap = self.grid_cost.copy()
         for node in path:
             i = round(node[0]) - self.min_x

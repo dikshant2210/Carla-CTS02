@@ -8,7 +8,7 @@ class SharedNetwork(nn.Module):
         super(SharedNetwork, self).__init__()
 
         # input_shape = [None, 100, 100, 3]
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=(8, 8), stride=(4, 4))
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=(8, 8), stride=(4, 4))
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2))
         self.conv3 = nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1))
         self.conv4 = nn.Conv2d(64, hidden_dim, kernel_size=(9, 9), stride=(1, 1))
@@ -66,7 +66,7 @@ class A2C(nn.Module):
         self.action_policy = ActionNetwork(hidden_dim, num_actions)
 
     def forward(self, x, lstm_state, cat_tensor):
-        x = torch.reshape(x, (-1, 1, 100, 100))
+        x = torch.reshape(x, (-1, 3, 100, 100))
         cat_tensor = torch.reshape(cat_tensor, (-1, 4))
         obs = (x, lstm_state)
         features, cx = self.shared_network(obs, cat_tensor)

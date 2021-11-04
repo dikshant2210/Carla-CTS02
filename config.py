@@ -11,6 +11,8 @@ class Config:
     sensor_simulation_step = '0.5'
     synchronous = True
     segcam_fov = '90'
+    segcam_image_x = '100'  # '1280'
+    segcam_image_y = '100'  # '720'
 
     grid_size = 2  # grid size in meters
     speed_limit = 50

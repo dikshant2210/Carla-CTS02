@@ -10,6 +10,7 @@ import weakref
 import numpy as np
 from utils import get_actor_display_name
 import pygame
+from config import Config
 
 
 class CollisionSensor(object):
@@ -213,6 +214,7 @@ class CameraManager(object):
     def __init__(self, parent_actor, hud, gamma_correction):
         self.sensor = None
         self.surface = None
+        self.array = None
         self._parent = parent_actor
         self.hud = hud
         self.recording = False
@@ -223,7 +225,8 @@ class CameraManager(object):
             (carla.Transform(carla.Location(x=1.6, z=1.7)), Attachment.Rigid),
             (carla.Transform(carla.Location(x=5.5, y=1.5, z=1.5)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-8.0, z=6.0), carla.Rotation(pitch=6.0)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-1, y=-bound_y, z=0.5)), Attachment.Rigid)]
+            (carla.Transform(carla.Location(x=-1, y=-bound_y, z=0.5)), Attachment.Rigid),
+            (carla.Transform(carla.Location(x=0, z=60), carla.Rotation(pitch=-90)), Attachment.Rigid)]
         self.transform_index = 1
         self.sensors = [
             ['sensor.camera.rgb', cc.Raw, 'Camera RGB', {}],
@@ -247,6 +250,10 @@ class CameraManager(object):
             if item[0].startswith('sensor.camera'):
                 bp.set_attribute('image_size_x', str(hud.dim[0]))
                 bp.set_attribute('image_size_y', str(hud.dim[1]))
+                if item[0].startswith('sensor.camera.semantic_segmentation'):
+                    bp.set_attribute('image_size_x', Config.segcam_image_x)
+                    bp.set_attribute('image_size_y', Config.segcam_image_y)
+                    bp.set_attribute('fov', Config.segcam_fov)
                 if bp.has_attribute('gamma'):
                     bp.set_attribute('gamma', str(gamma_correction))
                 for attr_name, attr_value in item[3].items():
@@ -331,6 +338,7 @@ class CameraManager(object):
             array = np.reshape(array, (image.height, image.width, 4))
             array = array[:, :, :3]
             array = array[:, :, ::-1]
+            self.array = array
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)

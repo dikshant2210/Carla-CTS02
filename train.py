@@ -152,6 +152,7 @@ def train_a2c():
         ##############################################################
 
         clock = pygame.time.Clock()
+        env.client.get_world().tick()
         for _ in range(Config.num_steps):
             clock.tick_busy_loop(60)
 
