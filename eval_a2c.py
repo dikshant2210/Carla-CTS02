@@ -91,7 +91,7 @@ def eval_a2c():
     file.write(str(vars(Config)) + "\n")
 
     # Path to load model
-    path = "_out/a2c/scenario_01_training/a2c_3034.pth"
+    path = "_out/a2c/scenario_01_training/a2c_1000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 

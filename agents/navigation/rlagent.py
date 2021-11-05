@@ -32,6 +32,7 @@ class RLAgent(Agent):
         self.display_costmap = False
         self.prev_action = None
         self.folder = datetime.datetime.now().timestamp()
+        self.past_trajectory = []
         # os.mkdir("_out/{}".format(self.folder))
 
         wps = carla_map.generate_waypoints(Config.grid_size)
@@ -81,6 +82,7 @@ class RLAgent(Agent):
 
     def update_scenario(self, scenario):
         self.scenario = scenario
+        self.past_trajectory = []
 
     def in_hit_area(self, x, y, theta, ped_x, ped_y):
         # TOP RIGHT VERTEX:
@@ -186,45 +188,53 @@ class RLAgent(Agent):
             reward += -500
         return reward, goal, hit, near_miss
 
+    def get_local_coordinates(self, path):
+        world_to_camera = np.array(self.world.semseg_sensor.sensor.get_transform().get_inverse_matrix())
+        world_points = np.array(path)
+        world_points = world_points[:, :2]
+        world_points = np.c_[world_points, np.zeros(world_points.shape[0]), np.ones(world_points.shape[0])].T
+        sensor_points = np.dot(world_to_camera, world_points)
+        point_in_camera_coords = np.array([
+            sensor_points[1],
+            sensor_points[2] * -1,
+            sensor_points[0]])
+
+        image_w = int(Config.segcam_image_x)
+        image_h = int(Config.segcam_image_y)
+        fov = float(Config.segcam_fov)
+        focal = image_w / (2.0 * np.tan(fov * np.pi / 360.0))
+        K = np.identity(3)
+        K[0, 0] = K[1, 1] = focal
+        K[0, 2] = image_w / 2.0
+        K[1, 2] = image_h / 2.0
+        points_2d = np.dot(K, point_in_camera_coords)
+        points_2d = np.array([
+            points_2d[0, :] / points_2d[2, :],
+            points_2d[1, :] / points_2d[2, :],
+            points_2d[2, :]])
+        points_2d = points_2d.T
+        points_in_canvas_mask = \
+            (points_2d[:, 0] > 0.0) & (points_2d[:, 0] < image_w) & \
+            (points_2d[:, 1] > 0.0) & (points_2d[:, 1] < image_h) & \
+            (points_2d[:, 2] > 0.0)
+        points_2d = points_2d[points_in_canvas_mask]
+        u_coord = points_2d[:, 0].astype(np.int)
+        v_coord = points_2d[:, 1].astype(np.int)
+        return u_coord, v_coord
+
     def get_car_intention(self, obstacles, path, start):
-        return self.world.semseg_sensor.array.copy()
-        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-        #     pkl.dump(self.world.semseg_sensor.array, file)
-        costmap = self.grid_cost.copy()
-        for node in path:
-            i = round(node[0]) - self.min_x
-            j = round(node[1]) - self.min_y
-            costmap[j, i] = 0.0
+        self.past_trajectory.append(start)
+        car_intention = self.world.semseg_sensor.array.copy()
+        if len(path) == 0:
+            return car_intention
+        x, y = self.get_local_coordinates(path)
+        car_intention[y, x, :] = 255.0  # overlay planned path on input with white line
 
-        for obs in obstacles:
-            i = round(obs[0])
-            j = round(obs[1])
-            costmap[i, j] = 10000
-
-        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-        #     pkl.dump(costmap, file)
-
-        idx1 = np.where(costmap == 10000)
-        costmap[idx1] = 256.0
-        costmap = 256.0 - costmap
-        idx2 = np.where(costmap == 256)
-        costmap[idx2] = 100.0
-
-        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-        #     pkl.dump(costmap, file)
-
-        x = round(start[0]) - self.min_x
-        y = round(start[1]) - self.min_y
-        boundaries = costmap.shape
-        x1 = max(0, x - 50)
-        x2 = min(boundaries[0], x + 50)
-        y1 = max(0, y - 50)
-        y2 = min(boundaries[1], y + 50)
-        pad_y = 100 - (y2 - y1)
-        pad_x = 100 - (x2 - x1)
-        # print(pad_x, pad_y)
-        return np.pad(costmap[y1:y2, x1:x2], ((round(pad_y / 2), pad_y - round(pad_y / 2)),
-                                              (round(pad_x / 2), pad_x - round(pad_x / 2))), constant_values=0)
+        x, y = self.get_local_coordinates(self.past_trajectory)
+        car_intention[y, x, :] = 0.0  # overlay past trajectory on input with black line
+        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+            pkl.dump(car_intention, file)
+        return car_intention
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player
