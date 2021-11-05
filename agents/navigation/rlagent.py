@@ -232,8 +232,8 @@ class RLAgent(Agent):
 
         x, y = self.get_local_coordinates(self.past_trajectory)
         car_intention[y, x, :] = 0.0  # overlay past trajectory on input with black line
-        with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
-            pkl.dump(car_intention, file)
+        # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
+        #     pkl.dump(car_intention, file)
         return car_intention
 
     def run_step(self, debug=False):
