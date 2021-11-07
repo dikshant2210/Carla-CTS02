@@ -91,7 +91,7 @@ def eval_a2c():
     file.write(str(vars(Config)) + "\n")
 
     # Path to load model
-    path = "_out/a2c/scenario_01_training/a2c_1000.pth"
+    path = "_out/a2c/scenario_01_seg_input/a2c_500.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -149,6 +149,7 @@ def eval_a2c():
         ##############################################################
 
         clock = pygame.time.Clock()
+        env.client.get_world().tick()
         for _ in range(Config.num_steps):
             clock.tick_busy_loop(60)
 

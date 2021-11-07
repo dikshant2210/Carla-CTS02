@@ -44,8 +44,8 @@ class Environment:
         hud = HUD(Config.width, Config.height)
         self.client.load_world('Town01_Opt')
         wld = self.client.get_world()
-        wld.unload_map_layer(carla.MapLayer.Props)
         wld.unload_map_layer(carla.MapLayer.StreetLights)
+        wld.unload_map_layer(carla.MapLayer.Props)
         self.map = wld.get_map()
         settings = wld.get_settings()
         settings.fixed_delta_seconds = Config.simulation_step
@@ -152,14 +152,13 @@ def train_a2c():
         ##############################################################
 
         clock = pygame.time.Clock()
+        env.client.get_world().tick()
         for _ in range(Config.num_steps):
             clock.tick_busy_loop(60)
 
             ##############################################################
             # Get the current observation
             control, observation = env.get_observation()
-            # plt.imshow(observation)
-            # plt.show()
             ##############################################################
 
             ##############################################################
