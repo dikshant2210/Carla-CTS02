@@ -166,8 +166,6 @@ def eval_a2c():
             m = Categorical(prob)
             action = m.sample()
             speed_action = action.item()
-            if speed_action == 2:
-                print(speed_action)
             if speed_action == 0:
                 control.throttle = 0.6
             elif speed_action == 2:
