@@ -78,6 +78,7 @@ class Config:
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
+    despot_port = 1245
 
     # A2C training parameters
     a2c_lr = 0.0001
