@@ -31,7 +31,7 @@ class Environment:
         pygame.font.init()
 
         self.client = carla.Client(Config.host, Config.port)
-        self.client.set_timeout(60.0)
+        self.client.set_timeout(120.0)
 
         self.display = None
         if Config.display:
