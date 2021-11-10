@@ -29,13 +29,13 @@ class Config:
     # scenarios = ['01']
 
     val_scenarios = ['01']
-    val_ped_speed_range = [0., 3.3]
+    val_ped_speed_range = [0., 4.0]
     val_ped_distance_range = [0, 40]
     val_car_speed_range = [6, 9]
 
     test_scenarios = ['01']
-    test_ped_speed_range = [0., 3.3]
-    test_ped_distance_range = [0, 40]
+    test_ped_speed_range = [0., 4.0]
+    test_ped_distance_range = [5, 50]
     test_car_speed_range = [6, 9]
 
     save_freq = 500

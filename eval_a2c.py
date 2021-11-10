@@ -91,7 +91,7 @@ def eval_a2c():
     file.write(str(vars(Config)) + "\n")
 
     # Path to load model
-    path = "_out/a2c/scenario_01_seg_input/a2c_500.pth"
+    path = "_out/a2c/seg_inp_all_scenarios/a2c_3000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -126,9 +126,6 @@ def eval_a2c():
         # Get the scenario id, parameters and instantiate the world
         idx = current_episode % len(episodes)
         scenario_id, ped_speed, ped_distance = episodes[idx]
-        scenario_id = '01'
-        ped_speed = 3.0
-        ped_distance = 25.0
         env.reset(scenario_id, ped_speed, ped_distance)
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, scenario_id, ped_speed, ped_distance))
