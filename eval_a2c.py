@@ -31,7 +31,7 @@ class Environment:
         pygame.font.init()
 
         self.client = carla.Client(Config.host, Config.port)
-        self.client.set_timeout(120.0)
+        self.client.set_timeout(60.0)
 
         self.display = None
         if Config.display:
@@ -221,9 +221,9 @@ def run_server():
 
 
 if __name__ == '__main__':
-    # p = Process(target=run_server)
-    # p.start()
-    # time.sleep(5)  # wait for the server to start
+    p = Process(target=run_server)
+    p.start()
+    time.sleep(5)  # wait for the server to start
 
     main()
     # p.terminate()
