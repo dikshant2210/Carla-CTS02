@@ -225,5 +225,5 @@ class World(object):
         if self.walker is not None:
             self.walker.destroy()
         # if self.incoming_car is not None and self.scenario[0] in [10, 3, 7, 8]:
-        if self.incoming_car is not None:
+        if self.incoming_car is not None and self.incoming_car.is_alive:
             self.incoming_car.destroy()
