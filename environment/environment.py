@@ -9,19 +9,17 @@ import carla
 import pygame
 import random
 
-from world import World
-from hud import HUD
+from environment.world import World
+from environment.hud import HUD
 from agents.navigation.rlagent import RLAgent
 from config import Config
 from agents.tools.scenario import Scenario
-
-random.seed(100)
 
 
 class GIDASBenchmark(gym.Env):
     def __init__(self):
         super(GIDASBenchmark, self).__init__()
-
+        random.seed(100)
         self.action_space = gym.spaces.Discrete(Config.N_DISCRETE_ACTIONS)
         height = int(Config.segcam_image_x)
         width = int(Config.segcam_image_y)
@@ -99,6 +97,7 @@ class GIDASBenchmark(gym.Env):
         observation = self._get_observation()
         reward, goal, accident, near_miss = self.planner_agent.get_reward()
         info = {"goal": goal, "accident": accident, "near miss": near_miss,
+                "velocity": self.planner_agent.vehicle.get_velocity(),
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}
 
         return observation, reward, goal or accident, info

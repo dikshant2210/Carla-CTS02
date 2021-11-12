@@ -5,7 +5,7 @@ Time: 23.03.21 14:27
 import sys
 import random
 from utils import find_weather_presets
-from sensors import *
+from environment.sensors import *
 
 
 class World(object):

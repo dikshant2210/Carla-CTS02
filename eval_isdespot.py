@@ -13,8 +13,8 @@ from multiprocessing import Process
 from datetime import datetime
 
 
-from world import World
-from hud import HUD
+from environment.world import World
+from environment.hud import HUD
 from agents.tools.connector import Connector
 from agents.navigation.isdespot import ISDespotP
 from config import Config

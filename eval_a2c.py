@@ -17,8 +17,8 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
-from world import World
-from hud import HUD
+from environment.world import World
+from environment.hud import HUD
 from agents.rl.a2c.model import A2C
 from agents.navigation.rlagent import RLAgent
 from config import Config

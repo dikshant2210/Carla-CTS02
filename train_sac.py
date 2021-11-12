@@ -21,8 +21,8 @@ from config import Config
 from agents.rl.sac.model import SAC, QNetwork
 from agents.rl.sac.utils import soft_update, hard_update, ExperienceBuffer
 from agents.navigation.rlagent import RLAgent
-from world import World
-from hud import HUD
+from environment.world import World
+from environment.hud import HUD
 from agents.tools.scenario import Scenario
 
 

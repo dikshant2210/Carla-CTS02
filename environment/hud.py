@@ -7,7 +7,6 @@ import pygame
 import carla
 import math
 import datetime
-import os
 from utils import get_actor_display_name
 
 
