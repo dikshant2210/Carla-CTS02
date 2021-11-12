@@ -15,6 +15,8 @@ from agents.navigation.rlagent import RLAgent
 from config import Config
 from agents.tools.scenario import Scenario
 
+random.seed(100)
+
 
 class GIDASBenchmark(gym.Env):
     def __init__(self):
@@ -36,6 +38,7 @@ class GIDASBenchmark(gym.Env):
         self.scenario = None
         self.speed = None
         self.distance = None
+        self._max_episode_steps = 500
         self.clock = pygame.time.Clock()
 
         hud = HUD(Config.width, Config.height)
@@ -117,6 +120,8 @@ class GIDASBenchmark(gym.Env):
 
 def main():
     env = GIDASBenchmark()
+    print(env.observation_space.shape[0])
+    print(env.action_space.n)
 
     for episodes in range(10):
         obs = env.reset()
