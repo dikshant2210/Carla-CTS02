@@ -45,7 +45,7 @@ def train_a2c():
     ##############################################################
     # Simulation loop
     current_episode = 0
-    max_episodes = len(env.episodes) * 2
+    max_episodes = 10000
     print("Total training episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
     while current_episode < max_episodes:
