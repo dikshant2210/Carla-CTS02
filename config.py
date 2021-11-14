@@ -80,6 +80,7 @@ class Config:
     gama = 1.7
     despot_port = 1245
     N_DISCRETE_ACTIONS = 3
+    max_speed = 50
 
     # A2C training parameters
     a2c_lr = 0.0001

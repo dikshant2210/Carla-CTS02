@@ -87,7 +87,7 @@ class GIDASBenchmark(gym.Env):
         if action == 0:
             self.control.throttle = 0.6
         elif action == 2:
-            self.control.throttle = -0.6
+            self.control.brake = 0.6
         else:
             self.control.throttle = 0
         self.world.player.apply_control(self.control)

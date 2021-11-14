@@ -107,29 +107,29 @@ class RLAgent(Agent):
         bm = [ped_x - top_right_x, ped_y - top_right_y]
         return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
 
-    def in_near_miss(self, x, y, theta, ped_x, ped_y):
+    def in_near_miss(self, x, y, theta, ped_x, ped_y, front_margin=1.5, side_margin=0.5):
         # TOP RIGHT VERTEX:
-        top_right_x = x + ((0.5 + self.vehicle_width / 2) * np.cos(theta)) - \
-                      ((1.5 + self.vehicle_length / 2) * np.sin(theta))
-        top_right_y = y + ((0.5 + self.vehicle_width / 2) * np.sin(theta)) + \
-                      ((1.5 + self.vehicle_length / 2) * np.cos(theta))
+        top_right_x = x + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
+                      ((front_margin + self.vehicle_length / 2) * np.sin(theta))
+        top_right_y = y + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
+                      ((front_margin + self.vehicle_length / 2) * np.cos(theta))
 
         # TOP LEFT VERTEX:
-        top_left_x = x - ((0.5 + self.vehicle_width / 2) * np.cos(theta)) - \
-                     ((1.5 + self.vehicle_length / 2) * np.sin(theta))
-        top_left_y = y - ((0.5 + self.vehicle_width / 2) * np.sin(theta)) + \
-                     ((1.5 + self.vehicle_length / 2) * np.cos(theta))
+        top_left_x = x - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
+                     ((front_margin + self.vehicle_length / 2) * np.sin(theta))
+        top_left_y = y - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
+                     ((front_margin + self.vehicle_length / 2) * np.cos(theta))
 
         # BOTTOM LEFT VERTEX:
-        bot_left_x = x - ((0.5 + self.vehicle_width / 2) * np.cos(theta)) + \
+        bot_left_x = x - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
                      ((0.5 + self.vehicle_length / 2) * np.sin(theta))
-        bot_left_y = y - ((0.5 + self.vehicle_width / 2) * np.sin(theta)) - \
+        bot_left_y = y - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
                      ((0.5 + self.vehicle_length / 2) * np.cos(theta))
 
         # BOTTOM RIGHT VERTEX:
-        bot_right_x = x + ((0.5 + self.vehicle_width / 2) * np.cos(theta)) + \
+        bot_right_x = x + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
                       ((0.5 + self.vehicle_length / 2) * np.sin(theta))
-        bot_right_y = y + ((0.5 + self.vehicle_width / 2) * np.sin(theta)) - \
+        bot_right_y = y + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
                       ((0.5 + self.vehicle_length / 2) * np.cos(theta))
 
         ab = [top_right_x - top_left_x, top_right_y - top_left_y]
@@ -137,6 +137,41 @@ class RLAgent(Agent):
         bc = [bot_right_x - top_right_x, bot_right_y - top_right_y]
         bm = [ped_x - top_right_x, ped_y - top_right_y]
         return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
+
+    def get_reward_hybrid(self):
+        reward = 0
+        goal = False
+        hit = False
+        nearmiss = False
+
+        velocity = self.vehicle.get_velocity()
+        speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
+        transform = self.vehicle.get_transform()
+        start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
+        end = self.scenario[2]
+        goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+
+        if speed > 0.3:
+            walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+            ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+                                        front_margin=2, side_margin=1.2)
+
+            if ped_hit:
+                ped_collision_reward = -0.2 + (-1 * pow(0.5 + speed / Config.max_speed, 1.4))
+                hit = True
+                nearmiss = True
+                reward += ped_collision_reward
+
+        if goal_dist < 3:
+            reward += 1
+            goal = True
+
+        if self.prev_action.throttle != 0:
+            reward -= 0.01
+
+        reward -= 0.5 * abs(speed - Config.max_speed) / 10000
+
+        return reward, goal, hit, nearmiss
 
     def get_reward(self):
         transform = self.vehicle.get_transform()
