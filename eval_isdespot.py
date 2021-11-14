@@ -64,11 +64,17 @@ class Environment:
 
     def step(self, action):
         self.world.player.apply_control(action)
+        if action.throttle == 0.6:
+            speed_action = 0
+        elif action.brake == 0.6:
+            speed_action = 2
+        else:
+            speed_action = 1
         if Config.synchronous:
             frame_num = self.client.get_world().tick()
 
         _, observation = self.planner_agent.run_step()
-        reward, goal, accident, near_miss = self.planner_agent.get_reward()
+        reward, goal, accident, near_miss = self.planner_agent.get_reward(speed_action)
 
         return observation, reward, goal, accident, near_miss
 
@@ -113,6 +119,8 @@ def eval_a2c():
         # Get the scenario id, parameters and instantiate the world
         idx = current_episode % len(episodes)
         scenario_id, ped_speed, ped_distance = episodes[idx]
+        ped_speed = 1.8
+        ped_distance = 31.0
         env.reset(scenario_id, ped_speed, ped_distance)
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, scenario_id, ped_speed, ped_distance))

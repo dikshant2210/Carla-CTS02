@@ -72,7 +72,7 @@ class ISDespotP(RLAgent):
 
         # Best speed action for the given path
         if self.prev_action is not None:
-            reward, goal, hit, near_miss = self.get_reward()
+            reward, goal, hit, near_miss = self.get_reward(self.prev_speed)
             terminal = goal or hit
         else:
             # handling first instance
@@ -90,12 +90,13 @@ class ISDespotP(RLAgent):
             t0 = time.time()
             self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
             m = self.conn.receive_message()
-            acc = 0
+            self.prev_speed = 1
             if m[0] == '0':
-                acc = 0.6
+                control.throttle = 0.6
+                self.prev_speed = 0
             elif m[0] == '2':
-                acc = -0.6
-            control.throttle = acc
+                control.brake = 0.6
+                self.prev_speed = 2
 
         self.prev_action = control
         return control, self.get_car_intention(obstacles, path, start)
