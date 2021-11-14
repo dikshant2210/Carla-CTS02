@@ -138,7 +138,7 @@ class RLAgent(Agent):
         bm = [ped_x - top_right_x, ped_y - top_right_y]
         return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
 
-    def get_reward_hybrid(self):
+    def get_reward(self):
         reward = 0
         goal = False
         hit = False
@@ -173,7 +173,7 @@ class RLAgent(Agent):
 
         return reward, goal, hit, nearmiss
 
-    def get_reward(self):
+    def get_reward_old(self):
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
