@@ -95,7 +95,7 @@ class GIDASBenchmark(gym.Env):
             frame_num = self.client.get_world().tick()
 
         observation = self._get_observation()
-        reward, goal, accident, near_miss = self.planner_agent.get_reward()
+        reward, goal, accident, near_miss = self.planner_agent.get_reward(action)
         info = {"goal": goal, "accident": accident, "near miss": near_miss,
                 "velocity": self.planner_agent.vehicle.get_velocity(),
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}

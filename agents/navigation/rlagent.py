@@ -2,6 +2,7 @@
 Author: Dikshant Gupta
 Time: 12.07.21 11:03
 """
+import reprlib
 
 import carla
 import sys
@@ -31,6 +32,7 @@ class RLAgent(Agent):
         self.fig = plt.figure()
         self.display_costmap = False
         self.prev_action = None
+        self.prev_speed = None
         self.folder = datetime.datetime.now().timestamp()
         self.past_trajectory = []
         # os.mkdir("_out/{}".format(self.folder))
@@ -138,7 +140,85 @@ class RLAgent(Agent):
         bm = [ped_x - top_right_x, ped_y - top_right_y]
         return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
 
-    def get_reward(self):
+    def linmap(self, a, b, c, d, x):
+        return (x - a) / (b - a) * (d - c) + c
+
+    def get_reward(self, action):
+        reward = 0
+        goal = False
+        hit = False
+        nearmiss = False
+
+        velocity = self.vehicle.get_velocity()
+        speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
+        transform = self.vehicle.get_transform()
+        start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
+        end = self.scenario[2]
+        goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+
+        if speed > 0.3:
+            walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+            if speed <= 20:
+                ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+                                            front_margin=1, side_margin=0.75)
+            else:
+                ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+                                            front_margin=2, side_margin=1.2)
+            if ped_hit:
+                # scale penalty by impact speed
+                scaling = self.linmap(0, Config.max_speed, 0, 1, min(speed, Config.max_speed))
+                collision_reward = 1000 * (scaling + 0.1)
+                if collision_reward >= 700:
+                    hit = True
+                reward -= collision_reward
+
+        reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
+
+        # Cost of collision with obstacles
+        grid = self.grid_cost.copy()
+        if self.scenario[0] in [3, 7, 8, 10]:
+            x = self.world.incoming_car.get_location().x
+            y = self.world.incoming_car.get_location().y
+            grid[round(x), round(y)] = 100
+
+        # cost of occupying road/non-road tile
+        # Penalizing for hitting an obstacle
+        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
+            x = round(start[0] - self.min_x - 1)
+        else:
+            x = round(start[0] - self.min_x)
+        location = [min(x, self.grid_cost.shape[0] - 1),
+                    min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
+        obstacle_cost = grid[location[0], location[1]]
+        if obstacle_cost <= 100:
+            reward -= (obstacle_cost / 20.0)
+        elif obstacle_cost <= 150:
+            reward -= (obstacle_cost / 15.0)
+        elif obstacle_cost <= 200:
+            reward -= (obstacle_cost / 10.0)
+        else:
+            reward -= (obstacle_cost / 0.22)
+
+        # "Heavily" penalize braking if you are already standing still
+        if self.prev_speed is not None:
+            if action == 2 and self.prev_speed < 0.2:
+                reward -= 1
+
+        # Penalize braking/acceleration actions to get a smoother ride
+        if action != 0:
+            reward -= 0.05
+
+        reward -= pow(abs(self.prev_action.steer), 1.3) / 2.0
+
+        if goal_dist < 3:
+            reward += 1000
+            goal = True
+
+        # Normalize reward
+        reward = reward / 1000.0
+        return reward, goal, hit, nearmiss
+
+    def get_reward_hybrid(self):
         reward = 0
         goal = False
         hit = False
@@ -317,6 +397,8 @@ class RLAgent(Agent):
             control.steer = (path[2][2] - start[2]) / 70.
 
         self.prev_action = control
+        velocity = self.vehicle.get_velocity()
+        self.prev_speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
         return control, self.get_car_intention(obstacles, path, start)
 
     def plot_costmap(self, obstacles, path):
