@@ -167,7 +167,7 @@ class RLAgent(Agent):
             if ped_hit:
                 # scale penalty by impact speed
                 scaling = self.linmap(0, Config.max_speed, 0, 1, min(speed, Config.max_speed))
-                collision_reward = 1000 * (scaling + 0.1)
+                collision_reward = Config.hit_penalty * (scaling + 0.1)
                 if collision_reward >= 700:
                     hit = True
                 reward -= collision_reward
@@ -211,7 +211,7 @@ class RLAgent(Agent):
         reward -= pow(abs(self.prev_action.steer), 1.3) / 2.0
 
         if goal_dist < 3:
-            reward += 1000
+            reward += Config.goal_reward
             goal = True
 
         # Normalize reward

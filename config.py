@@ -74,13 +74,15 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = False
+    display = True
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
     despot_port = 1245
     N_DISCRETE_ACTIONS = 3
     max_speed = 50
+    hit_penalty = 2000
+    goal_reward = 1000
 
     # A2C training parameters
     a2c_lr = 0.0001
