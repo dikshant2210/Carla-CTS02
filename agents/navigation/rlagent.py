@@ -150,7 +150,7 @@ class RLAgent(Agent):
         nearmiss = False
 
         velocity = self.vehicle.get_velocity()
-        speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
+        speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5) * 3.6  # in kmph
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
