@@ -81,7 +81,7 @@ class Config:
     despot_port = 1245
     N_DISCRETE_ACTIONS = 3
     max_speed = 50
-    hit_penalty = 2000
+    hit_penalty = 5000
     goal_reward = 1000
 
     # A2C training parameters
