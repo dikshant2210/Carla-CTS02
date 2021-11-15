@@ -11,8 +11,8 @@ class Config:
     sensor_simulation_step = '0.5'
     synchronous = True
     segcam_fov = '90'
-    segcam_image_x = '100'  # '1280'
-    segcam_image_y = '100'  # '720'
+    segcam_image_x = '400'  # '1280'
+    segcam_image_y = '400'  # '720'
 
     grid_size = 2  # grid size in meters
     speed_limit = 50
@@ -74,21 +74,21 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = False
+    display = True
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
     despot_port = 1245
     N_DISCRETE_ACTIONS = 3
     max_speed = 50
-    hit_penalty = 5000
+    hit_penalty = 1000
     goal_reward = 1000
 
     # A2C training parameters
     a2c_lr = 0.0001
     a2c_gamma = 0.99
     a2c_gae_lambda = 1.0
-    a2c_entropy_coef = 0.05
+    a2c_entropy_coef = 0.0
     a2c_value_loss_coef = 0.5
     max_grad_norm = 50
     num_steps = 500

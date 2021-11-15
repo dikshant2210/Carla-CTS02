@@ -12,6 +12,8 @@ import random
 from environment.world import World
 from environment.hud import HUD
 from agents.navigation.rlagent import RLAgent
+from agents.navigation.reactive_controller import ReactiveController
+from agents.navigation.isdespot import ISDespotP
 from config import Config
 from agents.tools.scenario import Scenario
 
@@ -67,6 +69,8 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = random.choice(self.episodes)
+        # ped_speed = 3.8  # Debug Settings
+        # ped_distance = 30
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance
@@ -88,7 +92,7 @@ class GIDASBenchmark(gym.Env):
             self.control.throttle = 0.6
         elif action == 2:
             self.control.brake = 0.6
-        else:
+        elif action == 1:
             self.control.throttle = 0
         self.world.player.apply_control(self.control)
         if Config.synchronous:
@@ -115,6 +119,13 @@ class GIDASBenchmark(gym.Env):
     def close(self):
         self.world.destroy()
         pygame.quit()
+
+    def reset_agent(self, agent):
+        if agent == 'reactive':
+            self.planner_agent = ReactiveController(self.world, self.map, self.scene)
+        if agent == 'isdespot':
+            # TODO: Add connection
+            self.planner_agent = ISDespotP(self.world, self.map, self.scene)
 
 
 def main():

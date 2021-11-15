@@ -194,7 +194,7 @@ class World(object):
 
     def render(self, display):
         self.camera_manager.render(display)
-        self.semseg_sensor.render(display)
+        # self.semseg_sensor.render(display)
         self.hud.render(display)
 
     def destroy_sensors(self):
