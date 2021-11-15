@@ -120,7 +120,7 @@ def eval_a2c():
         idx = current_episode % len(episodes)
         scenario_id, ped_speed, ped_distance = episodes[idx]
         ped_speed = 1.8
-        ped_distance = 31.0
+        ped_distance = 35.0
         env.reset(scenario_id, ped_speed, ped_distance)
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, scenario_id, ped_speed, ped_distance))

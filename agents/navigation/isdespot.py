@@ -8,6 +8,7 @@ import time
 import numpy as np
 from multiprocessing import Process
 import subprocess
+from config import Config
 
 from agents.navigation.rlagent import RLAgent
 
@@ -27,6 +28,21 @@ class ISDespotP(RLAgent):
         self.conn.establish_connection()
         m = self.conn.receive_message()
         print(m)  # START
+
+    def get_reward(self, action):
+        reward = -0.1
+        goal = False
+
+        transform = self.vehicle.get_transform()
+        start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
+        end = self.scenario[2]
+        goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
+
+        if goal_dist < 3:
+            reward += Config.goal_reward
+            goal = True
+
+        return reward, goal, False, False
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player
@@ -81,7 +97,7 @@ class ISDespotP(RLAgent):
         angle = transform.rotation.yaw
         car_pos = [self.vehicle.get_location().x, self.vehicle.get_location().y]
         car_velocity = self.vehicle.get_velocity()
-        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
         pedestrian_positions = [[self.world.walker.get_location().x, self.world.walker.get_location().y]]
 
         if len(path) == 0:
