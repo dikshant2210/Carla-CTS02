@@ -1,5 +1,6 @@
 .idea/
 test_script.py
+test.py
 __pycache__/
 temp.py
 _out/
