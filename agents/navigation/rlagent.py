@@ -2,14 +2,12 @@
 Author: Dikshant Gupta
 Time: 12.07.21 11:03
 """
-import reprlib
 
 import carla
 import sys
 import datetime
 import time
 import numpy as np
-import pickle as pkl
 import matplotlib.pyplot as plt
 
 from agents.navigation.agent import Agent
@@ -86,53 +84,37 @@ class RLAgent(Agent):
         self.scenario = scenario
         self.past_trajectory = []
 
-    def in_hit_area(self, x, y, theta, ped_x, ped_y):
+    def in_rectangle(self, x, y, theta, ped_x, ped_y, front_margin=1.5, side_margin=0.5, back_margin=0.5, debug=False):
+        theta = theta / (2 * np.pi)
         # TOP RIGHT VERTEX:
-        top_right_x = x + ((self.vehicle_width / 2) * np.cos(theta)) - ((self.vehicle_length / 2) * np.sin(theta))
-        top_right_y = y + ((self.vehicle_width / 2) * np.sin(theta)) + ((self.vehicle_length / 2) * np.cos(theta))
-
-        # TOP LEFT VERTEX:
-        top_left_x = x - ((self.vehicle_width / 2) * np.cos(theta)) - ((self.vehicle_length / 2) * np.sin(theta))
-        top_left_y = y - ((self.vehicle_width / 2) * np.sin(theta)) + ((self.vehicle_length / 2) * np.cos(theta))
-
-        # BOTTOM LEFT VERTEX:
-        bot_left_x = x - ((self.vehicle_width / 2) * np.cos(theta)) + ((self.vehicle_length / 2) * np.sin(theta))
-        bot_left_y = y - ((self.vehicle_width / 2) * np.sin(theta)) - ((self.vehicle_length / 2) * np.cos(theta))
-
-        # BOTTOM RIGHT VERTEX:
-        bot_right_x = x + ((self.vehicle_width / 2) * np.cos(theta)) + ((self.vehicle_length / 2) * np.sin(theta))
-        bot_right_y = y + ((self.vehicle_width / 2) * np.sin(theta)) - ((self.vehicle_length / 2) * np.cos(theta))
-
-        ab = [top_right_x - top_left_x, top_right_y - top_left_y]
-        am = [ped_x - top_left_x, ped_y - top_left_y]
-        bc = [bot_right_x - top_right_x, bot_right_y - top_right_y]
-        bm = [ped_x - top_right_x, ped_y - top_right_y]
-        return 0 <= np.dot(ab, am) <= np.dot(ab, ab) and 0 <= np.dot(bc, bm) <= np.dot(bc, bc)
-
-    def in_near_miss(self, x, y, theta, ped_x, ped_y, front_margin=1.5, side_margin=0.5):
-        # TOP RIGHT VERTEX:
-        top_right_x = x + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
-                      ((front_margin + self.vehicle_length / 2) * np.sin(theta))
-        top_right_y = y + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
+        top_right_x = x + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
                       ((front_margin + self.vehicle_length / 2) * np.cos(theta))
+        top_right_y = y - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
+                      ((front_margin + self.vehicle_length / 2) * np.sin(theta))
 
         # TOP LEFT VERTEX:
-        top_left_x = x - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
-                     ((front_margin + self.vehicle_length / 2) * np.sin(theta))
-        top_left_y = y - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
+        top_left_x = x - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) + \
                      ((front_margin + self.vehicle_length / 2) * np.cos(theta))
+        top_left_y = y + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
+                     ((front_margin + self.vehicle_length / 2) * np.sin(theta))
 
         # BOTTOM LEFT VERTEX:
-        bot_left_x = x - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
-                     ((0.5 + self.vehicle_length / 2) * np.sin(theta))
-        bot_left_y = y - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
-                     ((0.5 + self.vehicle_length / 2) * np.cos(theta))
+        bot_left_x = x - ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
+                     ((back_margin + self.vehicle_length / 2) * np.cos(theta))
+        bot_left_y = y + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
+                     ((back_margin + self.vehicle_length / 2) * np.sin(theta))
 
         # BOTTOM RIGHT VERTEX:
-        bot_right_x = x + ((side_margin + self.vehicle_width / 2) * np.cos(theta)) + \
-                      ((0.5 + self.vehicle_length / 2) * np.sin(theta))
-        bot_right_y = y + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
-                      ((0.5 + self.vehicle_length / 2) * np.cos(theta))
+        bot_right_x = x + ((side_margin + self.vehicle_width / 2) * np.sin(theta)) - \
+                      ((back_margin + self.vehicle_length / 2) * np.cos(theta))
+        bot_right_y = y - ((side_margin + self.vehicle_width / 2) * np.cos(theta)) - \
+                      ((back_margin + self.vehicle_length / 2) * np.sin(theta))
+
+        if debug:
+            print("Top Left ", top_left_x, top_left_y)
+            print("Top Right ", top_right_x, top_right_y)
+            print("Bot Left ", bot_left_x, bot_left_y)
+            print("Bot Right ", bot_right_x, bot_right_y)
 
         ab = [top_right_x - top_left_x, top_right_y - top_left_y]
         am = [ped_x - top_left_x, ped_y - top_left_y]
@@ -153,16 +135,16 @@ class RLAgent(Agent):
         speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5) * 3.6  # in kmph
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
+        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         end = self.scenario[2]
         goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
 
         if speed > 0.3:
-            walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
             if speed <= 20:
-                ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+                ped_hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                             front_margin=1, side_margin=0.75)
             else:
-                ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+                ped_hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                             front_margin=2, side_margin=1.2)
             if ped_hit:
                 # scale penalty by impact speed
@@ -214,6 +196,11 @@ class RLAgent(Agent):
             reward += Config.goal_reward
             goal = True
 
+        # incentive breaking if pedestrian nearby
+        # if self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y, front_margin=5, side_margin=1.0):
+        #     if action == 2:
+        #         reward += 100
+
         # Normalize reward
         reward = reward / 1000.0
         return reward, goal, hit, nearmiss
@@ -233,7 +220,7 @@ class RLAgent(Agent):
 
         if speed > 0.3:
             walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-            ped_hit = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y,
+            ped_hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                         front_margin=2, side_margin=1.2)
 
             if ped_hit:
@@ -269,12 +256,14 @@ class RLAgent(Agent):
         # Pedestrian hit and near miss section
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         # In hit area
-        hit = self.in_hit_area(start[0], start[1], start[2], walker_x, walker_y)
+        hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
+                                front_margin=0, side_margin=0, back_margin=0)
         if hit:  # accident
             hit = True
             return -1000, goal, hit, near_miss
         # in near miss area
-        near_miss = self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y)
+        near_miss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
+                                      front_margin=1.5, side_margin=0.5)
 
         # TODO: Collision with incoming or static car
 

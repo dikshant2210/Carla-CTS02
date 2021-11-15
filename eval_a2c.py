@@ -70,7 +70,7 @@ class Environment:
             frame_num = self.client.get_world().tick()
 
         _, observation = self.planner_agent.run_step()
-        reward, goal, accident, near_miss = self.planner_agent.get_reward()
+        reward, goal, accident, near_miss = self.planner_agent.get_reward(action)
 
         return observation, reward, goal, accident, near_miss
 
@@ -91,7 +91,7 @@ def eval_a2c():
     file.write(str(vars(Config)) + "\n")
 
     # Path to load model
-    path = "_out/a2c/seg_inp_all_scenarios/a2c_3000.pth"
+    path = "_out/a2c/scenario01_no_entropy/a2c_100.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -126,6 +126,8 @@ def eval_a2c():
         # Get the scenario id, parameters and instantiate the world
         idx = current_episode % len(episodes)
         scenario_id, ped_speed, ped_distance = episodes[idx]
+        ped_speed = 1.8
+        ped_distance = 31.0
         env.reset(scenario_id, ped_speed, ped_distance)
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, scenario_id, ped_speed, ped_distance))
@@ -147,6 +149,7 @@ def eval_a2c():
 
         clock = pygame.time.Clock()
         env.client.get_world().tick()
+        total_reward = 0
         for _ in range(Config.num_steps):
             clock.tick_busy_loop(60)
 
@@ -169,7 +172,7 @@ def eval_a2c():
             if speed_action == 0:
                 control.throttle = 0.6
             elif speed_action == 2:
-                control.throttle = -0.6
+                control.brake = 0.6
             else:
                 control.throttle = 0
             ##############################################################
@@ -179,6 +182,7 @@ def eval_a2c():
                 env.world.render(env.display)
                 pygame.display.flip()
             _, reward, goal, accident, nearmiss_current = env.step(control)
+            total_reward += reward
             done = goal or accident
             nearmiss = nearmiss_current or nearmiss
 
@@ -191,8 +195,8 @@ def eval_a2c():
             if done:
                 break
             ##############################################################
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(goal, accident, nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(goal, accident, nearmiss, total_reward))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}\n'.format(goal, accident, nearmiss, total_reward))
         current_episode += 1
 
     print("Evaluation time: {:.4f}hrs".format((time.time() - t0) / 3600))
