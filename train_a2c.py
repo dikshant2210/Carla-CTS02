@@ -149,12 +149,12 @@ def train_a2c():
             torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(), total_episode_reward))
         current_episode += 1
         if current_episode % Config.save_freq == 0:
-            torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
+            torch.save(rl_agent.state_dict(), "{}a2c_entropy_{}.pth".format(path, current_episode))
 
     env.close()
     print("Training time: {:.4f}hrs".format((time.time() - t0) / 3600))
     file.write("Training time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
-    torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
+    torch.save(rl_agent.state_dict(), "{}a2c_entropy_{}.pth".format(path, current_episode))
     file.close()
 
 
