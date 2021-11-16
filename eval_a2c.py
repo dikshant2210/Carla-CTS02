@@ -35,7 +35,7 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/scenario01_no_entropy/a2c_100.pth"
+    path = "_out/a2c/a2c_400.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -71,6 +71,7 @@ def eval_a2c():
         velocity_x = 0
         velocity_y = 0
         nearmiss = False
+        accident = False
 
         total_acc_decc = 0
         exec_time = 0
@@ -99,6 +100,8 @@ def eval_a2c():
 
             nearmiss_current = info['near miss']
             nearmiss = nearmiss_current or nearmiss
+            accident_current = info['accident']
+            accident = accident_current or accident
             total_episode_reward += reward
 
             velocity = info['velocity']
