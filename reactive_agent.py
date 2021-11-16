@@ -38,12 +38,21 @@ def reactive_controller():
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
         observation = env.reset()
+        exec_time = 0
+        total_acc_decc = 0
+        time_to_goal = time.time()
 
         for step_num in range(Config.num_steps):
             if Config.display:
                 env.render()
 
+            if env.control.throttle != 0 or env.control.brake != 0:
+                total_acc_decc += 1
+
+            start_time = time.time()
             observation, reward, done, info = env.step(action=None)
+            exec_time += (time.time() - start_time)
+
             nearmiss_current = info['near miss']
             nearmiss = nearmiss_current or nearmiss
             total_episode_reward += reward
@@ -52,12 +61,20 @@ def reactive_controller():
                 break
         current_episode += 1
 
+        # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
+        time_to_goal = time.time() - time_to_goal
+        exec_time = exec_time / (step_num + 1)
+
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], info['accident'], nearmiss))
         file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], info['accident'], nearmiss))
+        print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
+            time_to_goal, total_acc_decc, exec_time))
+        file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
+            time_to_goal, total_acc_decc, exec_time * 1000))
 
         ##############################################################
 

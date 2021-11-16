@@ -38,6 +38,7 @@ class GIDASBenchmark(gym.Env):
         self.scenario = None
         self.speed = None
         self.distance = None
+        self.mode = "TRAINING"
         self._max_episode_steps = 500
         self.clock = pygame.time.Clock()
 
@@ -61,6 +62,7 @@ class GIDASBenchmark(gym.Env):
         print(wld_map.name)
         wld.tick()
 
+        self.test_episodes = None
         self.episodes = list()
         for scenario in Config.scenarios:
             for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
@@ -68,7 +70,7 @@ class GIDASBenchmark(gym.Env):
                     self.episodes.append((scenario, speed, distance))
 
     def reset(self):
-        scenario_id, ped_speed, ped_distance = random.choice(self.episodes)
+        scenario_id, ped_speed, ped_distance = self.next_scene()
         # ped_speed = 3.8  # Debug Settings
         # ped_distance = 30
         self.scenario = scenario_id
@@ -99,12 +101,12 @@ class GIDASBenchmark(gym.Env):
             frame_num = self.client.get_world().tick()
 
         observation = self._get_observation()
-        reward, goal, accident, near_miss = self.planner_agent.get_reward(action)
+        reward, goal, accident, near_miss, terminal = self.planner_agent.get_reward(action)
         info = {"goal": goal, "accident": accident, "near miss": near_miss,
                 "velocity": self.planner_agent.vehicle.get_velocity(),
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}
 
-        return observation, reward, goal or accident, info
+        return observation, reward, terminal, info
 
     def render(self, mode="human"):
         if self.display is None:
@@ -126,6 +128,22 @@ class GIDASBenchmark(gym.Env):
         if agent == 'isdespot':
             # TODO: Add connection
             self.planner_agent = ISDespotP(self.world, self.map, self.scene)
+
+    def eval(self):
+        self.mode = "TESTING"
+        episodes = list()
+        for scenario in Config.test_scenarios:
+            for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 1, 0.1):
+                for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
+                    episodes.append((scenario, speed, distance))
+        self.episodes = episodes
+        self.test_episodes = iter(episodes)
+
+    def next_scene(self):
+        if self.mode == "TRAINING":
+            return random.choice(self.episodes)
+        elif self.mode == "TESTING":
+            return next(self.test_episodes)
 
 
 def main():
