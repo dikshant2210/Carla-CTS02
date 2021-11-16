@@ -88,7 +88,7 @@ class Config:
     a2c_lr = 0.0001
     a2c_gamma = 0.99
     a2c_gae_lambda = 1.0
-    a2c_entropy_coef = 0.0
+    a2c_entropy_coef = 0.01
     a2c_value_loss_coef = 0.5
     max_grad_norm = 50
     num_steps = 500

@@ -7,6 +7,7 @@ import pygame
 import subprocess
 import time
 import os
+import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Process
 from datetime import datetime
@@ -45,7 +46,7 @@ def train_a2c():
     ##############################################################
     # Simulation loop
     current_episode = 0
-    max_episodes = len(env.episodes) * 2
+    max_episodes = 10000
     print("Total training episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
     while current_episode < max_episodes:
@@ -69,13 +70,15 @@ def train_a2c():
         velocity_y = 0
         nearmiss = False
 
-        for _ in range(Config.num_steps):
+        for step_num in range(Config.num_steps):
             if Config.display:
                 env.render()
             # Forward pass of the RL Agent
+            # if step_num > 0:
+            #     plt.imsave('_out/{}.png'.format(step_num), observation)
             input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
-            cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, speed_action])).cuda().type(
-                torch.cuda.FloatTensor)
+            cat_tensor = torch.from_numpy(np.array([reward, velocity_x * 3.6, velocity_y * 3.6,
+                                                    speed_action])).cuda().type(torch.cuda.FloatTensor)
             logit, value, (hx, cx) = rl_agent(input_tensor, (hx, cx), cat_tensor)
 
             prob = F.softmax(logit, dim=-1)
@@ -134,13 +137,14 @@ def train_a2c():
             policy_losses.append(-log_prob * advantage)
             # calculate critic (value) loss using L1 smooth loss
             value_losses.append(F.smooth_l1_loss(value, torch.tensor([[R]]).cuda()))
-        loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum() + \
+        loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum() - \
                Config.a2c_entropy_coef * torch.stack(entropies).sum()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print("Policy Loss: {:.4f}, Value Loss: {:.4f}, Reward: {:.4f}".format(
-            torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(), total_episode_reward))
+        print("Policy Loss: {:.4f}, Value Loss: {:.4f}, Entropy: {:.4f}, Reward: {:.4f}".format(
+            torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(),
+            torch.stack(entropies).sum(), total_episode_reward))
         file.write("Policy Loss: {:.4f}, Value Loss: {:.4f}, Reward: {:.4f}\n".format(
             torch.stack(policy_losses).sum().item(), torch.stack(value_losses).sum().item(), total_episode_reward))
         current_episode += 1

@@ -137,7 +137,7 @@ def train_a2c():
             policy_losses.append(-log_prob * advantage)
             # calculate critic (value) loss using L1 smooth loss
             value_losses.append(F.smooth_l1_loss(value, torch.tensor([[R]]).cuda()))
-        loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum() + \
+        loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum() - \
                Config.a2c_entropy_coef * torch.stack(entropies).sum()
         optimizer.zero_grad()
         loss.backward()
