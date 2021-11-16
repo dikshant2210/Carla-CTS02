@@ -35,7 +35,7 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/a2c_400.pth"
+    path = "_out/a2c/a2c_2800.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -118,8 +118,8 @@ def eval_a2c():
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], info['accident'], nearmiss))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], info['accident'], nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
             time_to_goal, total_acc_decc, exec_time))
         file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(

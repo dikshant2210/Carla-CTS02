@@ -69,6 +69,7 @@ def train_a2c():
         velocity_x = 0
         velocity_y = 0
         nearmiss = False
+        acccident = False
 
         for step_num in range(Config.num_steps):
             if Config.display:
@@ -89,6 +90,8 @@ def train_a2c():
             observation, reward, done, info = env.step(speed_action)
             nearmiss_current = info['near miss']
             nearmiss = nearmiss_current or nearmiss
+            acccident_current = info['accident']
+            acccident = acccident_current or acccident
             total_episode_reward += reward
 
             # Logging value for loss calculation and backprop training
@@ -109,8 +112,8 @@ def train_a2c():
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], info['accident'], nearmiss))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], info['accident'], nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], acccident, nearmiss))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], acccident, nearmiss))
 
         ##############################################################
         # Update weights of the model
