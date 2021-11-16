@@ -73,6 +73,8 @@ class GIDASBenchmark(gym.Env):
         scenario_id, ped_speed, ped_distance = self.next_scene()
         # ped_speed = 3.8  # Debug Settings
         # ped_distance = 30
+        # ped_speed = 2.4
+        # ped_distance = 19
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance
@@ -106,6 +108,8 @@ class GIDASBenchmark(gym.Env):
                 "velocity": self.planner_agent.vehicle.get_velocity(),
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}
 
+        if self.mode == "TESTING":
+            terminal = goal
         return observation, reward, terminal, info
 
     def render(self, mode="human"):
@@ -143,28 +147,5 @@ class GIDASBenchmark(gym.Env):
         if self.mode == "TRAINING":
             return random.choice(self.episodes)
         elif self.mode == "TESTING":
-            return next(self.test_episodes)
-
-
-def main():
-    env = GIDASBenchmark()
-    print(env.observation_space.shape[0])
-    print(env.action_space.n)
-
-    for episodes in range(10):
-        obs = env.reset()
-        total_reward = 0
-        for i in range(500):
-            # env.render()
-            action = env.action_space.sample()
-            obs, reward, done, info = env.step(action)
-            total_reward += reward
-            if done:
-                print(info)
-                print("Reward: {:.4f}".format(total_reward))
-                break
-    env.close()
-
-
-if __name__ == '__main__':
-    main()
+            scene_config = next(self.test_episodes)
+            return scene_config

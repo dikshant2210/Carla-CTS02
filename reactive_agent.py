@@ -25,19 +25,21 @@ def reactive_controller():
     # Setting up environment
     env = GIDASBenchmark()
     env.reset_agent('reactive')
+    env.eval()
     ##############################################################
 
     ##############################################################
     # Simulation loop
     current_episode = 0
     max_episodes = len(env.episodes)
-    nearmiss = False
     print("Total training episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
         observation = env.reset()
+        nearmiss = False
+        accident = False
         exec_time = 0
         total_acc_decc = 0
         time_to_goal = time.time()
@@ -55,6 +57,8 @@ def reactive_controller():
 
             nearmiss_current = info['near miss']
             nearmiss = nearmiss_current or nearmiss
+            accident_current = info['accident']
+            accident = accident_current or accident
             total_episode_reward += reward
 
             if done:
@@ -69,8 +73,8 @@ def reactive_controller():
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], info['accident'], nearmiss))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], info['accident'], nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
             time_to_goal, total_acc_decc, exec_time))
         file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(

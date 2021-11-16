@@ -149,6 +149,7 @@ class RLAgent(Agent):
                                             front_margin=2, side_margin=1.2)
             if ped_hit:
                 # scale penalty by impact speed
+                hit = True
                 scaling = self.linmap(0, Config.max_speed, 0, 1, min(speed, Config.max_speed))
                 collision_reward = Config.hit_penalty * (scaling + 0.1)
                 if collision_reward >= 700:
@@ -206,8 +207,8 @@ class RLAgent(Agent):
         # Normalize reward
         reward = reward / 1000.0
 
-        hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                front_margin=0, side_margin=0, back_margin=0)
+        hit = hit or self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
+                                       front_margin=0, side_margin=0, back_margin=0)
         nearmiss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                      front_margin=1.5, side_margin=0.5, back_margin=0.5)
         return reward, goal, hit, nearmiss, terminal
