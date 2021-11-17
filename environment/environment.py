@@ -47,6 +47,7 @@ class GIDASBenchmark(gym.Env):
         wld = self.client.get_world()
         wld.unload_map_layer(carla.MapLayer.StreetLights)
         wld.unload_map_layer(carla.MapLayer.Props)
+        # wld.unload_map_layer(carla.MapLayer.Particles)
         self.map = wld.get_map()
         settings = wld.get_settings()
         settings.fixed_delta_seconds = Config.simulation_step
@@ -71,10 +72,9 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 3.8  # Debug Settings
-        # ped_distance = 30
-        # ped_speed = 2.4
-        # ped_distance = 19
+        # ped_speed = 0  # Debug Settings
+        # ped_distance = 35
+        # scenario_id = "09"
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance

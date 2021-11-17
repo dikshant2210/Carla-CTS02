@@ -4,7 +4,6 @@ Time: 12.07.21 11:03
 """
 
 import carla
-import sys
 import datetime
 import time
 import numpy as np
@@ -35,50 +34,21 @@ class RLAgent(Agent):
         self.past_trajectory = []
         # os.mkdir("_out/{}".format(self.folder))
 
-        wps = carla_map.generate_waypoints(Config.grid_size)
-        print("Total no. of waypoints: {}".format(len(wps)))
-
-        self.max_x = -sys.maxsize - 1
-        self.max_y = -sys.maxsize - 1
-        self.min_x = sys.maxsize
-        self.min_y = sys.maxsize
-
-        for wp in wps:
-            xyz = wp.transform.location
-            self.max_x = max([self.max_x, xyz.x])
-            self.max_y = max([self.max_y, xyz.y])
-            self.min_x = min([self.min_x, xyz.x])
-            self.min_y = min([self.min_y, xyz.y])
-
-        # print(self.max_y, self.max_x, self.min_y, self.min_x)
-
-        self.max_x = int(self.max_x)
-        self.max_y = int(self.max_y)
-        self.min_y = int(self.min_y) - 10
-        self.min_x = int(self.min_x) - 10
-
         obstacle = []
         self.vehicle_length = self.vehicle.bounding_box.extent.x * 2
         self.vehicle_width = self.vehicle.bounding_box.extent.y * 2
-        self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y,
-                                        obstacle, self.vehicle_length)
 
-        x_range = self.max_x - self.min_x
-        y_range = self.max_y - self.min_y
-        self.grid_cost = np.ones((x_range, y_range))
-        for i in range(self.min_x, self.max_x):
-            for j in range(self.min_y, self.max_y):
-                loc = self.occupancy_grid.map.convert_to_pixel([i, j, 0])
-                x = loc[0]
-                y = loc[1]
-                if x > 2199:
-                    x = 2199
-                if y > 2599:
-                    y = 2599
-                val = self.occupancy_grid.static_map[x, y]
-                if val == 50:
-                    val = 50.0
-                self.grid_cost[i - self.min_x, j - self.min_y] = val
+        self.grid_cost = np.ones((110, 310)) * 1000.0
+        # Road Network
+        self.grid_cost[7:13, 13:] = 1.0
+        self.grid_cost[97:103, 13:] = 1.0
+        self.grid_cost[7:, 7:13] = 1.0
+
+        self.min_x = -10
+        self.max_x = 100
+        self.min_y = -10
+        self.max_y = 300
+        self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y, obstacle, self.vehicle_length)
 
     def update_scenario(self, scenario):
         self.scenario = scenario
@@ -158,6 +128,7 @@ class RLAgent(Agent):
 
         reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
 
+        # TODO: Replace the below with all grid positions of incoming_car in player rectangle
         # Cost of collision with obstacles
         grid = self.grid_cost.copy()
         if self.scenario[0] in [3, 7, 8, 10]:
@@ -167,11 +138,7 @@ class RLAgent(Agent):
 
         # cost of occupying road/non-road tile
         # Penalizing for hitting an obstacle
-        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
-            x = round(start[0] - self.min_x - 1)
-        else:
-            x = round(start[0] - self.min_x)
-        location = [min(x, self.grid_cost.shape[0] - 1),
+        location = [min(round(start[0] - self.min_x), self.grid_cost.shape[0] - 1),
                     min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
         obstacle_cost = grid[location[0], location[1]]
         if obstacle_cost <= 100:
@@ -283,11 +250,7 @@ class RLAgent(Agent):
             grid[round(x), round(y)] = 100
 
         # cost of occupying road/non-road tile
-        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
-            x = round(start[0] - self.min_x - 1)
-        else:
-            x = round(start[0] - self.min_x)
-        location = [min(x, self.grid_cost.shape[0] - 1),
+        location = [min(round(start[0] - self.min_x), self.grid_cost.shape[0] - 1),
                     min(round(start[1] - self.min_y), self.grid_cost.shape[1] - 1)]
         reward = -grid[location[0], location[1]]
 
@@ -361,18 +324,14 @@ class RLAgent(Agent):
                 obstacles.append((int(walker_x), int(walker_y)))
             elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
                 obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [1, 4, 10]:
+            elif self.scenario[0] in [1, 2, 4, 5, 6, 9, 10]:
                 obstacles.append((int(walker_x), int(walker_y)))
         if self.scenario[0] in [3, 7, 8, 10]:
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
                 obstacles.append((int(car_x), int(car_y)))
         t0 = time.time()
-        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
-            car_lane = "right"
-        else:
-            car_lane = "left"
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles, car_lane=car_lane)
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
         if len(paths):
             path = paths[0]
         else:

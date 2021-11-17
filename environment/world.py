@@ -116,11 +116,12 @@ class World(object):
         # Set up other agents
         scenario_type = self.scenario[0]
         obstacles = self.scenario[1]
-        if scenario_type in [1, 4]:
+        if scenario_type in [1, 2, 4, 5, 6]:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
             self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
         elif scenario_type in [3, 7, 8]:
+            # Single pedestrian scenarios with parked car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
             self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
         elif scenario_type == 10:
@@ -128,6 +129,9 @@ class World(object):
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
             self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, -self.ped_speed, 0), 1))
             self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
+        elif scenario_type == 9:
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -150,13 +154,15 @@ class World(object):
         car_velocity = self.player.get_velocity()
         car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
         if dist_walker < self.ped_distance and car_speed > 0:
-            if self.scenario[0] in [1, 3]:
+            if self.scenario[0] in [1, 2, 3]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
-            elif self.scenario[0] in [4, 7, 8]:
+            elif self.scenario[0] in [4, 5, 7, 8, 6]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
             elif self.scenario[0] == 10:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
+            elif self.scenario[0] == 9:
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
 
     def next_weather(self, reverse=False):
         self._weather_index += -1 if reverse else 1
