@@ -74,7 +74,7 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = True
+    display = False
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7

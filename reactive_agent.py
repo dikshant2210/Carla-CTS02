@@ -5,6 +5,7 @@ Time: 15.11.21 16:29
 
 import pygame
 import subprocess
+import argparse
 import time
 from multiprocessing import Process
 from datetime import datetime
@@ -104,6 +105,17 @@ def run_server():
 
 
 if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(
+        description='CARLA Manual Control Client')
+    arg_parser.add_argument(
+        '-p', '--port',
+        metavar='P',
+        default=2000,
+        type=int,
+        help='TCP port to listen to (default: 2000)')
+    args = arg_parser.parse_args()
+    Config.port = args.port
+
     p = Process(target=run_server)
     p.start()
     time.sleep(5)  # wait for the server to start
