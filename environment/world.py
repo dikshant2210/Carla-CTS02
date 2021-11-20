@@ -116,10 +116,14 @@ class World(object):
         # Set up other agents
         scenario_type = self.scenario[0]
         obstacles = self.scenario[1]
-        if scenario_type in [1, 2, 4, 5, 6]:
+        if scenario_type in [1, 2, 4, 5]:
             # Single pedestrian scenarios
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
             self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
+        if scenario_type == 6:
+            # Single pedestrian scenarios
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, -self.ped_speed, 0), 1))
         elif scenario_type in [3, 7, 8]:
             # Single pedestrian scenarios with parked car
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])

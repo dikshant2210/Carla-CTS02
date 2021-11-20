@@ -191,7 +191,10 @@ def main():
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
     sx, sy, stheta = 92, 160, -90
-    gx, gy, gtheta = 87, 1, 0
+    gx, gy, gtheta = 75, 1, -180
+
+    # sx, sy, stheta = 100, 1, -180
+    # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
     obstacle = [(1.4, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
@@ -207,10 +210,13 @@ def main():
     print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
     t0 = time.time()
     paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, obstacle)
-    path = paths[0]
+    if paths:
+        path = paths[0]
+    else:
+        path = []
     print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
     path.reverse()
-    print(path)
+    print(len(path))
 
     cp = occupancy_grid.get_costmap([])
     for path in paths:
@@ -225,8 +231,8 @@ def main():
         obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
         plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
         plt.imshow(cp, cmap='gray')
-        plt.imshow(cp[x[0]-50:x[0]+50, y[0]-200:y[0]+500], cmap="gray")
-        # plt.show()
+        # plt.imshow(cp[x[0]-50:x[0]+50, y[0]-200:y[0]+500], cmap="gray")
+        plt.show()
 
     # k = 1
     # for _ in range(k):

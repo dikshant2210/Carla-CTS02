@@ -1,6 +1,7 @@
 .idea/
 test_script.py
 test.py
+run_environment.py
 __pycache__/
 temp.py
 _out/

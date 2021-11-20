@@ -25,15 +25,15 @@ class Config:
     ped_speed_range = [0.6, 3.3]
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    # scenarios = ['01', '03', '04', '07', '08']
-    scenarios = ['01']
+    scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
+    # scenarios = ['01']
 
     val_scenarios = ['01']
     val_ped_speed_range = [0., 4.0]
     val_ped_distance_range = [0, 40]
     val_car_speed_range = [6, 9]
 
-    test_scenarios = ['01']
+    test_scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
     test_ped_speed_range = [0., 4.0]
     test_ped_distance_range = [5, 50]
     test_car_speed_range = [6, 9]
@@ -74,7 +74,7 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = False
+    display = True
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
@@ -92,3 +92,4 @@ class Config:
     a2c_value_loss_coef = 0.5
     max_grad_norm = 50
     num_steps = 500
+    train_episodes = 50000
