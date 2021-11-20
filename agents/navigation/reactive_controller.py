@@ -38,7 +38,7 @@ class ReactiveController(RLAgent):
             car_lane = "right"
         else:
             car_lane = "left"
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles, car_lane=car_lane)
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
         if len(paths):
             path = paths[0]
         else:
