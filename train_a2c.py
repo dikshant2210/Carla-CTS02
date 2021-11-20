@@ -7,6 +7,7 @@ import pygame
 import subprocess
 import time
 import os
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Process
@@ -173,10 +174,22 @@ def main():
 
 
 def run_server():
-    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl'], shell=True)
+    port = "-carla-port={}".format(Config.port)
+    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
 if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(
+        description='CARLA Manual Control Client')
+    arg_parser.add_argument(
+        '-p', '--port',
+        metavar='P',
+        default=2000,
+        type=int,
+        help='TCP port to listen to (default: 2000)')
+    args = arg_parser.parse_args()
+    Config.port = args.port
+
     p = Process(target=run_server)
     p.start()
     time.sleep(5)  # wait for the server to start
