@@ -101,7 +101,8 @@ def main():
 
 
 def run_server():
-    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl'], shell=True)
+    port = "-carla-port={}".format(Config.port)
+    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
 if __name__ == '__main__':
