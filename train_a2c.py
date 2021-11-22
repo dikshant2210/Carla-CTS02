@@ -21,7 +21,7 @@ from config import Config
 from environment import GIDASBenchmark
 
 
-def train_a2c():
+def train_a2c(args):
     ##############################################################
     t0 = time.time()
     # Logging file
@@ -47,6 +47,11 @@ def train_a2c():
     ##############################################################
     # Simulation loop
     current_episode = 0
+    load_path = args.checkpoint
+    if load_path:
+        current_episode = int(load_path.strip().split('/')[2].split('_')[3].split('.')[0])
+        rl_agent.load_state_dict(torch.load(load_path))
+
     max_episodes = Config.train_episodes
     print("Total training episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
@@ -162,11 +167,11 @@ def train_a2c():
     file.close()
 
 
-def main():
+def main(args):
     print(__doc__)
 
     try:
-        train_a2c()
+        train_a2c(args)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')
@@ -187,11 +192,16 @@ if __name__ == '__main__':
         default=2000,
         type=int,
         help='TCP port to listen to (default: 2000)')
-    args = arg_parser.parse_args()
-    Config.port = args.port
+    arg_parser.add_argument(
+        '-ckp', '--checkpoint',
+        default='',
+        type=str,
+        help='load the model from this checkpoint')
+    arg = arg_parser.parse_args()
+    Config.port = arg.port
 
     p = Process(target=run_server)
     p.start()
     time.sleep(5)  # wait for the server to start
 
-    main()
+    main(arg)
