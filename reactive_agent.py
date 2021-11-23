@@ -46,7 +46,7 @@ def reactive_controller(arg):
         time_to_goal = time.time()
 
         for step_num in range(Config.num_steps):
-            if Config.display or True:
+            if Config.display:
                 env.render()
 
             if env.control.throttle != 0 or env.control.brake != 0:
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=2300,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help='TCP port to listen to (default: 2300)')
     arg_parser.add_argument(
         '-ep', '--episode',
         default=0,
