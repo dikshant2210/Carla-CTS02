@@ -25,8 +25,8 @@ class Config:
     ped_speed_range = [0.6, 3.3]
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
-    # scenarios = ['01']
+    # scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
+    scenarios = ['01']
 
     val_scenarios = ['01']
     val_ped_speed_range = [0., 4.0]
@@ -41,7 +41,7 @@ class Config:
     save_freq = 100
 
     # Setting the SAC training parameters
-    batch_size = 64  # 32  # How many experience traces to use for each training step.
+    batch_size = 1  # 32  # How many experience traces to use for each training step.
     trace_length = 8  # How long each experience trace will be when training
     update_freq = 200  # How often to perform a training step.
     y = .995  # Discount factor on the target Q-values
@@ -49,7 +49,7 @@ class Config:
     endE = 0.1  # Final chance of random action
     anneling_steps = 200000  # 10000 # How many steps of training to reduce startE to endE.
     num_episodes = 100000  # How many episodes of game environment to train network with.
-    pre_train_steps = 10000  # 10000  # How many steps of random actions before training begins.
+    pre_train_steps = 100  # 10000  # How many steps of random actions before training begins.
     load_model = True  # Whether to load a saved model.
     path = "_out/sac/"  # The path to save our model to.
     hidden_size = 256
@@ -57,6 +57,10 @@ class Config:
     max_epLength = 500  # The max allowed length of our episode.
     time_per_step = 1  # Length of each step used in gif creation
     summaryLength = 100  # Number of episodes to periodically save for analysis
+    sac_gamma = 0.99
+    sac_tau = 0.005
+    sac_lr = 0.0003
+    sac_alpha = 0.2
     num_pedestrians = 4
     num_angles = 3
     num_actions = 3  # num_angles * 3  # acceleration_type

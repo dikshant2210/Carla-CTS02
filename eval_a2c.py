@@ -35,7 +35,7 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/a2c_2800.pth"
+    path = "_out/a2c/scenario_01_with_entropy_0.005/a2c_entropy_005_2000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -78,8 +78,8 @@ def eval_a2c():
 
         time_to_goal = time.time()
         for step_num in range(Config.num_steps):
-            if Config.display:
-                env.render()
+            # if Config.display:
+            env.render()
             # Forward pass of the RL Agent
             start_time = time.time()
             input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
