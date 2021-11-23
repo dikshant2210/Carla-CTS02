@@ -37,3 +37,6 @@ class ExpBuffer:
         cat = torch.vstack([tr[8] for tr in transitions]).cuda().type(torch.cuda.FloatTensor)
         next_cat = torch.vstack([tr[9] for tr in transitions]).cuda().type(torch.cuda.FloatTensor)
         return obs, hx, cx, action, rewards, next_obs, next_hx, next_cx, cat, next_cat
+
+    def __len__(self):
+        return len(self.storage)
