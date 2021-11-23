@@ -25,8 +25,8 @@ class Config:
     ped_speed_range = [0.6, 3.3]
     ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    # scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
-    scenarios = ['01']
+    scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
+    # scenarios = ['01']
 
     val_scenarios = ['01']
     val_ped_speed_range = [0., 4.0]
@@ -41,7 +41,7 @@ class Config:
     save_freq = 100
 
     # Setting the SAC training parameters
-    batch_size = 1  # 32  # How many experience traces to use for each training step.
+    batch_size = 8  # 32  # How many experience traces to use for each training step.
     trace_length = 8  # How long each experience trace will be when training
     update_freq = 200  # How often to perform a training step.
     y = .995  # Discount factor on the target Q-values

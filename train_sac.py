@@ -22,7 +22,7 @@ from agents.rl.sac.utils import soft_update, hard_update, ExpBuffer
 
 
 class SACTrainer:
-    def __init__(self):
+    def __init__(self, args):
         ##############################################################
         # Logging file
         filename = "_out/sac/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
@@ -31,19 +31,24 @@ class SACTrainer:
         self.file.write(str(vars(Config)) + "\n")
 
         # Path to save model
-        path = "_out/sac/"
-        if not os.path.exists(path):
-            os.mkdir(path)
+        self.path = "_out/sac/"
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
 
         # Initialize environment and experience buffer
-        replay_buffer_size = Config.batch_size * Config.num_steps
+        replay_buffer_size = 50000
         sample_length = 300
+        self.current_episode = 0
         self.exp_buffer = ExpBuffer(replay_buffer_size, sample_length)
         self.env = GIDASBenchmark()
 
         # Instantiating the RL Agent
         torch.manual_seed(100)
         self.rl_agent = SAC(Config.num_actions).cuda()
+        load_path = args.checkpoint
+        if load_path:
+            self.current_episode = int(load_path.strip().split('/')[2].split('_')[3].split('.')[0])
+            self.rl_agent.load_state_dict(torch.load(load_path))
         self.critic_optim = Adam(list(self.rl_agent.q_network.parameters()) +
                                  list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
         self.critic_target = QNetwork(Config.num_actions).cuda()
@@ -62,7 +67,7 @@ class SACTrainer:
         # Simulation loop
         max_episodes = Config.train_episodes
         print("Total training episodes: {}".format(max_episodes))
-        current_episode = 0
+        current_episode = self.current_episode
         total_steps = 0
         pre_training = False
 
@@ -144,6 +149,8 @@ class SACTrainer:
             current_episode += 1
             if pre_training and current_episode > Config.batch_size:
                 self.update_parameters()
+            if current_episode % Config.save_freq == 0:
+                torch.save(self.rl_agent.state_dict(), "{}sac_{}.pth".format(self.path, current_episode))
 
     def update_parameters(self):
         obs, hx, cx, action, rewards, next_obs, next_hx, next_cx, cat, next_cat = self.exp_buffer.sample(
@@ -181,11 +188,13 @@ class SACTrainer:
 
         soft_update(self.critic_target, self.rl_agent.q_network, self.tau)
         print("Q-loss: {:.4f}, Policy loss: {:.4f}".format(qf_loss.detach().cpu(), policy_loss.detach().cpu()))
+        self.file.write("Q-loss: {:.4f}, Policy loss: {:.4f}\n".format(qf_loss.detach().cpu(),
+                                                                       policy_loss.detach().cpu()))
 
 
 def main(args):
     print(__doc__)
-    trainer = SACTrainer()
+    trainer = SACTrainer(args)
 
     try:
         trainer.train()
