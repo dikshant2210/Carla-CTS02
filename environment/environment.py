@@ -133,15 +133,15 @@ class GIDASBenchmark(gym.Env):
             # TODO: Add connection
             self.planner_agent = ISDespotP(self.world, self.map, self.scene)
 
-    def eval(self):
+    def eval(self, current_episode=0):
         self.mode = "TESTING"
         episodes = list()
         for scenario in Config.test_scenarios:
             for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 1, 0.1):
                 for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
                     episodes.append((scenario, speed, distance))
-        self.episodes = episodes
-        self.test_episodes = iter(episodes)
+        self.episodes = episodes[current_episode:]
+        self.test_episodes = iter(episodes[current_episode:])
 
     def next_scene(self):
         if self.mode == "TRAINING":

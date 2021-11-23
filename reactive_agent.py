@@ -14,7 +14,7 @@ from config import Config
 from environment import GIDASBenchmark
 
 
-def reactive_controller():
+def reactive_controller(arg):
     ##############################################################
     t0 = time.time()
     # Logging file
@@ -26,7 +26,7 @@ def reactive_controller():
     # Setting up environment
     env = GIDASBenchmark()
     env.reset_agent('reactive')
-    env.eval()
+    env.eval(arg.episode)
     ##############################################################
 
     ##############################################################
@@ -89,11 +89,11 @@ def reactive_controller():
     file.close()
 
 
-def main():
+def main(arg):
     print(__doc__)
 
     try:
-        reactive_controller()
+        reactive_controller(arg)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')
@@ -114,6 +114,11 @@ if __name__ == '__main__':
         default=2000,
         type=int,
         help='TCP port to listen to (default: 2000)')
+    arg_parser.add_argument(
+        '-ep', '--episode',
+        default=0,
+        type=int,
+        help='episode number to resume from')
     args = arg_parser.parse_args()
     Config.port = args.port
 
@@ -121,5 +126,5 @@ if __name__ == '__main__':
     p.start()
     time.sleep(5)  # wait for the server to start
 
-    main()
+    main(args)
 
