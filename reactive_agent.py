@@ -46,7 +46,7 @@ def reactive_controller(arg):
         time_to_goal = time.time()
 
         for step_num in range(Config.num_steps):
-            if Config.display:
+            if Config.display or True:
                 env.render()
 
             if env.control.throttle != 0 or env.control.brake != 0:
@@ -62,7 +62,7 @@ def reactive_controller(arg):
             accident = accident_current or accident
             total_episode_reward += reward
 
-            if done:
+            if done or accident:
                 break
         current_episode += 1
 
