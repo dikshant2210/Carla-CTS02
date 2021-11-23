@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
+from torch.distributions import Categorical
+import torch.functional as F
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -137,14 +139,20 @@ class SAC(nn.Module):
         self.value_network = ValueNetwork(hidden_dim)
         self.q_network = QNetwork(num_actions, hidden_dim)
         self.action_policy = GaussianPolicy(hidden_dim, num_actions, hidden_dim)
+        self.linear = nn.Linear(hidden_dim, 3)
 
     def forward(self, x, lstm_state, cat_tensor):
         x = torch.reshape(x, (-1, 3, 400, 400))
         cat_tensor = torch.reshape(cat_tensor, (-1, 4))
         obs = (x, lstm_state)
-        features, _ = self.shared_network(obs, cat_tensor)
+        features, cx = self.shared_network(obs, cat_tensor)
         value = self.value_network(features)
         action, log_prob, mean = self.action_policy.sample(features)
+        # logit = self.linear(features)
+        # prob = F.softmax(logit, dim=-1)
+        # m = Categorical(prob)
+        # action = m.sample()
+        # log_prob = m.log_prob(action)
         q_value1, q_value2 = self.q_network(features, action)
 
-        return value, q_value1, q_value2, action, log_prob
+        return value, q_value1, q_value2, action, log_prob, (features, cx)

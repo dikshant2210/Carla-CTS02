@@ -55,6 +55,7 @@ class SACTrainer:
         hard_update(self.critic_target, self.rl_agent.q_network)
         self.policy_optim = Adam(list(self.rl_agent.action_policy.parameters()) +
                                  list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
+        self.optim = Adam(self.rl_agent.parameters(), lr=Config.sac_lr)
 
         # Parameters
         self.gamma = Config.sac_gamma
@@ -102,8 +103,9 @@ class SACTrainer:
                     torch.cuda.FloatTensor)
                 cat_tensor = torch.reshape(cat_tensor, (-1, 4))
                 with torch.no_grad():
-                    state = self.rl_agent.shared_network((obs, (hx, cx)), cat_tensor)
-                    a, _, _ = self.rl_agent.action_policy.sample(state[0])
+                    # state = self.rl_agent.shared_network((obs, (hx, cx)), cat_tensor)
+                    # a, _, _ = self.rl_agent.action_policy.sample(state[0])
+                    _, _, _, a, _, state = self.rl_agent(obs, (hx, cx), cat_tensor)
                 a = a.cpu().numpy()
                 speed_action = np.argmax(a, axis=-1)[0]
                 if not pre_training:
@@ -135,15 +137,15 @@ class SACTrainer:
                 accident = accident or info['accident']
                 total_steps += 1
 
-                if done:
+                if done or accident:
                     break
 
             print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
                 current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
             self.file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
                 current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-            print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
-                info['goal'], accident, near_miss, total_episode_reward))
+            print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}, Buffer size: {}'.format(
+                info['goal'], accident, near_miss, total_episode_reward, len(self.exp_buffer)))
             self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}\n'.format(
                 info['goal'], accident, near_miss, total_episode_reward))
             current_episode += 1
@@ -156,15 +158,18 @@ class SACTrainer:
         obs, hx, cx, action, rewards, next_obs, next_hx, next_cx, cat, next_cat = self.exp_buffer.sample(
             Config.batch_size)
         with torch.no_grad():
-            features, _ = self.rl_agent.shared_network((next_obs, (next_hx, next_cx)), next_cat)
-            next_state_action, next_state_log_pi, _ = self.rl_agent.action_policy.sample(features)
+            # features, _ = self.rl_agent.shared_network((next_obs, (next_hx, next_cx)), next_cat)
+            # next_state_action, next_state_log_pi, _ = self.rl_agent.action_policy.sample(features)
+            _, _, _, next_state_action, next_state_log_pi, (features, _) = self.rl_agent(next_obs, (next_hx, next_cx),
+                                                                                         next_cat)
             qf1_next_target, qf2_next_target = self.critic_target(features, next_state_action)
             min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
             next_q_value = rewards + self.gamma * min_qf_next_target
 
         # Two Q-functions to mitigate positive bias in the policy improvement step
-        f, _ = self.rl_agent.shared_network((obs, (hx, cx)), cat)
-        qf1, qf2 = self.rl_agent.q_network(f, action)
+        _, qf1, qf2, pi, log_pi, (f, _) = self.rl_agent(obs, (hx, cx), cat)
+        # f, _ = self.rl_agent.shared_network((obs, (hx, cx)), cat)
+        # qf1, qf2 = self.rl_agent.q_network(f, action)
 
         # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
         qf1_loss = F.mse_loss(qf1, next_q_value)
@@ -172,24 +177,27 @@ class SACTrainer:
         qf2_loss = F.mse_loss(qf2, next_q_value)
         qf_loss = qf1_loss + qf2_loss
 
-        pi, log_pi, _ = self.rl_agent.action_policy.sample(f)
-        qf1_pi, qf2_pi = self.rl_agent.q_network(f, pi)
-        min_qf_pi = torch.min(qf1_pi, qf2_pi)
+        # pi, log_pi, _ = self.rl_agent.action_policy.sample(f)
+        # qf1_pi, qf2_pi = self.rl_agent.q_network(f, pi)
+        # min_qf_pi = torch.min(qf1_pi, qf2_pi)
+        min_qf_pi = torch.min(qf1, qf2)
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).sum()
 
-        self.critic_optim.zero_grad()
-        self.policy_optim.zero_grad()
+        # self.critic_optim.zero_grad()
+        # self.policy_optim.zero_grad()
+        self.optim.zero_grad()
         loss = qf_loss + policy_loss
         loss.backward()
-        self.critic_optim.step()
-        self.policy_optim.step()
+        self.optim.step()
+        # print(self.rl_agent.shared_network.conv1.weight.grad)
+        # self.critic_optim.step()
+        # self.policy_optim.step()
 
         soft_update(self.critic_target, self.rl_agent.q_network, self.tau)
-        print("Q-loss: {:.4f}, Policy loss: {:.4f}".format(qf_loss.detach().cpu(), policy_loss.detach().cpu()))
-        self.file.write("Q-loss: {:.4f}, Policy loss: {:.4f}\n".format(qf_loss.detach().cpu(),
-                                                                       policy_loss.detach().cpu()))
+        print("Q-loss: {:.4f}, Policy loss: {:.4f}".format(qf_loss.item(), policy_loss.item()))
+        self.file.write("Q-loss: {:.4f}, Policy loss: {:.4f}\n".format(qf_loss.item(), policy_loss.item()))
 
 
 def main(args):
