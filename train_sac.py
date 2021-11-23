@@ -36,7 +36,7 @@ class SACTrainer:
             os.mkdir(self.path)
 
         # Initialize environment and experience buffer
-        replay_buffer_size = 50000
+        replay_buffer_size = 20000
         sample_length = 300
         self.current_episode = 0
         self.exp_buffer = ExpBuffer(replay_buffer_size, sample_length)
