@@ -10,6 +10,8 @@ import os
 import pygame
 import argparse
 import time
+import math
+import random
 import torch
 from datetime import datetime
 from torch.optim import Adam
@@ -108,7 +110,10 @@ class SACTrainer:
                     _, _, _, a, _, state = self.rl_agent(obs, (hx, cx), cat_tensor)
                 a = a.cpu().numpy()
                 speed_action = np.argmax(a, axis=-1)[0]
-                if not pre_training:
+
+                eps_threshold = Config.EPS_END + (Config.EPS_START - Config.EPS_END) * math.exp(-1. * total_steps /
+                                                                                                Config.EPS_DECAY)
+                if random.random() > eps_threshold:
                     speed_action = self.env.action_space.sample()
                     a = np.zeros((1, 3))
                     a[0, speed_action] = 1.0
@@ -137,6 +142,9 @@ class SACTrainer:
                 accident = accident or info['accident']
                 total_steps += 1
 
+                if pre_training and current_episode > Config.batch_size and total_steps % Config.update_freq == 0:
+                    self.update_parameters()
+
                 if done or accident:
                     break
 
@@ -149,8 +157,6 @@ class SACTrainer:
             self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}\n'.format(
                 info['goal'], accident, near_miss, total_episode_reward))
             current_episode += 1
-            if pre_training and current_episode > Config.batch_size:
-                self.update_parameters()
             if current_episode % Config.save_freq == 0:
                 torch.save(self.rl_agent.state_dict(), "{}sac_{}.pth".format(self.path, current_episode))
 

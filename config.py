@@ -63,6 +63,9 @@ class Config:
     num_pedestrians = 4
     num_angles = 3
     num_actions = 3  # num_angles * 3  # acceleration_type
+    EPS_START = 0.9
+    EPS_END = 0.05
+    EPS_DECAY = 500
 
     # angle + 4 car related statistics + 2*num_pedestrians related statistics + one-hot encoded last_action
     input_size = 1 + 4 + 2 * num_pedestrians + num_actions
