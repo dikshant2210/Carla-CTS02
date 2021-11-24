@@ -51,7 +51,7 @@ def eval_isdespot(arg):
 
         for step_num in range(Config.num_steps):
             ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
-            if Config.display or True:
+            if Config.display:
                 env.render()
 
             if env.control.throttle != 0 or env.control.brake != 0:
