@@ -189,7 +189,7 @@ class SACTrainer:
         min_qf_pi = torch.min(qf1, qf2)
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).sum()
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
 
         # self.critic_optim.zero_grad()
         # self.policy_optim.zero_grad()

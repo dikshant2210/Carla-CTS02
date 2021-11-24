@@ -111,7 +111,7 @@ def train_a2c(args):
             rewards.append(reward)
             entropies.append(entropy)
 
-            if done:
+            if done or acccident:
                 break
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(

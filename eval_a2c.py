@@ -108,7 +108,7 @@ def eval_a2c():
             velocity_x = velocity.x
             velocity_y = velocity.y
 
-            if done:
+            if done or accident:
                 break
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
