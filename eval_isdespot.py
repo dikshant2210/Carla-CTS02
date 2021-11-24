@@ -34,7 +34,6 @@ def eval_isdespot(arg):
     # Simulation loop
     current_episode = 0
     max_episodes = len(env.episodes)
-    max_episodes = 1
     print("Total testing episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
     pedestrian_path = {}
