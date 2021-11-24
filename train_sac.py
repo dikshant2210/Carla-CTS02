@@ -94,7 +94,7 @@ class SACTrainer:
             for step_num in range(Config.num_steps):
                 if Config.display:
                     self.env.render()
-                if total_steps == Config.batch_size * Config.num_steps:
+                if total_steps == Config.pre_train_steps:
                     pre_training = True
                     print("Pre-train phase done.")
 
