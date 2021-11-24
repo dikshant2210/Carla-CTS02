@@ -16,6 +16,7 @@ from agents.navigation.reactive_controller import ReactiveController
 from agents.navigation.isdespot import ISDespotP
 from config import Config
 from agents.tools.scenario import Scenario
+from agents.tools.connector import Connector
 
 
 class GIDASBenchmark(gym.Env):
@@ -72,9 +73,9 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 0  # Debug Settings
+        # ped_speed = 1.5  # Debug Settings
         # ped_distance = 35
-        # scenario_id = "09"
+        # scenario_id = "01"
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance
@@ -130,8 +131,8 @@ class GIDASBenchmark(gym.Env):
         if agent == 'reactive':
             self.planner_agent = ReactiveController(self.world, self.map, self.scene)
         if agent == 'isdespot':
-            # TODO: Add connection
-            self.planner_agent = ISDespotP(self.world, self.map, self.scene)
+            conn = Connector(Config.despot_port)
+            self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
 
     def eval(self, current_episode=0):
         self.mode = "TESTING"

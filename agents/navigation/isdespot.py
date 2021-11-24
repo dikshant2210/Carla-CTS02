@@ -30,19 +30,9 @@ class ISDespotP(RLAgent):
         print(m)  # START
 
     def get_reward(self, action):
+        _, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
         reward = -0.1
-        goal = False
-
-        transform = self.vehicle.get_transform()
-        start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
-        end = self.scenario[2]
-        goal_dist = np.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
-
-        if goal_dist < 3:
-            reward += Config.goal_reward
-            goal = True
-
-        return reward, goal, False, False
+        return reward, goal, hit, nearmiss, terminal
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player
@@ -64,12 +54,7 @@ class ISDespotP(RLAgent):
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
                 obstacles.append((int(car_x), int(car_y)))
-        t0 = time.time()
-        if self.scenario[0] in [1, 2, 3, 6, 9, 10]:
-            car_lane = "right"
-        else:
-            car_lane = "left"
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles, car_lane=car_lane)
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
         if len(paths):
             path = paths[0]
         else:
@@ -88,7 +73,7 @@ class ISDespotP(RLAgent):
 
         # Best speed action for the given path
         if self.prev_action is not None:
-            reward, goal, hit, near_miss = self.get_reward(self.prev_speed)
+            reward, goal, hit, near_miss, terminal = self.get_reward(self.prev_speed)
             terminal = goal or hit
         else:
             # handling first instance
