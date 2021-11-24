@@ -43,7 +43,7 @@ def reactive_controller(arg):
         accident = False
         exec_time = 0
         total_acc_decc = 0
-        time_to_goal = time.time()
+        step_num = 0
 
         for step_num in range(Config.num_steps):
             if Config.display:
@@ -67,7 +67,7 @@ def reactive_controller(arg):
         current_episode += 1
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
-        time_to_goal = time.time() - time_to_goal
+        time_to_goal = (step_num + 1) * Config.simulation_step
         exec_time = exec_time / (step_num + 1)
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
