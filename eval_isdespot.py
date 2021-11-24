@@ -7,6 +7,7 @@ import pygame
 import subprocess
 import argparse
 import time
+import pickle as pkl
 from multiprocessing import Process
 from datetime import datetime
 
@@ -33,8 +34,10 @@ def eval_isdespot(arg):
     # Simulation loop
     current_episode = 0
     max_episodes = len(env.episodes)
+    max_episodes = 1
     print("Total testing episodes: {}".format(max_episodes))
     file.write("Total training episodes: {}\n".format(max_episodes))
+    pedestrian_path = {}
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
@@ -43,9 +46,11 @@ def eval_isdespot(arg):
         accident = False
         exec_time = 0
         total_acc_decc = 0
+        ped_data = []
         time_to_goal = time.time()
 
         for step_num in range(Config.num_steps):
+            ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
             if Config.display or True:
                 env.render()
 
@@ -65,15 +70,16 @@ def eval_isdespot(arg):
             if done or accident:
                 break
         current_episode += 1
+        pedestrian_path[current_episode] = ped_data
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
         time_to_goal = time.time() - time_to_goal
         exec_time = exec_time / (step_num + 1)
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
-            current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
+            current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
-            current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
+            current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
         file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
@@ -87,6 +93,8 @@ def eval_isdespot(arg):
     print("Testing time: {:.4f}hrs".format((time.time() - t0) / 3600))
     file.write("Testing time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
     file.close()
+    with open('_out/pedestrian_data.pkl', 'wb') as file:
+        pkl.dump(pedestrian_path, file)
 
 
 def main(arg):
