@@ -66,6 +66,7 @@ class GIDASBenchmark(gym.Env):
 
         self.test_episodes = None
         self.episodes = list()
+        print(Config.scenarios)
         for scenario in Config.scenarios:
             for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
                 for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
