@@ -1,6 +1,6 @@
 """
 Author: Dikshant Gupta
-Time: 24.10.21 00:47
+Time: 24.11.21 11:45
 """
 
 import subprocess
@@ -41,24 +41,24 @@ class SACTrainer:
         replay_buffer_size = 20000
         sample_length = 300
         self.current_episode = 0
-        self.device = torch.device("cuda")
-        self.exp_buffer = ExpBuffer(replay_buffer_size, sample_length, self.device)
+        self.exp_buffer = ExpBuffer(replay_buffer_size, sample_length)
         self.env = GIDASBenchmark()
+        self.env.reset_agent('isdespot')
 
         # Instantiating the RL Agent
         torch.manual_seed(100)
-        self.rl_agent = SAC(Config.num_actions).to(self.device)
+        self.rl_agent = SAC(Config.num_actions).cuda()
         load_path = args.checkpoint
         if load_path:
             self.current_episode = int(load_path.strip().split('/')[2].split('_')[3].split('.')[0])
             self.rl_agent.load_state_dict(torch.load(load_path))
         self.critic_optim = Adam(list(self.rl_agent.q_network.parameters()) +
                                  list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
-        self.critic_target = QNetwork(Config.num_actions).to(self.device)
+        self.critic_target = QNetwork(Config.num_actions).cuda()
         hard_update(self.critic_target, self.rl_agent.q_network)
         self.policy_optim = Adam(list(self.rl_agent.action_policy.parameters()) +
                                  list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
-        self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).to(self.device)).item()
+        self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).cuda()).item()
         self.log_alpha = torch.zeros(1, requires_grad=True, device=torch.device("cuda"))
         self.alpha_optim = Adam([self.log_alpha], lr=Config.sac_lr)
 
@@ -79,7 +79,7 @@ class SACTrainer:
 
         while current_episode < max_episodes:
             obs = self.env.reset()
-            obs = torch.from_numpy(obs).type(torch.FloatTensor).to(self.device)
+            obs = torch.from_numpy(obs).cuda().type(torch.cuda.FloatTensor)
             obs = torch.reshape(obs, (-1, 3, 400, 400))
 
             # Setup placeholder variables
@@ -93,8 +93,8 @@ class SACTrainer:
             info = None
 
             # Setup initial inputs for LSTM Cell
-            cx = torch.zeros(1, 256).to(self.device)
-            hx = torch.zeros(1, 256).to(self.device)
+            cx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
+            hx = torch.zeros(1, 256).cuda().type(torch.cuda.FloatTensor)
 
             for step_num in range(Config.num_steps):
                 if Config.display:
@@ -104,25 +104,31 @@ class SACTrainer:
                     print("Pre-train phase done.")
 
                 # Forward pass of the RL Agent
-                cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, last_action]))
-                cat_tensor = cat_tensor.type(torch.FloatTensor).to(self.device)
+                cat_tensor = torch.from_numpy(np.array([reward, velocity_x, velocity_y, last_action])).cuda().type(
+                    torch.cuda.FloatTensor)
                 cat_tensor = torch.reshape(cat_tensor, (-1, 4))
                 with torch.no_grad():
-                    state = self.rl_agent.shared_network((obs, (hx, cx)), cat_tensor)
-                    a, _, _ = self.rl_agent.action_policy.sample(state[0])
+                    # state = self.rl_agent.shared_network((obs, (hx, cx)), cat_tensor)
+                    # a, _, _ = self.rl_agent.action_policy.sample(state[0])
+                    _, _, _, a, _, state = self.rl_agent(obs, (hx, cx), cat_tensor)
                 a = a.cpu().numpy()
                 speed_action = np.argmax(a, axis=-1)[0]
 
                 eps_threshold = Config.EPS_END + (Config.EPS_START - Config.EPS_END) * math.exp(-1. * total_steps /
                                                                                                 Config.EPS_DECAY)
                 if random.random() > eps_threshold:
-                    speed_action = self.env.action_space.sample()
+                    speed_action = None
+                    idx = 1
+                    if self.env.control.throttle > 0:
+                        idx = 0
+                    elif self.env.control.brake > 0:
+                        idx = 2
                     a = np.zeros((1, 3))
-                    a[0, speed_action] = 1.0
+                    a[0, idx] = 1.0
 
                 # Simulate one step
                 next_obs, reward, done, info = self.env.step(speed_action)
-                next_obs = torch.from_numpy(next_obs).type(torch.FloatTensor).to(self.device)
+                next_obs = torch.from_numpy(next_obs).cuda().type(torch.cuda.FloatTensor)
                 next_obs = torch.reshape(next_obs, (-1, 3, 400, 400))
                 total_episode_reward += reward
 
@@ -130,7 +136,6 @@ class SACTrainer:
                 terminal = done or accident
                 mask = torch.tensor(float(not terminal))
                 next_cat = torch.from_numpy(np.array([reward, info['velocity'].x, info['velocity'].y, speed_action]))
-                next_cat = next_cat.type(torch.FloatTensor)
                 self.exp_buffer.write_tuple([obs.cpu(), hx.cpu(), cx.cpu(), a, reward, next_obs.cpu(), state[0].cpu(),
                                              state[1].cpu(), cat_tensor.cpu(), next_cat, mask])
 
@@ -249,4 +254,3 @@ if __name__ == '__main__':
     time.sleep(5)  # wait for the server to start
 
     main(arg)
-    p.terminate()
