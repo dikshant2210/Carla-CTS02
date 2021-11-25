@@ -114,7 +114,7 @@ class SACTrainer:
 
                 eps_threshold = Config.EPS_END + (Config.EPS_START - Config.EPS_END) * math.exp(-1. * total_steps /
                                                                                                 Config.EPS_DECAY)
-                if random.random() > eps_threshold:
+                if random.random() < eps_threshold:
                     speed_action = self.env.action_space.sample()
                     a = np.zeros((1, 3))
                     a[0, speed_action] = 1.0
@@ -232,9 +232,9 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=2600,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help='TCP port to listen to (default: 2600)')
     arg_parser.add_argument(
         '-ckp', '--checkpoint',
         default='',

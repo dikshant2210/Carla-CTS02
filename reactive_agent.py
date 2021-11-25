@@ -111,9 +111,9 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2300,
+        default=2400,
         type=int,
-        help='TCP port to listen to (default: 2300)')
+        help='TCP port to listen to (default: 2400)')
     arg_parser.add_argument(
         '-ep', '--episode',
         default=0,

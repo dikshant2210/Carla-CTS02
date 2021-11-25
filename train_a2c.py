@@ -189,9 +189,9 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=2500,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help='TCP port to listen to (default: 2500)')
     arg_parser.add_argument(
         '-ckp', '--checkpoint',
         default='',
