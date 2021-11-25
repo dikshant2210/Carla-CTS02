@@ -56,8 +56,7 @@ class SACTrainer:
                                  list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
         self.critic_target = QNetwork(Config.num_actions).to(self.device)
         hard_update(self.critic_target, self.rl_agent.q_network)
-        self.policy_optim = Adam(list(self.rl_agent.action_policy.parameters()) +
-                                 list(self.rl_agent.shared_network.parameters()), lr=Config.sac_lr)
+        self.policy_optim = Adam(list(self.rl_agent.action_policy.parameters()), lr=Config.sac_lr)
         self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).to(self.device)).item()
         self.log_alpha = torch.zeros(1, requires_grad=True, device=torch.device("cuda"))
         self.alpha_optim = Adam([self.log_alpha], lr=Config.sac_lr)
@@ -185,6 +184,10 @@ class SACTrainer:
         qf2_loss = F.mse_loss(qf2, next_q_value)
         qf_loss = qf1_loss + qf2_loss
 
+        self.critic_optim.zero_grad()
+        qf_loss.backward()
+        self.critic_optim.step()
+
         pi, log_pi, _ = self.rl_agent.action_policy.sample(f)
         qf1_pi, qf2_pi = self.rl_agent.q_network(f, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
@@ -192,11 +195,8 @@ class SACTrainer:
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
         policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
 
-        self.critic_optim.zero_grad()
         self.policy_optim.zero_grad()
-        loss = qf_loss + policy_loss
-        loss.backward()
-        self.critic_optim.step()
+        policy_loss.backward()
         self.policy_optim.step()
 
         alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
