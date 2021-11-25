@@ -184,10 +184,6 @@ class SACTrainer:
         qf2_loss = F.mse_loss(qf2, next_q_value)
         qf_loss = qf1_loss + qf2_loss
 
-        self.critic_optim.zero_grad()
-        qf_loss.backward()
-        self.critic_optim.step()
-
         pi, log_pi, _ = self.rl_agent.action_policy.sample(f)
         qf1_pi, qf2_pi = self.rl_agent.q_network(f, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
@@ -195,8 +191,11 @@ class SACTrainer:
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
         policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
 
+        loss = qf_loss + policy_loss
         self.policy_optim.zero_grad()
-        policy_loss.backward()
+        self.critic_optim.zero_grad()
+        loss.backward()
+        self.critic_optim.step()
         self.policy_optim.step()
 
         alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
