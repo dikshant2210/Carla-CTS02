@@ -1,8 +1,10 @@
 import argparse
 import numpy as np
-import itertools
 import torch
-import gym
+import subprocess
+import pygame
+import time
+from multiprocessing import Process
 from collections import deque
 import multiprocessing
 
@@ -12,28 +14,8 @@ from environment import GIDASBenchmark
 from config import Config
 
 
-parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
-parser.add_argument('--cuda', action="store_true",
-                    help='run on CUDA (default: False)')
-args = parser.parse_args()
-
-
-class Counter(object):
-    def __init__(self, initval=0):
-        self.val = multiprocessing.Value('i', initval)
-        self.lock = multiprocessing.Lock()
-
-    def increment(self):
-        with self.lock:
-            self.val.value += 1
-
-    def value(self):
-        with self.lock:
-            return self.val.value
-
-
 class SACTrainer:
-    def __init__(self):
+    def __init__(self, args):
         seed = 123456
         self.env = GIDASBenchmark()
         self.env.seed(seed)
@@ -48,7 +30,6 @@ class SACTrainer:
         manager = multiprocessing.Manager()
         shared_list = manager.list()
         self.storage = deque(shared_list, maxlen=1)
-        self.total_steps = Counter(0)
 
     def train(self):
         # Training Loop
@@ -147,10 +128,43 @@ class SACTrainer:
         print("----------------------------------------")
 
 
-def train_sac():
-    sac_trainer = SACTrainer()
-    sac_trainer.train()
+def main(args):
+    print(__doc__)
+
+    try:
+        sac_trainer = SACTrainer(args)
+
+    except KeyboardInterrupt:
+        print('\nCancelled by user. Bye!')
+        pygame.quit()
+
+
+def run_server():
+    port = "-carla-port={}".format(Config.port)
+    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
 if __name__ == '__main__':
-    train_sac()
+    arg_parser = argparse.ArgumentParser(
+        description='CARLA Manual Control Client')
+    arg_parser.add_argument(
+        '-p', '--port',
+        metavar='P',
+        default=2800,
+        type=int,
+        help='TCP port to listen to (default: 2800)')
+    arg_parser.add_argument(
+        '-ckp', '--checkpoint',
+        default='',
+        type=str,
+        help='load the model from this checkpoint')
+    arg_parser.add_argument('--cuda', action="store_true",
+                            help='run on CUDA (default: False)')
+    arg = arg_parser.parse_args()
+    Config.port = arg.port
+
+    p = Process(target=run_server)
+    p.start()
+    time.sleep(5)  # wait for the server to start
+
+    main(arg)
