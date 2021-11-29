@@ -133,6 +133,7 @@ def main(args):
 
     try:
         sac_trainer = SACTrainer(args)
+        sac_trainer.train()
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')
