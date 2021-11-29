@@ -37,6 +37,7 @@ class SACTrainer:
         updates = 0
         running_reward = 0.05
         max_episodes = Config.train_episodes
+        print("Total training episode: {}".format(max_episodes))
         for i_episode in range(max_episodes):
             episode_reward = 0
             episode_steps = 0
@@ -86,14 +87,13 @@ class SACTrainer:
                 break
 
             running_reward = 0.05 * episode_reward + (1 - 0.05) * running_reward
-            print("Episode: {}, Scenario: {}, Ped. Speed: {}, Ped Distance: {}".format(
+            print("Episode: {}, Scenario: {}, Ped. Speed: {:.2f}, Ped Distance: {}".format(
                 i_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
             print("Total numsteps: {}, episode steps: {}, reward: {}, avg. reward: {:.3f}".format(
                 total_numsteps, episode_steps, round(episode_reward, 2), running_reward))
 
             if len(self.storage) > Config.batch_size:
                 # Number of updates per step in environment
-                print("Updating parametrs!")
                 for i in range(Config.update_freq):
                     # Update parameters of all the networks
                     critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters(
