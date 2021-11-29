@@ -29,7 +29,7 @@ class SACTrainer:
         # Memory
         manager = multiprocessing.Manager()
         shared_list = manager.list()
-        self.storage = deque(shared_list, maxlen=1)
+        self.storage = deque(shared_list, maxlen=Config.episode_buffer)
 
     def train(self):
         # Training Loop
