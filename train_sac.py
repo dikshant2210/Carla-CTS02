@@ -62,7 +62,9 @@ class SACTrainer:
                     action[a] = 1.0  # Sample random action
                 else:
                     # Sample action from policy
-                    action, hidden = self.agent.select_action((state.unsqueeze(0), cat_tensor.unsqueeze(0)), hidden)
+                    with torch.no_grad():
+                        action, hidden = self.agent.select_action((state.unsqueeze(0),
+                                                                   cat_tensor.unsqueeze(0)), hidden)
                     a = np.argmax(action, axis=-1)
 
                 next_state, reward, done, info = self.env.step(a)  # Step
