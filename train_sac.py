@@ -80,9 +80,11 @@ class SACTrainer:
 
                 # Append transition to memory
                 episode_memory.add(state, cat_tensor, action, reward, next_state, next_cat_tensor, mask)
-
                 state = next_state
                 cat_tensor = next_cat_tensor
+
+                if done or info['accident']:
+                    break
 
             self.storage.append(episode_memory)
             if total_numsteps > Config.total_training_steps:
@@ -102,32 +104,7 @@ class SACTrainer:
                         self.storage, Config.batch_size, updates)
                     updates += 1
 
-            # if i_episode % 50 == 0:
-            #     self.eval()
-
         self.env.close()
-
-    def eval(self):
-        avg_reward = 0.
-        episodes = 5
-        for _ in range(episodes):
-            state = self.env.reset()
-            episode_reward = 0
-            done = False
-            hidden = None
-            while not done:
-                action, hidden = self.agent.select_action(torch.tensor(state).float().view(1, 1, -1), hidden,
-                                                          evaluate=True)
-                a = np.argmax(action, axis=-1)
-                next_state, reward, done, _ = self.env.step(a)
-                episode_reward += reward
-                state = next_state
-            avg_reward += episode_reward
-        avg_reward /= episodes
-
-        print("----------------------------------------")
-        print("Test Episodes: {}, Avg. Reward: {}".format(episodes, round(avg_reward, 2)))
-        print("----------------------------------------")
 
 
 def main(args):

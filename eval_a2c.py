@@ -4,10 +4,10 @@ Time: 05.10.21 10:47
 """
 
 import pygame
+import argparse
 import subprocess
 import time
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Process
 from datetime import datetime
@@ -35,7 +35,7 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/scenario_01_with_entropy_0.005/a2c_entropy_005_2000.pth"
+    path = "_out/a2c/a2c_entropy_005_13000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -54,8 +54,8 @@ def eval_a2c():
     # Simulation loop
     current_episode = 0
     max_episodes = len(env.episodes)
-    print("Total training episodes: {}".format(max_episodes))
-    file.write("Total training episodes: {}\n".format(max_episodes))
+    print("Total eval episodes: {}".format(max_episodes))
+    file.write("Total eval episodes: {}\n".format(max_episodes))
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
@@ -72,14 +72,14 @@ def eval_a2c():
         velocity_y = 0
         nearmiss = False
         accident = False
+        step_num = 0
 
         total_acc_decc = 0
         exec_time = 0
 
-        time_to_goal = time.time()
         for step_num in range(Config.num_steps):
-            # if Config.display:
-            env.render()
+            if Config.display or True:
+                env.render()
             # Forward pass of the RL Agent
             start_time = time.time()
             input_tensor = torch.from_numpy(observation).cuda().type(torch.cuda.FloatTensor)
@@ -112,7 +112,7 @@ def eval_a2c():
                 break
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
-        time_to_goal = time.time() - time_to_goal
+        time_to_goal = (step_num + 1) * Config.simulation_step
         exec_time = exec_time / (step_num + 1)
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
@@ -132,8 +132,8 @@ def eval_a2c():
             torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
 
     env.close()
-    print("Training time: {:.4f}hrs".format((time.time() - t0) / 3600))
-    file.write("Training time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
+    print("Evaluation time: {:.4f}hrs".format((time.time() - t0) / 3600))
+    file.write("Evaluation time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
     torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
     file.close()
 
@@ -154,6 +154,17 @@ def run_server():
 
 
 if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(
+        description='CARLA Manual Control Client')
+    arg_parser.add_argument(
+        '-p', '--port',
+        metavar='P',
+        default=2000,
+        type=int,
+        help='TCP port to listen to (default: 2900)')
+    arg = arg_parser.parse_args()
+    Config.port = arg.port
+
     p = Process(target=run_server)
     p.start()
     time.sleep(5)  # wait for the server to start
