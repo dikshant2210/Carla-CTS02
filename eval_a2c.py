@@ -78,7 +78,7 @@ def eval_a2c():
         exec_time = 0
 
         for step_num in range(Config.num_steps):
-            if Config.display or True:
+            if Config.display:
                 env.render()
             # Forward pass of the RL Agent
             start_time = time.time()
