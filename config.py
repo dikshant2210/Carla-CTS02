@@ -41,21 +41,16 @@ class Config:
     save_freq = 100
 
     # Setting the SAC training parameters
-    batch_size = 4  # 32  # How many experience traces to use for each training step.
-    trace_length = 8  # How long each experience trace will be when training
-    update_freq = 200  # How often to perform a training step.
-    y = .995  # Discount factor on the target Q-values
-    startE = 1  # Starting chance of random action
-    endE = 0.1  # Final chance of random action
-    anneling_steps = 200000  # 10000 # How many steps of training to reduce startE to endE.
-    pre_train_steps = 10000  # 10000  # How many steps of random actions before training begins.
+    batch_size = 16  # 32  # How many experience traces to use for each training step.
+    update_freq = 20  # How often to perform a training step after each episode.
+    pre_train_steps = 100  # 10000  # How many steps of random actions before training begins.
     load_model = True  # Whether to load a saved model.
     path = "_out/sac/"  # The path to save our model to.
+    total_training_steps = 1000001
+    automatic_entropy_tuning = False
+    target_update_interval = 1
     hidden_size = 256
-    var_end_size = 128
     max_epLength = 500  # The max allowed length of our episode.
-    time_per_step = 1  # Length of each step used in gif creation
-    summaryLength = 100  # Number of episodes to periodically save for analysis
     sac_gamma = 0.99
     sac_tau = 0.005
     sac_lr = 0.0003
