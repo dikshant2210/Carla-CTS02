@@ -42,12 +42,13 @@ class SAC(object):
         self.policy_optim = Adam(self.policy.parameters(), lr=Config.sac_lr)
 
     def select_action(self, state, hidden, evaluate=False):
-        state = torch.FloatTensor(state).to(self.device)
+        cat_tensor = state[1].type(torch.FloatTensor).to(self.device)
+        state = torch.FloatTensor(state[0]).to(self.device)
         lens = torch.IntTensor([1])
         if evaluate is False:
-            action, _, _, hidden = self.policy.sample(state, lens, hidden)
+            action, _, _, hidden = self.policy.sample((state, cat_tensor), lens, hidden)
         else:
-            _, _, action, hidden = self.policy.sample(state, lens, hidden)
+            _, _, action, hidden = self.policy.sample((state, cat_tensor), lens, hidden)
         action = action.detach().cpu().numpy()[0]
         return action.squeeze(0), hidden
 
@@ -55,35 +56,43 @@ class SAC(object):
         # Sample a batch from memory
         episodes = random.sample(memory, batch_size)
         s = list()
+        c = list()
         a = list()
         r = list()
         ns = list()
+        nc = list()
         m = list()
         lens = list()
         for i in range(batch_size):
-            state_batch, action_batch, reward_batch, next_state_batch, mask_batch = episodes[i].get_tensor_episode()
+            state_batch, cat_batch, action_batch, reward_batch, next_state_batch, next_cat_batch, mask_batch = episodes[i].get_tensor_episode()
             s.append(state_batch)
+            c.append(cat_batch)
             a.append(action_batch)
             r.append(reward_batch)
             ns.append(next_state_batch)
+            nc.append(next_cat_batch)
             m.append(mask_batch)
             lens.append(state_batch.size()[0])
 
         state_batch = torch.nn.utils.rnn.pad_sequence(s, batch_first=True).to(self.device)
+        cat_batch = torch.nn.utils.rnn.pad_sequence(c, batch_first=True).to(self.device)
         action_batch = torch.nn.utils.rnn.pad_sequence(a, batch_first=True).to(self.device)
         reward_batch = torch.nn.utils.rnn.pad_sequence(r, batch_first=True).to(self.device)
         next_state_batch = torch.nn.utils.rnn.pad_sequence(ns, batch_first=True).to(self.device)
+        next_cat_batch = torch.nn.utils.rnn.pad_sequence(nc, batch_first=True).to(self.device)
         mask_batch = torch.nn.utils.rnn.pad_sequence(m, batch_first=True).to(self.device)
+        # print(state_batch.size(), cat_batch.size(), action_batch.size(), reward_batch.size(), next_state_batch.size(), next_cat_batch.size(), mask_batch.size())
         lens = torch.tensor(lens)
 
         with torch.no_grad():
-            next_state_action, next_state_log_pi, _, _ = self.policy.sample(next_state_batch, lens)
-            qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, next_state_action, lens)
+            next_state_action, next_state_log_pi, _, _ = self.policy.sample((next_state_batch, next_cat_batch), lens)
+            qf1_next_target, qf2_next_target = self.critic_target((next_state_batch, next_cat_batch),
+                                                                  next_state_action, lens)
             min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
-            next_q_value = reward_batch + mask_batch * self.gamma * (min_qf_next_target)
+            next_q_value = reward_batch + mask_batch * self.gamma * min_qf_next_target
 
         # Two Q-functions to mitigate positive bias in the policy improvement step
-        qf1, qf2 = self.critic(state_batch, action_batch, lens)
+        qf1, qf2 = self.critic((state_batch, cat_batch), action_batch, lens)
         qf1_loss = F.mse_loss(qf1, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
         qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
         qf_loss = qf1_loss + qf2_loss
@@ -92,9 +101,9 @@ class SAC(object):
         qf_loss.backward()
         self.critic_optim.step()
 
-        pi, log_pi, _, _ = self.policy.sample(state_batch, lens)
+        pi, log_pi, _, _ = self.policy.sample((state_batch, cat_batch), lens)
 
-        qf1_pi, qf2_pi = self.critic(state_batch, pi, lens)
+        qf1_pi, qf2_pi = self.critic((state_batch, cat_batch), pi, lens)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]

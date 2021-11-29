@@ -17,8 +17,49 @@ def weights_init_(m):
 
 
 class SharedNetwork(nn.Module):
-    def __init__(self, num_inputs, hidden_dim):
+    def __init__(self, num_inputs, hidden_dim=256):
         super(SharedNetwork, self).__init__()
+
+        self.hidden_dim = hidden_dim
+        # input_shape = [None, 400, 400, 3]
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=(8, 8), stride=(4, 4))
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2))
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1))
+        self.conv4 = nn.Conv2d(64, 128, kernel_size=(9, 9), stride=(3, 3))
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=(9, 9), stride=(1, 1))
+        self.conv6 = nn.Conv2d(128, hidden_dim, kernel_size=(5, 5), stride=(1, 1))
+        self.pool = nn.AdaptiveMaxPool2d((1, 1, hidden_dim))
+        self.fc1 = nn.Linear(hidden_dim, hidden_dim, bias=True)
+        self.relu = nn.ReLU()
+        self.flatten = nn.Flatten()
+        self.lstm = nn.LSTM(hidden_dim + 4, hidden_dim, batch_first=True)
+
+    def forward(self, obs, lens, hidden=None):
+        obs, cat_tensor = obs
+        batch_size, seq_len, h, w, c = obs.size()
+        obs = obs.view(batch_size * seq_len, h, w, c).permute(0, 3, 1, 2)
+        x = self.relu(self.conv1(obs))
+        x = self.relu(self.conv2(x))
+        x = self.relu(self.conv3(x))
+        x = self.relu(self.conv4(x))
+        x = self.relu(self.conv5(x))
+        x = self.relu(self.conv6(x))
+        x = self.flatten(x)
+        x = self.relu(self.fc1(x))
+        x = x.view(batch_size, seq_len, self.hidden_dim)
+        x = torch.cat((x, cat_tensor), dim=-1)
+        x = pack_padded_sequence(x, lens, batch_first=True, enforce_sorted=False)
+        if hidden is not None:
+            x, h = self.lstm(x, hidden)
+        else:
+            x, h = self.lstm(x)
+        x, output_lengths = pad_packed_sequence(x, batch_first=True)
+        return x, h
+
+
+class SharedNetworkD(nn.Module):
+    def __init__(self, num_inputs, hidden_dim):
+        super(SharedNetworkD, self).__init__()
         self.linear1 = nn.Linear(num_inputs, hidden_dim)
         self.lstm = nn.LSTM(hidden_dim, hidden_dim, batch_first=True)
 
@@ -39,15 +80,15 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
 
         self.out_size = num_inputs
-        self.shared = SharedNetwork(num_inputs, self.out_size)
+        self.shared = SharedNetwork(hidden_dim)
 
         # Q1 architecture
-        self.linear1 = nn.Linear(self.out_size + num_actions, hidden_dim)
+        self.linear1 = nn.Linear(hidden_dim + num_actions, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
         self.linear3 = nn.Linear(hidden_dim, 1)
 
         # Q2 architecture
-        self.linear4 = nn.Linear(self.out_size + num_actions, hidden_dim)
+        self.linear4 = nn.Linear(hidden_dim + num_actions, hidden_dim)
         self.linear5 = nn.Linear(hidden_dim, hidden_dim)
         self.linear6 = nn.Linear(hidden_dim, 1)
 
@@ -73,9 +114,9 @@ class GaussianPolicy(nn.Module):
         super(GaussianPolicy, self).__init__()
 
         self.out_size = 64
-        self.shared = SharedNetwork(num_inputs, self.out_size)
+        self.shared = SharedNetwork(hidden_dim)
 
-        self.linear1 = nn.Linear(self.out_size, hidden_dim)
+        self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
 
         self.mean_linear = nn.Linear(hidden_dim, num_actions)

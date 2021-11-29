@@ -41,9 +41,9 @@ class Config:
     save_freq = 100
 
     # Setting the SAC training parameters
-    batch_size = 16  # 32  # How many experience traces to use for each training step.
+    batch_size = 8  # 32  # How many experience traces to use for each training step.
     update_freq = 20  # How often to perform a training step after each episode.
-    pre_train_steps = 100  # 10000  # How many steps of random actions before training begins.
+    pre_train_steps = 10000  # 10000  # How many steps of random actions before training begins.
     load_model = True  # Whether to load a saved model.
     path = "_out/sac/"  # The path to save our model to.
     total_training_steps = 1000001
@@ -61,6 +61,7 @@ class Config:
     EPS_START = 0.9
     EPS_END = 0.1
     EPS_DECAY = 500
+    episode_buffer = 50
 
     # angle + 4 car related statistics + 2*num_pedestrians related statistics + one-hot encoded last_action
     input_size = 1 + 4 + 2 * num_pedestrians + num_actions
