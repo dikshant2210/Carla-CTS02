@@ -109,6 +109,7 @@ class ADRQNTrainer:
         self.n_actions = num_actions
         self.gamma = 0.999
         self.explore = 30
+        self.path = '_out/sac/'
 
         self.network = QNetwork(num_actions).to(self.device)
         self.target_network = QNetwork(num_actions).to(self.device)
@@ -176,6 +177,8 @@ class ADRQNTrainer:
             print("Goal: {}, Acccident: {}, Nearmiss: {}, Reward: {:.4f}".format(
                 info['goal'], acccident, nearmiss, episode_reward))
             self.target_network.load_state_dict(self.network.state_dict())
+            if (i_episode + 1) % 1:
+                torch.save(self.network.state_dict(), self.path + 'sac_{}.pth'.format(i_episode + 1))
         self.env.close()
 
     def update_parameters(self):
@@ -223,6 +226,7 @@ class ADRQNTrainer:
         loss = torch.nn.MSELoss()(q_values, target_values.detach())
         loss.backward()
         self.optimizer.step()
+        print("Q-Loss: {:.4f}".format(loss.item()))
 
 
 def main(args):
