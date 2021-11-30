@@ -177,7 +177,7 @@ class ADRQNTrainer:
             print("Goal: {}, Acccident: {}, Nearmiss: {}, Reward: {:.4f}".format(
                 info['goal'], acccident, nearmiss, episode_reward))
             self.target_network.load_state_dict(self.network.state_dict())
-            if (i_episode + 1) % 1 == 0:
+            if (i_episode + 1) % 100 == 0:
                 torch.save(self.network.state_dict(), self.path + 'sac_{}.pth'.format(i_episode + 1))
         self.env.close()
 
