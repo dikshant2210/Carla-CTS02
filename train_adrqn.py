@@ -160,14 +160,13 @@ class ADRQNTrainer:
                 state = next_state
                 cat_tensor = next_cat_tensor
 
-                # Updating Networks
-                if i_episode >= self.explore:
-                    self.update_parameters()
-                    eps = eps_end + (eps_start - eps_end) * math.exp((-1 * (i_episode - self.explore)) / eps_decay)
-
                 if done or info['accident']:
                     break
             self.storage.append(episode_memory)
+            # Updating Networks
+            if i_episode >= self.explore:
+                self.update_parameters()
+                eps = eps_end + (eps_start - eps_end) * math.exp((-1 * (i_episode - self.explore)) / eps_decay)
             print("Episode: {}, Reward: {:.4f} Ped. Speed: {}, Ped. Distance: {}".format(
                 i_episode, episode_reward, info['ped_speed'], info['ped_distance']))
             self.target_network.load_state_dict(self.network.state_dict())
