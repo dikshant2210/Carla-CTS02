@@ -155,20 +155,24 @@ class ADRQNTrainer:
                 next_cat_tensor = torch.from_numpy(np.array([reward, velocity_x * 3.6, velocity_y * 3.6, a])).view(1, 4)
                 episode_reward += reward
                 mask = float(done)
+                nearmiss = nearmiss or info['near miss']
+                acccident = acccident or info['accident']
 
                 episode_memory.add(state, cat_tensor, action, reward, next_state, next_cat_tensor, mask)
                 state = next_state
                 cat_tensor = next_cat_tensor
 
-                if done or info['accident']:
+                if done or acccident:
                     break
             self.storage.append(episode_memory)
             # Updating Networks
             if i_episode >= self.explore:
                 self.update_parameters()
                 eps = eps_end + (eps_start - eps_end) * math.exp((-1 * (i_episode - self.explore)) / eps_decay)
-            print("Episode: {}, Reward: {:.4f} Ped. Speed: {}, Ped. Distance: {}".format(
-                i_episode, episode_reward, info['ped_speed'], info['ped_distance']))
+            print("Episode: {} Ped. Speed: {:.2f}m/s, Ped. Distance: {:.2f}".format(
+                i_episode + 1, info['ped_speed'], info['ped_distance']))
+            print("Goal: {}, Acccident: {}, Nearmiss: {}, Reward: {:.4f}".format(
+                info['goal'], acccident, nearmiss, episode_reward))
             self.target_network.load_state_dict(self.network.state_dict())
         self.env.close()
 
