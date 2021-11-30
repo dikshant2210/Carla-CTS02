@@ -143,9 +143,10 @@ class ADRQNTrainer:
 
             for t in range(Config.num_steps):
                 lens = torch.IntTensor([1])
+                cat_tensor = cat_tensor.type(torch.FloatTensor)
                 action, hidden = self.network.act((state.unsqueeze(0).to(self.device),
-                                                   cat_tensor.unsqueeze(0).to(self.device)),
-                                                  lens, hidden=hidden, epsilon=eps)
+                                                   cat_tensor.unsqueeze(0).to(self.device)), lens,
+                                                  hidden=hidden, epsilon=eps)
                 observation, reward, done, info = self.env.step(action)
                 next_state = torch.tensor(observation).float().unsqueeze(0)
                 velocity = info['velocity']
