@@ -165,7 +165,7 @@ class ADRQNTrainer:
                     self.update_parameters()
                     eps = eps_end + (eps_start - eps_end) * math.exp((-1 * (i_episode - self.explore)) / eps_decay)
 
-                if done:
+                if done or info['accident']:
                     break
             self.storage.append(episode_memory)
             print("Episode: {}, Reward: {:.4f} Ped. Speed: {}, Ped. Distance: {}".format(
