@@ -59,7 +59,6 @@ class SACTrainer:
                 if Config.pre_train_steps > total_numsteps:
                     action = np.zeros(self.env.action_space.n)
                     a = self.env.action_space.sample()
-                    a = 0
                     action[a] = 1.0  # Sample random action
                 else:
                     # Sample action from policy
