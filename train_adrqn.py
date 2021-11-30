@@ -167,10 +167,12 @@ class ADRQNTrainer:
             self.storage.append(episode_memory)
             # Updating Networks
             if i_episode >= self.explore:
-                self.update_parameters()
+                for _ in range(Config.update_freq):
+                    self.update_parameters()
                 eps = eps_end + (eps_start - eps_end) * math.exp((-1 * (i_episode - self.explore)) / eps_decay)
-            print("Episode: {} Ped. Speed: {:.2f}m/s, Ped. Distance: {:.2f}".format(
-                i_episode + 1, info['ped_speed'], info['ped_distance']))
+
+            print("Episode: {} Ped. Speed: {:.2f}m/s, Ped. Distance: {:.2f} Eps: {:.3f}".format(
+                i_episode + 1, info['ped_speed'], info['ped_distance'], eps))
             print("Goal: {}, Acccident: {}, Nearmiss: {}, Reward: {:.4f}".format(
                 info['goal'], acccident, nearmiss, episode_reward))
             self.target_network.load_state_dict(self.network.state_dict())

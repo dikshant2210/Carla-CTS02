@@ -41,7 +41,7 @@ class Config:
     save_freq = 100
 
     # Setting the SAC training parameters
-    batch_size = 4  # 32  # How many experience traces to use for each training step.
+    batch_size = 2  # 32  # How many experience traces to use for each training step.
     update_freq = 2  # How often to perform a training step after each episode.
     pre_train_steps = 10000  # 10000  # How many steps of random actions before training begins.
     load_model = True  # Whether to load a saved model.
