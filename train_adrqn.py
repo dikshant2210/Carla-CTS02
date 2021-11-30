@@ -173,7 +173,7 @@ class ADRQNTrainer:
         self.env.close()
 
     def update_parameters(self):
-        episodes = random.sample(self.storage, 1)
+        episodes = random.sample(self.storage, Config.batch_size)
         s = list()
         c = list()
         a = list()
