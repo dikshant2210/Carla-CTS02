@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
+import torch.nn.functional as F
 from collections import deque
 import random
 import math
@@ -216,6 +217,9 @@ class ADRQNTrainer:
         #       next_cat_batch.size(), mask_batch.size())
 
         q_values, _ = self.network.forward((state_batch, cat_batch), lens)
+        prob = F.softmax(q_values, dim=-1)
+        log_prob = F.softmax(q_values, dim=-1)
+        entropy = -(log_prob * prob).sum()
         q_values = torch.gather(q_values, -1, action_batch).squeeze(-1)
         predicted_q_values, _ = self.target_network.forward((next_state_batch, next_cat_batch), lens)
         target_values = reward_batch.squeeze(-1) + (self.gamma * (1 - mask_batch.float().squeeze(-1)) *
@@ -223,10 +227,10 @@ class ADRQNTrainer:
 
         # Update network parameters
         self.optimizer.zero_grad()
-        loss = torch.nn.MSELoss()(q_values, target_values.detach())
+        loss = F.smooth_l1_loss(q_values, target_values.detach()) - Config.a2c_entropy_coef * entropy
         loss.backward()
         self.optimizer.step()
-        print("Q-Loss: {:.4f}".format(loss.item()))
+        print("Q-Loss: {:.4f}, Entropy: {:.4f}".format(loss.item(), entropy.item()))
 
 
 def main(args):
