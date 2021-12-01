@@ -227,10 +227,11 @@ class ADRQNTrainer:
 
         # Update network parameters
         self.optimizer.zero_grad()
-        loss = F.smooth_l1_loss(q_values, target_values.detach()) - Config.a2c_entropy_coef * entropy
+        qloss = F.smooth_l1_loss(q_values, target_values.detach())
+        loss = qloss - Config.a2c_entropy_coef * entropy
         loss.backward()
         self.optimizer.step()
-        print("Q-Loss: {:.4f}, Entropy: {:.4f}".format(loss.item(), Config.a2c_entropy_coef * entropy.item()))
+        print("Q-Loss: {:.4f}, Entropy: {:.4f}".format(qloss.item(), Config.a2c_entropy_coef * entropy.item()))
 
 
 def main(args):
