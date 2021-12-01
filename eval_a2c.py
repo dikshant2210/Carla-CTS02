@@ -98,15 +98,16 @@ def eval_a2c():
             observation, reward, done, info = env.step(speed_action)
             exec_time += (time.time() - start_time)
 
-            nearmiss_current = info['near miss']
-            nearmiss = nearmiss_current or nearmiss
-            accident_current = info['accident']
-            accident = accident_current or accident
-            total_episode_reward += reward
-
             velocity = info['velocity']
             velocity_x = velocity.x
             velocity_y = velocity.y
+            speed = np.sqrt(velocity_x ** 2 + velocity_y ** 2)
+
+            nearmiss_current = info['near miss']
+            nearmiss = nearmiss_current or (nearmiss and speed > 0)
+            accident_current = info['accident']
+            accident = accident_current or (accident and speed > 0)
+            total_episode_reward += reward
 
             if done or accident:
                 break
