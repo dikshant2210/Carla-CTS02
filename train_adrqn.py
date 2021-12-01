@@ -218,7 +218,7 @@ class ADRQNTrainer:
 
         q_values, _ = self.network.forward((state_batch, cat_batch), lens)
         prob = F.softmax(q_values, dim=-1)
-        log_prob = F.softmax(q_values, dim=-1)
+        log_prob = F.log_softmax(q_values, dim=-1)
         entropy = -(log_prob * prob).sum()
         q_values = torch.gather(q_values, -1, action_batch).squeeze(-1)
         predicted_q_values, _ = self.target_network.forward((next_state_batch, next_cat_batch), lens)
