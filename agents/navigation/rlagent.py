@@ -153,7 +153,7 @@ class RLAgent(Agent):
         # "Heavily" penalize braking if you are already standing still
         if self.prev_speed is not None:
             if action == 2 and self.prev_speed < 0.2:
-                reward -= 1
+                reward -= Config.braking_penalty
 
         # Penalize braking/acceleration actions to get a smoother ride
         if action != 0:
