@@ -62,6 +62,7 @@ class Config:
     EPS_END = 0.1
     EPS_DECAY = 500
     episode_buffer = 80
+    adrqn_entropy_coef = 0.0005
 
     # angle + 4 car related statistics + 2*num_pedestrians related statistics + one-hot encoded last_action
     input_size = 1 + 4 + 2 * num_pedestrians + num_actions
@@ -85,7 +86,7 @@ class Config:
     max_speed = 50
     hit_penalty = 1000
     goal_reward = 1000
-    braking_penalty = 100
+    braking_penalty = 10
 
     # A2C training parameters
     a2c_lr = 0.0001
