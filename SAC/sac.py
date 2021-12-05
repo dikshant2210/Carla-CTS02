@@ -54,6 +54,13 @@ class SAC(object):
     def update_parameters(self, memory, batch_size, updates):
         # Sample a batch from memory
         state_batch, cat_batch, action_batch, reward_batch, next_state_batch, next_cat_batch, mask_batch = memory.sample(batch_size)
+        state_batch = state_batch.to(self.device)
+        cat_batch = cat_batch.to(self.device)
+        action_batch = action_batch.to(self.device)
+        reward_batch = reward_batch.to(self.device)
+        next_state_batch = next_state_batch.to(self.device)
+        next_cat_batch = next_cat_batch.to(self.device)
+        mask_batch = mask_batch.to(self.device)
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample((next_state_batch, next_cat_batch))
