@@ -14,6 +14,7 @@ class Memory:
         self.next_state = deque([], maxlen=Config.episode_buffer)
         self.next_cat_tensor = deque([], maxlen=Config.episode_buffer)
         self.mask = deque([], maxlen=Config.episode_buffer)
+        self.weight = []
 
     def add(self, state, cat_tensor, action, reward, next_state, next_cat_tensor, mask):
         self.state.append(state)
@@ -23,9 +24,12 @@ class Memory:
         self.mask.append(mask)
         self.cat_tensor.append(cat_tensor)
         self.next_cat_tensor.append(next_cat_tensor)
+        self.weight.append(1.0)
 
     def sample(self, batch_size):
-        indexes = random.sample(list(range(len(self.state))), batch_size)
+        total = sum(self.weight)
+        weights = [x / total for x in self.weight]
+        indexes = random.choices(list(range(len(self.state))), weights=weights, k=batch_size)
         state = []
         cat_tensor = []
         action = []
