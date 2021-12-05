@@ -44,7 +44,7 @@ def eval_a2c():
     env.eval()
 
     # Instantiating RL agent
-    torch.manual_seed(100)
+    # torch.manual_seed(100)
     rl_agent = A2C(hidden_dim=256, num_actions=3).cuda()
     rl_agent.load_state_dict(torch.load(path))
     rl_agent.eval()
@@ -129,8 +129,6 @@ def eval_a2c():
         ##############################################################
 
         current_episode += 1
-        if current_episode % Config.save_freq == 0:
-            torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
 
     env.close()
     print("Evaluation time: {:.4f}hrs".format((time.time() - t0) / 3600))
@@ -160,7 +158,7 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=2900,
         type=int,
         help='TCP port to listen to (default: 2900)')
     arg = arg_parser.parse_args()
