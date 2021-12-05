@@ -90,7 +90,7 @@ class SACTrainer:
                 total_numsteps, episode_steps, round(episode_reward, 4)))
             print("Goal: {}, Accident: {}, Nearmiss: {}".format(info['goal'], acccident, nearmiss))
 
-            if len(self.episode_memory.state) > batch_size:
+            if len(self.episode_memory.state) > batch_size and total_numsteps > Config.pre_train_steps:
                 # Number of updates per step in environment
                 for i in range(Config.update_freq):
                     # Update parameters of all the networks

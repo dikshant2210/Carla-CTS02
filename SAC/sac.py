@@ -49,7 +49,7 @@ class SAC(object):
         else:
             _, _, action = self.policy.sample((state, cat_tensor))
         action = action.detach().cpu().numpy()[0]
-        return action.squeeze(0)
+        return action
 
     def update_parameters(self, memory, batch_size, updates):
         # Sample a batch from memory

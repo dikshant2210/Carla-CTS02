@@ -6,7 +6,7 @@ from config import Config
 
 class Memory:
     def __init__(self):
-        Config.episode_buffer = 10000
+        Config.episode_buffer = 20000
         self.state = deque([], maxlen=Config.episode_buffer)
         self.cat_tensor = deque([], maxlen=Config.episode_buffer)
         self.action = deque([], maxlen=Config.episode_buffer)
