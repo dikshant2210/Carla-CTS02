@@ -105,7 +105,8 @@ class GaussianPolicy(nn.Module):
     def sample(self, state):
         out = self.forward(state)
         action_probs = F.softmax(out, dim=1)
-        print(action_probs)
+        print(torch.isnan(out).sum(), torch.isnan(state).sum())
+        # print(action_probs)
         action_dist = torch.distributions.Categorical(probs=action_probs)
         actions = action_dist.sample().view(-1, 1)
 
