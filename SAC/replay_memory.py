@@ -14,7 +14,7 @@ class Memory:
         self.next_state = deque([], maxlen=Config.episode_buffer)
         self.next_cat_tensor = deque([], maxlen=Config.episode_buffer)
         self.mask = deque([], maxlen=Config.episode_buffer)
-        self.weight = []
+        self.weight = deque([], maxlen=Config.episode_buffer)
 
     def add(self, state, cat_tensor, action, reward, next_state, next_cat_tensor, mask):
         self.state.append(state)

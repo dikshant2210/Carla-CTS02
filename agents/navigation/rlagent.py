@@ -159,7 +159,7 @@ class RLAgent(Agent):
 
         # Penalize braking/acceleration actions to get a smoother ride
         if action == 0:
-            reward -= 0.01
+            reward -= 0.005
         if action == 2:
             reward -= 0.05
 
