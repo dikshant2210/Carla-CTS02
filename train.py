@@ -50,6 +50,8 @@ class SACTrainer:
             acccident = False
 
             for _ in range(Config.num_steps):
+                if Config.display or True:
+                    self.env.render()
                 if Config.pre_train_steps > total_numsteps:
                     # action = np.zeros(self.env.action_space.n)
                     action = self.env.action_space.sample()
@@ -60,7 +62,7 @@ class SACTrainer:
                         action = self.agent.select_action((state, cat_tensor))
                     # a = np.argmax(action, axis=-1)
 
-                next_state, reward, done, info = self.env.step(a)  # Step
+                next_state, reward, done, info = self.env.step(action)  # Step
                 next_state = torch.tensor(next_state).float().unsqueeze(0)
                 velocity = info['velocity']
                 velocity_x = velocity.x
