@@ -23,37 +23,31 @@ class SharedNetwork(nn.Module):
         self.hidden_dim = hidden_dim
         # input_shape = [None, 400, 400, 3]
         self.conv1 = nn.Conv2d(3, 32, kernel_size=(8, 8), stride=(4, 4))
-        self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2))
-        self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1))
-        self.bn3 = nn.BatchNorm2d(64)
         self.conv4 = nn.Conv2d(64, 128, kernel_size=(9, 9), stride=(3, 3))
-        self.bn4 = nn.BatchNorm2d(128)
         self.conv5 = nn.Conv2d(128, 128, kernel_size=(9, 9), stride=(1, 1))
-        self.bn5 = nn.BatchNorm2d(128)
         self.conv6 = nn.Conv2d(128, hidden_dim, kernel_size=(5, 5), stride=(1, 1))
+        self.pool = nn.AdaptiveMaxPool2d((1, 1, hidden_dim))
         self.fc1 = nn.Linear(hidden_dim, hidden_dim, bias=True)
-        self.ln1 = nn.LayerNorm(hidden_dim)
         self.relu = nn.ReLU()
         self.flatten = nn.Flatten()
         self.fc2 = nn.Linear(hidden_dim + 4, hidden_dim)
-        self.ln2 = nn.LayerNorm(hidden_dim)
 
     def forward(self, obs):
         obs, cat_tensor = obs
         obs = obs.permute(0, 3, 1, 2)
         obs = F.normalize(obs)
-        x = self.bn1(self.relu(self.conv1(obs)))
-        x = self.bn2(self.relu(self.conv2(x)))
-        x = self.bn3(self.relu(self.conv3(x)))
-        x = self.bn4(self.relu(self.conv4(x)))
-        x = self.bn5(self.relu(self.conv5(x)))
+        x = self.relu(self.conv1(obs))
+        x = self.relu(self.conv2(x))
+        x = self.relu(self.conv3(x))
+        x = self.relu(self.conv4(x))
+        x = self.relu(self.conv5(x))
         x = self.relu(self.conv6(x))
         x = self.flatten(x)
-        x = self.ln1(self.relu(self.fc1(x)))
+        x = self.relu(self.fc1(x))
         x = torch.cat((x, cat_tensor), dim=-1)
-        x = self.ln2(self.fc2(x))
+        x = self.fc2(x)
         return x
 
 
@@ -107,14 +101,13 @@ class GaussianPolicy(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         out = self.out(x)
+        if torch.isnan(out).sum().item() > 0:
+            print(torch.isnan(out).sum().item(), torch.isnan(x).sum().item(), torch.isnan(state).sum().item())
         return out
 
     def sample(self, state):
         out = self.forward(state)
         action_probs = F.softmax(out, dim=1)
-        print(torch.isnan(out).sum().item(), torch.isnan(state[0]).sum().item(),
-              torch.isnan(state[1]).sum().item(), torch.isnan(action_probs).sum().item())
-        # print(action_probs)
         action_dist = torch.distributions.Categorical(probs=action_probs)
         actions = action_dist.sample().view(-1, 1)
 
