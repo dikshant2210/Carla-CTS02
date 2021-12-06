@@ -159,7 +159,7 @@ class SAC(object):
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
         q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True)
         entropies = -torch.sum(pi * log_pi, dim=1, keepdim=True)
-        policy_loss = -(q + self.alpha * entropies).mean()
+        policy_loss = -(q + self.alpha * 0.05 * entropies).mean()
         # print("Entropy: {:.4f}, Q: {:.4f}".format(self.alpha * entropies.mean().item(), q.mean().item()))
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]

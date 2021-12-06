@@ -53,7 +53,7 @@ class Config:
     max_epLength = 500  # The max allowed length of our episode.
     sac_gamma = 0.99
     sac_tau = 0.005
-    sac_lr = 0.0003
+    sac_lr = 0.0001
     sac_alpha = 0.2
     num_pedestrians = 4
     num_angles = 5
