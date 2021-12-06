@@ -103,7 +103,7 @@ class SACTrainer:
                     critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters_categorical(
                         self.episode_memory, batch_size, updates)
                     updates += 1
-                    print("Q-Loss: {:.4f}, Policy Loss: {:.4f}".format(critic_2_loss + critic_1_loss, policy_loss))
+                    # print("Q-Loss: {:.4f}, Policy Loss: {:.4f}".format(critic_2_loss + critic_1_loss, policy_loss))
 
         self.env.close()
 

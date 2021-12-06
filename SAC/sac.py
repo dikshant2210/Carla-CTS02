@@ -161,7 +161,6 @@ class SAC(object):
         q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True) * 0.01
         entropies = -torch.sum(pi * log_pi, dim=1, keepdim=True)
         policy_loss = -(q + 0.01 * self.alpha * entropies).mean()
-        print("Entropy: {:.4f}, Q: {:.4f}".format((0.01 * self.alpha * entropies).mean().item(), q.mean().item()))
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
         # policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
@@ -190,6 +189,10 @@ class SAC(object):
 
         if updates % self.target_update_interval == 0:
             soft_update(self.critic_target, self.critic, self.tau)
+
+        print("Entropy: {:.4f}, Q: {:.4f}, Policy loss: {:.4f}, Q-Loss: {:.4f}".format(
+            (0.01 * self.alpha * entropies).mean().item(), q.mean().item(), policy_loss.item(),
+            qf1_loss.item() + qf2_loss.item()))
 
         return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
 
