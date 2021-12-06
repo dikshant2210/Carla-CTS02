@@ -47,13 +47,13 @@ class Config:
     load_model = True  # Whether to load a saved model.
     path = "_out/sac/"  # The path to save our model to.
     total_training_steps = 1000001
-    automatic_entropy_tuning = False
+    automatic_entropy_tuning = True
     target_update_interval = 1
     hidden_size = 256
     max_epLength = 500  # The max allowed length of our episode.
     sac_gamma = 0.99
     sac_tau = 0.005
-    sac_lr = 0.0001
+    sac_lr = 0.0003
     sac_alpha = 0.2
     num_pedestrians = 4
     num_angles = 5
