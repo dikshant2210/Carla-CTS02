@@ -148,7 +148,7 @@ class SAC(object):
 
         self.critic_optim.zero_grad()
         qf_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.1)
         self.critic_optim.step()
 
         _, log_pi, pi = self.policy.sample((state_batch, cat_batch))
@@ -168,7 +168,7 @@ class SAC(object):
 
         self.policy_optim.zero_grad()
         policy_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=0.1)
         self.policy_optim.step()
 
         for p in self.critic.parameters():
@@ -179,7 +179,7 @@ class SAC(object):
 
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.log_alpha, max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.log_alpha, max_norm=0.1)
             self.alpha_optim.step()
 
             self.alpha = self.log_alpha.exp()
