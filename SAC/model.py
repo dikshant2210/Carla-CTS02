@@ -130,10 +130,10 @@ class GaussianPolicy(nn.Module):
         pi_distribution = Normal(mean, std)
         pi_action = pi_distribution.rsample()
         logp_pi = pi_distribution.log_prob(pi_action).sum(axis=-1)
-        logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(axis=1, keepdim=True)
+        logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(axis=1)
 
         pi_action = torch.tanh(pi_action)
-        return pi_action, logp_pi, mean
+        return pi_action, logp_pi.unsqueeze(0), mean
 
     def to(self, device):
         self.action_scale = self.action_scale.to(device)
