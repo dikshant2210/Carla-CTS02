@@ -1,8 +1,7 @@
-#include"ped_pomdp.h"
+#include "ped_pomdp.h"
 #include "solver/despot.h"
 #include "connector.h"
 #include "HybridDespot.h"
-#include "path_connector.h"
 #include<random>
 #include<ctime>
 
@@ -16,7 +15,7 @@ public:
     typedef pair<float, Pedestrian> PedDistPair;
 
     int observation_size = 4 + 2*NUM_PEDESTRIANS;
-//    void run(connector& conn, PathConnector& path_conn) {
+
     void run(connector& conn) {
         worldModel = WorldModel();
 
@@ -27,7 +26,6 @@ public:
         ScenarioLowerBound *lower_bound = pomdp.CreateScenarioLowerBound("SMART");
         ScenarioUpperBound *upper_bound = pomdp.CreateScenarioUpperBound("SMART", "SMART");
 
-        //HybridDESPOT solver = HybridDESPOT(&pomdp, lower_bound, upper_bound, &python_conn);
         DESPOT solver = DESPOT(&pomdp, lower_bound, upper_bound);
 
         // for pomdp planning and print world info
@@ -57,10 +55,6 @@ public:
 			world_state.peds[i].goal = -1;
 			world_state.peds[i].pos = COORD(ped.first,ped.second);
             world_state.peds[i].id = i;
-        }
-        for(int i = 0; i < n_peds; i++) {
-            PedHistory h(world_state.peds[i].pos.x, world_state.peds[i].pos.y);
-            worldModel.history.push_back(h);
         }
 
         int num_of_peds_world = n_peds;
@@ -105,7 +99,7 @@ public:
 
 			// set current position to be 0 (will probably always stay that way)
 			world_state.car.pos = 0;
-			world_state.car.vel = m->carSpeed;
+			world_state.car.vel = m->carSpeed; // in m/s
 
             for(int i=0; i<n_peds; i++) {
                 pair<float,float> &ped = m->pedestrianPositions[i];
@@ -115,28 +109,6 @@ public:
             }
             // log the path of pedestrian
             clog << world_state.peds[0].pos << "\n";
-
-            if(step < 14) {
-                for(int i = 0; i < n_peds; i++) {
-                    worldModel.history[i].x.push_back(world_state.peds[i].pos.x);
-                    worldModel.history[i].y.push_back(world_state.peds[i].pos.y);
-                }
-            }
-            else {
-                for(int i = 0; i < n_peds; i++) {
-                    worldModel.history[i].x.push_back(world_state.peds[i].pos.x);
-                    worldModel.history[i].y.push_back(world_state.peds[i].pos.y);
-                    worldModel.history[i].x.erase(worldModel.history[i].x.begin());
-                    worldModel.history[i].y.erase(worldModel.history[i].y.begin());
-                }
-                //TODO ... store predicted path in predicted_path
-                worldModel.use_path_prediction = false;
-//                vector<PedHistory> prediction = path_conn.getPredictedPath(worldModel.history);
-                for(int i = 0; i < n_peds; i++) {
-                    PedHistory h(worldModel.history[i].x.back(), worldModel.history[i].y.back());
-                    worldModel.predicted_path.push_back(h);
-                }
-            }
 
             COORD &pathPos = worldModel.path[world_state.car.pos];
             if(worldModel.inCollision(world_state)){
@@ -273,7 +245,7 @@ int main(int argc, char** argv) {
 
     Globals::config.discount = 0.990;
 	Globals::config.time_per_move = (1.0 / ModelParams::control_freq);
-	Globals::config.search_depth = 60;
+	Globals::config.search_depth = 20;
 
 	cout << "Maximum search_depth: " << Globals::config.search_depth
 	    << ", num_scenarios" << Globals::config.num_scenarios << "\n";
@@ -288,9 +260,6 @@ int main(int argc, char** argv) {
     connector conn;
     conn.establish_connection(port);
     conn.sendMessage("RESET\n");
-
-//    PathConnector path_conn;
-//    path_conn.establish_connection();
 
     Simulator sim;
     for(long i=0;; i++){
