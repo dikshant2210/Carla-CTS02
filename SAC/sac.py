@@ -40,7 +40,7 @@ class SAC(object):
             self.alpha_optim = Adam([self.log_alpha], lr=Config.sac_lr)
 
         self.policy = GaussianPolicy(num_inputs, action_space.n, Config.hidden_size).to(self.device)
-        self.policy_optim = Adam(self.policy.parameters(), lr=Config.sac_lr)
+        self.policy_optim = Adam(self.policy.parameters(), lr=Config.sac_lr, weight_decay=1e-4)
 
     def select_action(self, state, evaluate=False):
         cat_tensor = state[1].type(torch.FloatTensor).to(self.device)
