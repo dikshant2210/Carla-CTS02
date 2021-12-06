@@ -61,7 +61,8 @@ class Memory:
             mask.append(self.mask[i])
 
         state = torch.vstack([s for s in state])
-        action = torch.vstack([torch.from_numpy(a) for a in action]).type(torch.FloatTensor)
+        # action = torch.vstack([torch.from_numpy(a) for a in action]).type(torch.FloatTensor)
+        action = torch.vstack([torch.tensor(a) for a in action]).type(torch.FloatTensor)
         reward = torch.vstack([torch.tensor(r) for r in reward]).type(torch.FloatTensor)
         next_state = torch.vstack([ns for ns in next_state])
         mask = torch.vstack([torch.tensor(m) for m in mask])

@@ -51,14 +51,14 @@ class SACTrainer:
 
             for _ in range(Config.num_steps):
                 if Config.pre_train_steps > total_numsteps:
-                    action = np.zeros(self.env.action_space.n)
-                    a = self.env.action_space.sample()
-                    action[a] = 1.0  # Sample random action
+                    # action = np.zeros(self.env.action_space.n)
+                    action = self.env.action_space.sample()
+                    # action[a] = 1.0  # Sample random action
                 else:
                     # Sample action from policy
                     with torch.no_grad():
                         action = self.agent.select_action((state, cat_tensor))
-                    a = np.argmax(action, axis=-1)
+                    # a = np.argmax(action, axis=-1)
 
                 next_state, reward, done, info = self.env.step(a)  # Step
                 next_state = torch.tensor(next_state).float().unsqueeze(0)
@@ -94,7 +94,7 @@ class SACTrainer:
                 # Number of updates per step in environment
                 for i in range(Config.update_freq):
                     # Update parameters of all the networks
-                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters(
+                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters_categorical(
                         self.episode_memory, batch_size, updates)
                     updates += 1
                     print("Q-Loss: {:.4f}, Policy Loss: {:.4f}".format(critic_2_loss + critic_1_loss, policy_loss))

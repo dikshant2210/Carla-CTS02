@@ -58,20 +58,19 @@ class QNetwork(nn.Module):
         self.shared = SharedNetwork(hidden_dim)
 
         # Q1 architecture
-        self.linear1 = nn.Linear(hidden_dim + num_actions, hidden_dim)
+        self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear3 = nn.Linear(hidden_dim, 1)
+        self.linear3 = nn.Linear(hidden_dim, num_actions)
 
         # Q2 architecture
-        self.linear4 = nn.Linear(hidden_dim + num_actions, hidden_dim)
+        self.linear4 = nn.Linear(hidden_dim, hidden_dim)
         self.linear5 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear6 = nn.Linear(hidden_dim, 1)
+        self.linear6 = nn.Linear(hidden_dim, num_actions)
 
         self.apply(weights_init_)
 
-    def forward(self, state, action):
-        state = self.shared(state)
-        xu = torch.cat([state, action], -1)
+    def forward(self, state):
+        xu = self.shared(state)
 
         x1 = F.relu(self.linear1(xu))
         x1 = F.relu(self.linear2(x1))
@@ -93,64 +92,25 @@ class GaussianPolicy(nn.Module):
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
 
-        self.mean_linear = nn.Linear(hidden_dim, num_actions)
-        self.log_std_linear = nn.Linear(hidden_dim, num_actions)
-
+        self.out = nn.Linear(hidden_dim, num_actions)
         self.apply(weights_init_)
-
-        self.action_scale = torch.tensor(1.)
-        self.action_bias = torch.tensor(0.)
 
     def forward(self, state):
         state = self.shared(state)
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
-        mean = self.mean_linear(x)
-        log_std = self.log_std_linear(x)
-        log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
-        return mean, log_std
+        out = self.out(x)
+        return out
 
-    def sample_base(self, state):
-        mean, log_std = self.forward(state)
-        std = log_std.exp()
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        action = y_t * self.action_scale + self.action_bias
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log(self.action_scale * (1 - y_t.pow(2)) + epsilon)
-        log_prob = log_prob.sum(-1, keepdim=True)
-        mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action, log_prob, mean
-
-    def sample_gumbel(self, state):
-        pass
-
-    def sample_(self, state):
-        out, _ = self.forward(state)
+    def sample(self, state):
+        out = self.forward(state)
         action_probs = F.softmax(out, dim=1)
         action_dist = torch.distributions.Categorical(action_probs)
         actions = action_dist.sample().view(-1, 1)
 
         z = (action_probs == 0).float() * 1e-8
         log_action_probs = torch.log(action_probs + z)
-        print(actions.size(), log_action_probs.size())
         return actions, log_action_probs, action_probs
 
-    def sample(self, state):
-        mean, log_std = self.forward(state)
-        std = log_std.exp()
-        pi_distribution = Normal(mean, std)
-        pi_action = pi_distribution.rsample()
-        logp_pi = pi_distribution.log_prob(pi_action).sum(axis=-1)
-        logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(axis=1)
-
-        pi_action = torch.tanh(pi_action)
-        print(pi_action.size(), logp_pi.size())
-        return pi_action, logp_pi, mean
-
     def to(self, device):
-        self.action_scale = self.action_scale.to(device)
-        self.action_bias = self.action_bias.to(device)
         return super(GaussianPolicy, self).to(device)
