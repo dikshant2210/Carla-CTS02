@@ -50,7 +50,7 @@ class SharedNetwork(nn.Module):
         if torch.isnan(x8).sum().item() > 0:
             print(torch.isnan(x1).sum().item(), torch.isnan(x2).sum().item(), torch.isnan(x3).sum().item(),
                   torch.isnan(x4).sum().item(), torch.isnan(x5).sum().item(), torch.isnan(x6).sum().item(),
-                  torch.isnan(x7).sum().item(), torch.isnan(x8).sum().item())
+                  torch.isnan(x7).sum().item(), torch.isnan(x8).sum().item(), torch.isnan(obs).sum().item())
         return x8
 
 
