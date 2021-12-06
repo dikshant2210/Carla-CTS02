@@ -38,17 +38,20 @@ class SharedNetwork(nn.Module):
         obs, cat_tensor = obs
         obs = obs.permute(0, 3, 1, 2)
         obs = F.normalize(obs)
-        x = self.relu(self.conv1(obs))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.conv3(x))
-        x = self.relu(self.conv4(x))
-        x = self.relu(self.conv5(x))
-        x = self.relu(self.conv6(x))
-        x = self.flatten(x)
-        x = self.relu(self.fc1(x))
-        x = torch.cat((x, cat_tensor), dim=-1)
-        x = self.fc2(x)
-        return x
+        x1 = self.relu(self.conv1(obs))
+        x2 = self.relu(self.conv2(x1))
+        x3 = self.relu(self.conv3(x2))
+        x4 = self.relu(self.conv4(x3))
+        x5 = self.relu(self.conv5(x4))
+        x6 = self.relu(self.conv6(x5))
+        x7 = self.relu(self.fc1(self.flatten(x6)))
+        x7 = torch.cat((x7, cat_tensor), dim=-1)
+        x8 = self.fc2(x7)
+        if torch.isnan(x8).sum().item() > 0:
+            print(torch.isnan(x1).sum().item(), torch.isnan(x2).sum().item(), torch.isnan(x3).sum().item(),
+                  torch.isnan(x4).sum().item(), torch.isnan(x5).sum().item(), torch.isnan(x6).sum().item(),
+                  torch.isnan(x7).sum().item(), torch.isnan(x8).sum().item())
+        return x8
 
 
 class QNetwork(nn.Module):
@@ -101,8 +104,8 @@ class GaussianPolicy(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         out = self.out(x)
-        if torch.isnan(out).sum().item() > 0:
-            print(torch.isnan(out).sum().item(), torch.isnan(x).sum().item(), torch.isnan(state).sum().item())
+        # if torch.isnan(out).sum().item() > 0:
+        #     print(torch.isnan(out).sum().item(), torch.isnan(x).sum().item(), torch.isnan(state).sum().item())
         return out
 
     def sample(self, state):
