@@ -127,7 +127,7 @@ class RLAgent(Agent):
                 reward -= collision_reward
 
         # reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
-        reward -= pow(goal_dist / 4000.0, 0.8) * 1.2
+        reward -= pow(goal_dist / 3000.0, 0.8) * 1.2
 
         # TODO: Replace the below with all grid positions of incoming_car in player rectangle
         # Cost of collision with obstacles

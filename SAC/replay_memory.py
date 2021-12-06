@@ -1,5 +1,7 @@
 import torch
 import random
+import math
+import numpy as np
 from collections import deque
 from config import Config
 
@@ -16,6 +18,13 @@ class Memory:
         self.mask = deque([], maxlen=Config.episode_buffer)
         self.weight = deque([], maxlen=Config.episode_buffer)
 
+    @staticmethod
+    def normpdf(x, mean, sd=1):
+        var = float(sd) ** 2
+        denom = (2 * math.pi * var) ** .5
+        num = math.exp(-(float(x) - float(mean)) ** 2 / (2 * var))
+        return num / denom
+
     def add(self, state, cat_tensor, action, reward, next_state, next_cat_tensor, mask):
         self.state.append(state)
         self.action.append(action)
@@ -24,7 +33,11 @@ class Memory:
         self.mask.append(mask)
         self.cat_tensor.append(cat_tensor)
         self.next_cat_tensor.append(next_cat_tensor)
-        self.weight.append(1.0)
+        a = np.argmax(action, axis=-1)
+        if a == 0:
+            self.weight.append(0.9)
+        else:
+            self.weight.append(0.45)
 
     def sample(self, batch_size):
         total = sum(self.weight)
