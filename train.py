@@ -50,7 +50,7 @@ class SACTrainer:
             acccident = False
 
             for _ in range(Config.num_steps):
-                if Config.display or True:
+                if Config.display:
                     self.env.render()
                 if Config.pre_train_steps > total_numsteps:
                     # action = np.zeros(self.env.action_space.n)
