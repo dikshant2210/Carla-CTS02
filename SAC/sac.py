@@ -45,10 +45,11 @@ class SAC(object):
         cat_tensor = state[1].type(torch.FloatTensor).to(self.device)
         state = torch.FloatTensor(state[0]).to(self.device)
         if evaluate is False:
-            action, _, _ = self.policy.sample((state, cat_tensor))
+            action, logp, _ = self.policy.sample((state, cat_tensor))
         else:
-            _, _, action = self.policy.sample((state, cat_tensor))
+            _, logp, action = self.policy.sample((state, cat_tensor))
         action = action.detach().cpu().numpy()[0]
+        print(logp.size())
         return action
 
     def update_parameters(self, memory, batch_size, updates):
@@ -80,6 +81,8 @@ class SAC(object):
         self.critic_optim.step()
 
         pi, log_pi, _ = self.policy.sample((state_batch, cat_batch))
+        for p in self.critic.parameters():
+            p.requires_grad = False
 
         qf1_pi, qf2_pi = self.critic((state_batch, cat_batch), pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
@@ -90,6 +93,9 @@ class SAC(object):
         self.policy_optim.zero_grad()
         policy_loss.backward()
         self.policy_optim.step()
+
+        for p in self.critic.parameters():
+            p.requires_grad = True
 
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()

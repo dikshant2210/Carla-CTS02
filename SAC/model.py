@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
@@ -109,19 +110,30 @@ class GaussianPolicy(nn.Module):
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
 
+    # def sample(self, state):
+    #     mean, log_std = self.forward(state)
+    #     std = log_std.exp()
+    #     normal = Normal(mean, std)
+    #     x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
+    #     y_t = torch.tanh(x_t)
+    #     action = y_t * self.action_scale + self.action_bias
+    #     log_prob = normal.log_prob(x_t)
+    #     # Enforcing Action Bound
+    #     log_prob -= torch.log(self.action_scale * (1 - y_t.pow(2)) + epsilon)
+    #     log_prob = log_prob.sum(-1, keepdim=True)
+    #     mean = torch.tanh(mean) * self.action_scale + self.action_bias
+    #     return action, log_prob, mean
+
     def sample(self, state):
         mean, log_std = self.forward(state)
         std = log_std.exp()
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        action = y_t * self.action_scale + self.action_bias
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log(self.action_scale * (1 - y_t.pow(2)) + epsilon)
-        log_prob = log_prob.sum(-1, keepdim=True)
-        mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action, log_prob, mean
+        pi_distribution = Normal(mean, std)
+        pi_action = pi_distribution.rsample()
+        logp_pi = pi_distribution.log_prob(pi_action).sum(axis=-1)
+        logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(axis=1)
+
+        pi_action = torch.tanh(pi_action)
+        return pi_action, logp_pi, mean
 
     def to(self, device):
         self.action_scale = self.action_scale.to(device)

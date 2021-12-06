@@ -33,11 +33,12 @@ class Memory:
         self.mask.append(mask)
         self.cat_tensor.append(cat_tensor)
         self.next_cat_tensor.append(next_cat_tensor)
-        a = np.argmax(action, axis=-1)
-        if a == 0:
-            self.weight.append(0.9)
-        else:
-            self.weight.append(0.45)
+        # a = np.argmax(action, axis=-1)
+        # if a == 0:
+        #     self.weight.append(0.9)
+        # else:
+        #     self.weight.append(0.45)
+        self.weight.append(1.0)
 
     def sample(self, batch_size):
         total = sum(self.weight)
