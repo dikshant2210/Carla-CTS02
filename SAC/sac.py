@@ -158,7 +158,7 @@ class SAC(object):
 
         qf1_pi, qf2_pi = self.critic((state_batch, cat_batch))
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
-        q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True)
+        q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True) * 0.01
         entropies = -torch.sum(pi * log_pi, dim=1, keepdim=True)
         policy_loss = -(q + 0.01 * self.alpha * entropies).mean()
         print("Entropy: {:.4f}, Q: {:.4f}".format((0.01 * self.alpha * entropies).mean().item(), q.mean().item()))
