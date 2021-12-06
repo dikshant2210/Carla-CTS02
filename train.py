@@ -4,6 +4,7 @@ import torch
 import subprocess
 import pygame
 import time
+from collections import deque
 from multiprocessing import Process
 
 from SAC.sac import SAC
@@ -34,6 +35,7 @@ class SACTrainer:
         total_numsteps = 0
         updates = 0
         max_episodes = Config.train_episodes
+        running_reward = deque([], maxlen=50)
         print("Total training episode: {}".format(max_episodes))
         for i_episode in range(max_episodes):
             episode_reward = 0
@@ -85,12 +87,14 @@ class SACTrainer:
 
             if total_numsteps > Config.total_training_steps:
                 break
+            running_reward.append(episode_reward)
 
             print("Episode: {}, Scenario: {}, Ped. Speed: {:.2f}, Ped Distance: {}".format(
                 i_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
             print("Total numsteps: {}, episode steps: {}, reward: {}".format(
                 total_numsteps, episode_steps, round(episode_reward, 4)))
-            print("Goal: {}, Accident: {}, Nearmiss: {}".format(info['goal'], acccident, nearmiss))
+            print("Goal: {}, Accident: {}, Nearmiss: {}, Avg. Reward: {:.4f}".format(
+                info['goal'], acccident, nearmiss, sum(running_reward) / len(running_reward)))
 
             if len(self.episode_memory.state) > batch_size and total_numsteps > Config.pre_train_steps:
                 # Number of updates per step in environment
