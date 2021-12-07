@@ -125,7 +125,7 @@ class BaseAgent(ABC):
         goal = False
         state = self.env.reset()
 
-        while (not done) and episode_steps <= self.max_episode_steps:
+        while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
             if self.start_steps > self.steps:
@@ -137,9 +137,10 @@ class BaseAgent(ABC):
 
             # Clip reward to [-1.0, 1.0].
             clipped_reward = max(min(reward, 1.0), -1.0)
+            mask = False if episode_steps + 1 == self.max_episode_steps else done
 
             # To calculate efficiently, set priority=max_priority here.
-            self.memory.append(state, action, clipped_reward, next_state, done)
+            self.memory.append(state, action, clipped_reward, next_state, mask)
 
             self.steps += 1
             episode_steps += 1
