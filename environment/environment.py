@@ -74,8 +74,8 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 1.5  # Debug Settings
-        # ped_distance = 35
+        # ped_speed = 4.2  # Debug Settings
+        # ped_distance = 12
         # scenario_id = "01"
         self.scenario = scenario_id
         self.speed = ped_speed
@@ -95,7 +95,7 @@ class GIDASBenchmark(gym.Env):
     def step(self, action):
         self.world.tick(self.clock)
         if action == 0:
-            self.control.throttle = 0.6
+            self.control.throttle = 0.7
         elif action == 2:
             self.control.brake = 0.6
         elif action == 1:

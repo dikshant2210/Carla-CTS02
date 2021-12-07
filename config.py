@@ -87,7 +87,7 @@ class Config:
     max_speed = 50
     hit_penalty = 1000
     goal_reward = 1000
-    braking_penalty = 1
+    braking_penalty = 10
 
     # A2C training parameters
     a2c_lr = 0.0001
