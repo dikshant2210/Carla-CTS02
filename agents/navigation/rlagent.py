@@ -156,7 +156,7 @@ class RLAgent(Agent):
             if action != 0 and self.prev_speed < 0.5:
                 reward -= Config.braking_penalty
             if action == 0 and self.prev_speed < 0.5:
-                reward += Config.braking_penalty
+                reward += Config.braking_penalty * 10
 
         # Limit max speed to 45
         if self.prev_speed is not None:
