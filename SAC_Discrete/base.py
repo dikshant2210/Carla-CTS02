@@ -157,9 +157,9 @@ class BaseAgent(ABC):
             if self.steps % self.target_update_interval == 0:
                 self.update_target()
 
-            # if self.steps % self.eval_interval == 0:
-            #     self.evaluate()
-            #     self.save_models(os.path.join(self.model_dir, 'final'))
+            if self.steps % self.eval_interval == 0:
+                # self.evaluate()
+                self.save_models(os.path.join(self.model_dir, 'final'))
 
         # We log running mean of training rewards.
         self.train_return.append(episode_return)
@@ -168,10 +168,6 @@ class BaseAgent(ABC):
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
         print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
-
-        # print(f'Episode: {self.episodes:<4}  '
-        #       f'Episode steps: {episode_steps:<4}  '
-        #       f'Return: {episode_return:<5.3f}')
 
     def learn(self):
         assert hasattr(self, 'q1_optim') and hasattr(self, 'q2_optim') and\
