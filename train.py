@@ -26,7 +26,7 @@ def run(args):
         name = 'shared-' + name
     time = datetime.now().strftime("%Y%m%d-%H%M")
     log_dir = os.path.join(
-        'logs', args.env_id, f'{name}-seed{args.seed}-{time}')
+        '_out', args.env_id, f'{name}-seed{args.seed}-{time}')
 
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--config', type=str, default=os.path.join('SAC_Discrete/config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
-    parser.add_argument('--env_id', type=str, default='MsPacmanNoFrameskip-v4')
+    parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
