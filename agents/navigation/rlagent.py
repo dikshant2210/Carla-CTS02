@@ -153,9 +153,9 @@ class RLAgent(Agent):
 
         # "Heavily" penalize braking if you are already standing still
         if self.prev_speed is not None:
-            if action == 2 and self.prev_speed < 0.2:
+            if action != 0 and self.prev_speed < 0.5:
                 reward -= Config.braking_penalty
-            if action == 0 and self.prev_speed < 0.2:
+            if action == 0 and self.prev_speed < 0.5:
                 reward += Config.braking_penalty
 
         # Limit max speed to 45
