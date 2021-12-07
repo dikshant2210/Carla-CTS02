@@ -228,6 +228,7 @@ class ADRQNTrainer:
         # Update network parameters
         self.optimizer.zero_grad()
         qloss = F.smooth_l1_loss(q_values, target_values.detach())
+        entropy += torch.max(q_values, dim=-1)[0].sum()
         loss = qloss - Config.adrqn_entropy_coef * entropy
         loss.backward()
         self.optimizer.step()
