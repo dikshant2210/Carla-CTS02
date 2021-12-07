@@ -124,7 +124,7 @@ class BaseAgent(ABC):
         accident = False
         goal = False
         state = self.env.reset()
-        action_count = {'0': 0, '1': 0, '2': 0}
+        action_count = {0: 0, 1: 0, 2: 0}
 
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
