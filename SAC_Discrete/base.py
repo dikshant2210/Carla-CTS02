@@ -165,8 +165,8 @@ class BaseAgent(ABC):
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
-            goal, accident, nearmiss, episode_return))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
+        print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
 
         # print(f'Episode: {self.episodes:<4}  '
         #       f'Episode steps: {episode_steps:<4}  '
