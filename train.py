@@ -3,7 +3,6 @@ import yaml
 import argparse
 from datetime import datetime
 
-from SAC_Discrete.sacd.env import make_pytorch_env
 from SAC_Discrete.sacd_agent import SacdAgent
 from SAC_Discrete.shared_sacd import SharedSacdAgent
 from environment import GIDASBenchmark
