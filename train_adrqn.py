@@ -156,7 +156,7 @@ class ADRQNTrainer:
                 velocity_y = velocity.y
                 next_cat_tensor = torch.from_numpy(np.array([reward, velocity_x * 3.6, velocity_y * 3.6, a])).view(1, 4)
                 episode_reward += reward
-                mask = float(done)
+                mask = 0 if t+1 == Config.num_steps else float(done)
                 nearmiss = nearmiss or info['near miss']
                 acccident = acccident or info['accident']
 
