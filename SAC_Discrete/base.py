@@ -15,7 +15,7 @@ class BaseAgent(ABC):
                  target_entropy_ratio=0.98, start_steps=20000,
                  update_interval=4, target_update_interval=8000,
                  use_per=False, num_eval_steps=125000, max_episode_steps=27000,
-                 log_interval=10, eval_interval=1000, cuda=True, seed=0):
+                 log_interval=10, eval_interval=1000, cuda=True, seed=0, display=False):
         super().__init__()
         self.env = env
         self.test_env = test_env
@@ -70,6 +70,7 @@ class BaseAgent(ABC):
         self.max_episode_steps = max_episode_steps
         self.log_interval = log_interval
         self.eval_interval = eval_interval
+        self.display = display
 
     def run(self):
         while True:
@@ -119,10 +120,14 @@ class BaseAgent(ABC):
         episode_steps = 0
 
         done = False
+        nearmiss = False
+        accident = False
+        goal = False
         state = self.env.reset()
 
         while (not done) and episode_steps <= self.max_episode_steps:
-            self.env.render()
+            if self.display:
+                self.env.render()
             if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
             else:
@@ -140,6 +145,10 @@ class BaseAgent(ABC):
             episode_steps += 1
             episode_return += reward
             state = next_state
+            nearmiss = nearmiss or info['near miss']
+            accident = accident or info['accident']
+            goal = info['goal']
+            done = done or accident
 
             if self.is_update():
                 self.learn()
@@ -147,17 +156,21 @@ class BaseAgent(ABC):
             if self.steps % self.target_update_interval == 0:
                 self.update_target()
 
-            if self.steps % self.eval_interval == 0:
-                self.evaluate()
-                self.save_models(os.path.join(self.model_dir, 'final'))
+            # if self.steps % self.eval_interval == 0:
+            #     self.evaluate()
+            #     self.save_models(os.path.join(self.model_dir, 'final'))
 
         # We log running mean of training rewards.
         self.train_return.append(episode_return)
 
+        print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
+            self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
+            goal, accident, nearmiss, episode_return))
 
-        print(f'Episode: {self.episodes:<4}  '
-              f'Episode steps: {episode_steps:<4}  '
-              f'Return: {episode_return:<5.3f}')
+        # print(f'Episode: {self.episodes:<4}  '
+        #       f'Episode steps: {episode_steps:<4}  '
+        #       f'Return: {episode_return:<5.3f}')
 
     def learn(self):
         assert hasattr(self, 'q1_optim') and hasattr(self, 'q2_optim') and\
