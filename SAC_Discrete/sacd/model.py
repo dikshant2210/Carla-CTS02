@@ -33,8 +33,8 @@ class DQNBase(BaseNetwork):
         self.net = nn.Sequential(
             nn.Conv2d(num_channels, 32, kernel_size=(8, 8), stride=(4, 4), padding=0),
             nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=(8, 8), stride=(4, 4), padding=0),
-            nn.ReLU(),
+            # nn.Conv2d(32, 32, kernel_size=(8, 8), stride=(4, 4), padding=0),
+            # nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2), padding=0),
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=0),
@@ -58,16 +58,16 @@ class QNetwork(BaseNetwork):
 
         if not dueling_net:
             self.head = nn.Sequential(
-                nn.Linear(8 * 8 * 64, 512),
+                nn.Linear(46 * 46 * 64, 512),
                 nn.ReLU(inplace=True),
                 nn.Linear(512, num_actions))
         else:
             self.a_head = nn.Sequential(
-                nn.Linear(8 * 8 * 64, 512),
+                nn.Linear(46 * 46 * 64, 512),
                 nn.ReLU(inplace=True),
                 nn.Linear(512, num_actions))
             self.v_head = nn.Sequential(
-                nn.Linear(8 * 8 * 64, 512),
+                nn.Linear(46 * 46 * 64, 512),
                 nn.ReLU(inplace=True),
                 nn.Linear(512, 1))
 
@@ -107,7 +107,7 @@ class CateoricalPolicy(BaseNetwork):
             self.conv = DQNBase(num_channels)
 
         self.head = nn.Sequential(
-            nn.Linear(8 * 8 * 64, 512),
+            nn.Linear(46 * 46 * 64, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, num_actions))
 
