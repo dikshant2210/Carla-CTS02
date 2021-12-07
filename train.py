@@ -1,11 +1,16 @@
 import os
 import yaml
 import argparse
+import subprocess
+import time
 from datetime import datetime
+from multiprocessing import Process
+
 
 from SAC_Discrete.sacd_agent import SacdAgent
 from SAC_Discrete.shared_sacd import SharedSacdAgent
 from environment import GIDASBenchmark
+from config import Config
 
 
 def run(args):
@@ -31,6 +36,11 @@ def run(args):
     agent.run()
 
 
+def run_server():
+    port = "-carla-port={}".format(Config.port)
+    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -40,4 +50,9 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
+
+    p = Process(target=run_server)
+    p.start()
+    time.sleep(5)
+
     run(args)
