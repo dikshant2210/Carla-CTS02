@@ -124,6 +124,7 @@ class BaseAgent(ABC):
         accident = False
         goal = False
         state = self.env.reset()
+        action_count = {'0': 0, '1': 0, '2': 0}
 
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
@@ -134,6 +135,7 @@ class BaseAgent(ABC):
                 action = self.explore(state)
 
             next_state, reward, done, info = self.env.step(action)
+            action_count[action] += 1
 
             # Clip reward to [-1.0, 1.0].
             clipped_reward = max(min(reward, 1.0), -1.0)
@@ -168,6 +170,7 @@ class BaseAgent(ABC):
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
         print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
+        print(action_count)
 
     def learn(self):
         assert hasattr(self, 'q1_optim') and hasattr(self, 'q2_optim') and\
