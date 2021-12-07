@@ -3,10 +3,9 @@ import yaml
 import argparse
 from datetime import datetime
 
-from SAC_Discrete.sacd.env import make_pytorch_env
-from SAC_Discrete.sacd_agent import SacdAgent
-from SAC_Discrete.shared_sacd import SharedSacdAgent
-from environment import GIDASBenchmark
+from sacd.env import make_pytorch_env
+from sacd_agent import SacdAgent
+from shared_sacd import SharedSacdAgent
 
 
 def run(args):
@@ -14,7 +13,9 @@ def run(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # Create environments.
-    env = GIDASBenchmark()
+    env = make_pytorch_env(args.env_id, clip_rewards=False)
+    test_env = make_pytorch_env(
+        args.env_id, episode_life=False, clip_rewards=False)
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -27,7 +28,7 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 
@@ -35,7 +36,7 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--config', type=str, default=os.path.join('SAC_Discrete/config', 'sacd.yaml'))
+        '--config', type=str, default=os.path.join('config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
     parser.add_argument('--env_id', type=str, default='MsPacmanNoFrameskip-v4')
     parser.add_argument('--cuda', action='store_true')

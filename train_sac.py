@@ -4,14 +4,15 @@ import torch
 import subprocess
 import pygame
 import time
-from multiprocessing import Process
 from collections import deque
-import multiprocessing
+from multiprocessing import Process
 
-from agents.rl.sac.sac import SAC
-from agents.rl.sac.replay_memory import EpisodeMemory
+from SAC.sac import SAC
+from SAC.replay_memory import Memory
 from environment import GIDASBenchmark
 from config import Config
+
+batch_size = Config.batch_size * 300
 
 
 class SACTrainer:
@@ -27,25 +28,20 @@ class SACTrainer:
         self.agent = SAC(self.env.observation_space.shape[0], self.env.action_space, args)
 
         # Memory
-        manager = multiprocessing.Manager()
-        shared_list = manager.list()
-        self.storage = deque(shared_list, maxlen=Config.episode_buffer)
+        self.episode_memory = Memory()
 
     def train(self):
         # Training Loop
         total_numsteps = 0
         updates = 0
-        running_reward = 0.05
         max_episodes = Config.train_episodes
+        running_reward = deque([], maxlen=50)
         print("Total training episode: {}".format(max_episodes))
         for i_episode in range(max_episodes):
             episode_reward = 0
             episode_steps = 0
-            done = False
-            hidden = None
             state = self.env.reset()
             state = torch.tensor(state).float().unsqueeze(0)
-            episode_memory = EpisodeMemory()
 
             a = 1
             reward = 0
@@ -56,18 +52,19 @@ class SACTrainer:
             acccident = False
 
             for _ in range(Config.num_steps):
+                if Config.display:
+                    self.env.render()
                 if Config.pre_train_steps > total_numsteps:
-                    action = np.zeros(self.env.action_space.n)
-                    a = self.env.action_space.sample()
-                    action[a] = 1.0  # Sample random action
+                    # action = np.zeros(self.env.action_space.n)
+                    action = self.env.action_space.sample()
+                    # action[a] = 1.0  # Sample random action
                 else:
                     # Sample action from policy
                     with torch.no_grad():
-                        action, hidden = self.agent.select_action((state.unsqueeze(0),
-                                                                   cat_tensor.unsqueeze(0)), hidden)
-                    a = np.argmax(action, axis=-1)
+                        action = self.agent.select_action((state, cat_tensor))
+                    # a = np.argmax(action, axis=-1)
 
-                next_state, reward, done, info = self.env.step(a)  # Step
+                next_state, reward, done, info = self.env.step(action)  # Step
                 next_state = torch.tensor(next_state).float().unsqueeze(0)
                 velocity = info['velocity']
                 velocity_x = velocity.x
@@ -79,30 +76,34 @@ class SACTrainer:
                 mask = 1 if episode_steps == Config.num_steps else float(not done)
 
                 # Append transition to memory
-                episode_memory.add(state, cat_tensor, action, reward, next_state, next_cat_tensor, mask)
+                self.episode_memory.add(state, cat_tensor, action, reward, next_state, next_cat_tensor, mask)
                 state = next_state
                 cat_tensor = next_cat_tensor
+                nearmiss = nearmiss or info['near miss']
+                acccident = acccident or info['accident']
 
                 if done or info['accident']:
                     break
 
-            self.storage.append(episode_memory)
             if total_numsteps > Config.total_training_steps:
                 break
+            running_reward.append(episode_reward)
 
-            running_reward = 0.05 * episode_reward + (1 - 0.05) * running_reward
             print("Episode: {}, Scenario: {}, Ped. Speed: {:.2f}, Ped Distance: {}".format(
                 i_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-            print("Total numsteps: {}, episode steps: {}, reward: {}, avg. reward: {:.3f}".format(
-                total_numsteps, episode_steps, round(episode_reward, 2), running_reward))
+            print("Total numsteps: {}, episode steps: {}, reward: {}".format(
+                total_numsteps, episode_steps, round(episode_reward, 4)))
+            print("Goal: {}, Accident: {}, Nearmiss: {}, Avg. Reward: {:.4f}".format(
+                info['goal'], acccident, nearmiss, sum(running_reward) / len(running_reward)))
 
-            if len(self.storage) > Config.batch_size:
+            if len(self.episode_memory.state) > batch_size and total_numsteps > Config.pre_train_steps:
                 # Number of updates per step in environment
                 for i in range(Config.update_freq):
                     # Update parameters of all the networks
-                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters(
-                        self.storage, Config.batch_size, updates)
+                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = self.agent.update_parameters_categorical(
+                        self.episode_memory, batch_size, updates)
                     updates += 1
+                    # print("Q-Loss: {:.4f}, Policy Loss: {:.4f}".format(critic_2_loss + critic_1_loss, policy_loss))
 
         self.env.close()
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2800,
+        default=2000,
         type=int,
         help='TCP port to listen to (default: 2800)')
     arg_parser.add_argument(
