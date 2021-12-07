@@ -63,6 +63,7 @@ class Config:
     EPS_DECAY = 500
     episode_buffer = 80
     adrqn_entropy_coef = 0.0005
+    grad_norm = 0.1
 
     # angle + 4 car related statistics + 2*num_pedestrians related statistics + one-hot encoded last_action
     input_size = 1 + 4 + 2 * num_pedestrians + num_actions

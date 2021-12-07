@@ -148,7 +148,7 @@ class SAC(object):
 
         self.critic_optim.zero_grad()
         qf_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.01)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=Config.grad_norm)
         self.critic_optim.step()
 
         _, log_pi, pi = self.policy.sample((state_batch, cat_batch))
@@ -158,16 +158,16 @@ class SAC(object):
 
         qf1_pi, qf2_pi = self.critic((state_batch, cat_batch))
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
-        q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True) * 0.01
-        entropies = -torch.sum(pi * log_pi, dim=1, keepdim=True)
-        policy_loss = -(q + 0.01 * self.alpha * entropies).mean()
+        q = torch.sum(min_qf_pi * pi, dim=1, keepdim=True) * 0.1
+        entropies = -torch.sum(pi * log_pi, dim=1, keepdim=True) * self.alpha * 0.01
+        policy_loss = -(q + entropies).mean()
 
         # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
         # policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
 
         self.policy_optim.zero_grad()
         policy_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=0.01)
+        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=Config.grad_norm)
         self.policy_optim.step()
 
         for p in self.critic.parameters():
@@ -178,7 +178,7 @@ class SAC(object):
 
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.log_alpha, max_norm=0.01)
+            torch.nn.utils.clip_grad_norm_(self.log_alpha, max_norm=Config.grad_norm)
             self.alpha_optim.step()
 
             self.alpha = self.log_alpha.exp()
@@ -191,8 +191,7 @@ class SAC(object):
             soft_update(self.critic_target, self.critic, self.tau)
 
         print("Entropy: {:.4f}, Q: {:.4f}, Policy loss: {:.4f}, Q-Loss: {:.4f}".format(
-            (0.01 * self.alpha * entropies).mean().item(), q.mean().item(), policy_loss.item(),
-            qf1_loss.item() + qf2_loss.item()))
+            entropies.mean().item(), q.mean().item(), policy_loss.item(), qf1_loss.item() + qf2_loss.item()))
 
         return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
 
