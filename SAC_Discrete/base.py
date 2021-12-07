@@ -138,7 +138,7 @@ class BaseAgent(ABC):
             action_count[action] += 1
 
             # Clip reward to [-1.0, 1.0].
-            clipped_reward = max(min(reward, 1.0), -1.0)
+            clipped_reward = max(min(reward, 2.0), -2.0)
             mask = False if episode_steps + 1 == self.max_episode_steps else done
 
             # To calculate efficiently, set priority=max_priority here.
