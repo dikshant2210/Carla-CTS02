@@ -164,10 +164,15 @@ class RLAgent(Agent):
                 reward -= Config.braking_penalty
 
         # Penalize braking/acceleration actions to get a smoother ride
-        if action == 0:
+        if self.prev_action.brake > 0: last_action = 2
+        elif self.prev_action.throttle > 0: last_action = 0
+        else: last_action = 1
+        if last_action != 0 and last_action != action:
             reward -= 0.05
-        if action == 2:
-            reward -= 0.05
+        # if action == 0:
+        #     reward -= 0.05
+        # if action == 2:
+        #     reward -= 0.05
 
         reward -= pow(abs(self.prev_action.steer), 1.3) / 2.0
 
