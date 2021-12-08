@@ -136,7 +136,7 @@ class BaseAgent(ABC):
             else:
                 action, critic_action = self.explore(state)
 
-            next_state, reward, done, info = self.env.step(action)
+            next_state, reward, done, info = self.env.step(critic_action)
             action_count[action] += 1
             action_count_critic[critic_action] += 1
 
