@@ -141,7 +141,7 @@ class BaseAgent(ABC):
             clipped_reward = max(min(reward, 2.0), -2.0)
             if episode_steps + 1 == self.max_episode_steps:
                 mask = False
-                reward -= 0.7
+                # reward -= 0.7
             else:
                 mask = done
             # mask = False if episode_steps + 1 == self.max_episode_steps else done
@@ -175,7 +175,7 @@ class BaseAgent(ABC):
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
         print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
-        print(action_count)
+        print(action_count, "Alpha: {:.4f}".format(self.alpha.item()))
 
     def learn(self):
         assert hasattr(self, 'q1_optim') and hasattr(self, 'q2_optim') and\
