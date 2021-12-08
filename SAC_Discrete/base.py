@@ -125,17 +125,20 @@ class BaseAgent(ABC):
         goal = False
         state = self.env.reset()
         action_count = {0: 0, 1: 0, 2: 0}
+        action_count_critic = {0: 0, 1: 0, 2: 0}
 
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
             if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
+                critic_action = action
             else:
-                action = self.explore(state)
+                action, critic_action = self.explore(state)
 
             next_state, reward, done, info = self.env.step(action)
             action_count[action] += 1
+            action_count_critic[critic_action] += 1
 
             # Clip reward to [-1.0, 1.0].
             clipped_reward = max(min(reward, 2.0), -2.0)
@@ -165,7 +168,7 @@ class BaseAgent(ABC):
                 self.update_target()
 
             if self.steps % self.eval_interval == 0:
-                # self.evaluate()
+                self.evaluate()
                 self.save_models(os.path.join(self.model_dir, 'final'))
 
         # We log running mean of training rewards.
@@ -175,7 +178,7 @@ class BaseAgent(ABC):
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
         print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
-        print(action_count, "Alpha: {:.4f}".format(self.alpha.item()))
+        print("Policy; ", action_count, "Critic: ", action_count_critic, "Alpha: {:.4f}".format(self.alpha.item()))
 
     def learn(self):
         assert hasattr(self, 'q1_optim') and hasattr(self, 'q2_optim') and\

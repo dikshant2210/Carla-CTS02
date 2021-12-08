@@ -63,7 +63,11 @@ class SharedSacdAgent(BaseAgent):
             state[None, ...]).to(self.device).float() / 255.
         with torch.no_grad():
             action, _, _ = self.policy.sample(self.conv(state))
-        return action.item()
+            curr_q1 = self.online_critic.Q1(self.conv(state))
+            curr_q2 = self.online_critic.Q2(self.conv(state))
+            q = torch.min(curr_q1, curr_q2)
+            critic_action = torch.argmax(q, dim=1)
+        return action.item(), critic_action.item()
 
     def exploit(self, state):
         # Act without randomness.
