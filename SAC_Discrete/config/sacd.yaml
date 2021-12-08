@@ -8,7 +8,7 @@ target_entropy_ratio: 0.98
 start_steps: 5000
 update_interval: 4
 target_update_interval: 500
-use_per: False
+use_per: True
 dueling_net: False
 num_eval_steps: 10000
 max_episode_steps: 300
