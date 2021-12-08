@@ -139,7 +139,12 @@ class BaseAgent(ABC):
 
             # Clip reward to [-1.0, 1.0].
             clipped_reward = max(min(reward, 2.0), -2.0)
-            mask = False if episode_steps + 1 == self.max_episode_steps else done
+            if episode_steps + 1 == self.max_episode_steps:
+                mask = False
+                reward -= 0.7
+            else:
+                mask = done
+            # mask = False if episode_steps + 1 == self.max_episode_steps else done
 
             # To calculate efficiently, set priority=max_priority here.
             self.memory.append(state, action, clipped_reward, next_state, mask)
