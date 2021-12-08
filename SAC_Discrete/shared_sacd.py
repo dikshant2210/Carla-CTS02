@@ -25,15 +25,15 @@ class SharedSacdAgent(BaseAgent):
 
         # Define networks.
         self.conv = DQNBase(
-            self.env.observation_space.shape[0]).to(self.device)
+            self.env.observation_space.shape[2]).to(self.device)
         self.policy = CateoricalPolicy(
-            self.env.observation_space.shape[0], self.env.action_space.n,
+            self.env.observation_space.shape[2], self.env.action_space.n,
             shared=True).to(self.device)
         self.online_critic = TwinnedQNetwork(
-            self.env.observation_space.shape[0], self.env.action_space.n,
+            self.env.observation_space.shape[2], self.env.action_space.n,
             dueling_net=dueling_net, shared=True).to(device=self.device)
         self.target_critic = TwinnedQNetwork(
-            self.env.observation_space.shape[0], self.env.action_space.n,
+            self.env.observation_space.shape[2], self.env.action_space.n,
             dueling_net=dueling_net, shared=True).to(device=self.device).eval()
 
         # Copy parameters of the learning network to the target network.
