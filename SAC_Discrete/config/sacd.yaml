@@ -7,7 +7,7 @@ multi_step: 1
 target_entropy_ratio: 0.98
 start_steps: 25000
 update_interval: 4
-target_update_interval: 500
+target_update_interval: 3000
 use_per: True
 dueling_net: True
 num_eval_steps: 10000
