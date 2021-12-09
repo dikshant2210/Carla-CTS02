@@ -74,7 +74,7 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        ped_speed = 0  # Debug Settings
+        # ped_speed = 0  # Debug Settings
         # ped_distance = 12
         # scenario_id = "01"
         self.scenario = scenario_id
