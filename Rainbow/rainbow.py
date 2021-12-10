@@ -29,7 +29,7 @@ class Rainbow:
         self.optimizer = optim.Adam(self.current_model.parameters(), lr=0.0001)
         self.update_target()
 
-        self.replay_initial = 1000
+        self.replay_initial = 30000
         self.replay_buffer = ReplayBuffer(100000)
 
     def update_target(self):
@@ -140,7 +140,7 @@ class Rainbow:
                 state = self.env.reset()
                 all_rewards.append(episode_reward)
                 episodes += 1
-                print(info)
+                print("-------------------------")
                 print("Ep: {}, Sce: {}, Dist: {:.1f}, Speed: {:.1f}".format(
                     episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
                 print("Goal: {}, Accident: {}, Nearmiss: {}".format(info['goal'], info['accident'], nearmiss))
