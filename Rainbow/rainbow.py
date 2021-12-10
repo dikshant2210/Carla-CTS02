@@ -119,6 +119,9 @@ class Rainbow:
         num_steps = 0
         episodes = 0
 
+        nearmiss = False
+        action_count = {0: 0, 1: 0, 2: 0}
+
         state = self.env.reset()
         for frame_idx in range(1, num_frames + 1):
             action = self.current_model.act(state)
@@ -130,16 +133,23 @@ class Rainbow:
             state = next_state
             episode_reward += reward
             num_steps += 1
+            nearmiss = nearmiss or info['near miss']
+            action_count[action] += 1
 
             if done or num_steps >= 300:
                 state = self.env.reset()
                 all_rewards.append(episode_reward)
                 episodes += 1
                 print(info)
-                print("Ep: {}, Total Steps: {}, Ep.Steps: {}, Ep. Reward: {:.4f}".format(
-                    episodes, frame_idx, num_steps, episode_reward))
+                print("Ep: {}, Sce: {}, Dist: {:.1f}, Speed: {:.1f}".format(
+                    episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
+                print("Goal: {}, Accident: {}, Nearmiss: {}".format(info['goal'], info['accident'], nearmiss))
+                print("Total Steps: {}, Ep.Steps: {}, Ep. Reward: {:.4f}".format(frame_idx, num_steps, episode_reward))
+                print(action_count)
                 episode_reward = 0
                 num_steps = 0
+                nearmiss = False
+                action_count = {0: 0, 1: 0, 2: 0}
 
             if len(self.replay_buffer) > self.replay_initial:
                 loss = self.compute_td_loss(batch_size)
