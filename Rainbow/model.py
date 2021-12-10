@@ -55,7 +55,7 @@ class RainbowCnnDQN(nn.Module):
         advantage = advantage.view(batch_size, self.num_actions, self.num_atoms)
 
         x = value + advantage - advantage.mean(1, keepdim=True)
-        x = F.softmax(x.view(-1, self.num_atoms), dim=0).view(-1, self.num_actions, self.num_atoms)
+        x = F.softmax(x.view(-1, self.num_atoms)).view(-1, self.num_actions, self.num_atoms)
 
         return x
 
