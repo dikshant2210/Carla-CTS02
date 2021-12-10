@@ -128,7 +128,6 @@ class Rainbow:
 
             next_state, reward, done, info = self.env.step(action)
             self.replay_buffer.push(state, action, reward, next_state, done)
-            assert next_state.shape[0] == 3
 
             state = next_state
             episode_reward += reward

@@ -326,8 +326,8 @@ class RLAgent(Agent):
         car_intention[y, x, :] = 0.0  # overlay past trajectory on input with black line
         # with open("_out/costmap_{}.pkl".format(start[1]), "wb") as file:
         #     pkl.dump(car_intention, file)
-        car_intention = np.transpose(car_intention, (2, 0, 1))
-        assert car_intention.shape[0] == 3
+        # car_intention = np.transpose(car_intention, (2, 0, 1))
+        # assert car_intention.shape[0] == 3
         return car_intention
 
     def run_step(self, debug=False):

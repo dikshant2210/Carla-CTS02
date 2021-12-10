@@ -17,14 +17,14 @@ class RainbowCnnDQN(nn.Module):
     def __init__(self, input_shape, num_actions, num_atoms, Vmin, Vmax):
         super(RainbowCnnDQN, self).__init__()
 
-        self.input_shape = input_shape
+        self.input_shape = (input_shape[2], input_shape[0], input_shape[1])
         self.num_actions = num_actions
         self.num_atoms = num_atoms
         self.Vmin = Vmin
         self.Vmax = Vmax
 
         self.features = nn.Sequential(
-            nn.Conv2d(input_shape[0], 32, kernel_size=(8, 8), stride=(4, 4)),
+            nn.Conv2d(self.input_shape[0], 32, kernel_size=(8, 8), stride=(4, 4)),
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=(8, 8), stride=(2, 2)),
             nn.ReLU(),
@@ -39,10 +39,12 @@ class RainbowCnnDQN(nn.Module):
         self.noisy_advantage2 = NoisyLinear(512, self.num_atoms * self.num_actions, use_cuda=USE_CUDA)
 
     def forward(self, x):
+        x = x.permute(0, 3, 1, 2)
         batch_size = x.size(0)
 
         x = x / 255.
         x = self.features(x)
+        x = x.contiguous()
         x = x.view(batch_size, -1)
 
         value = F.relu(self.noisy_value1(x))
