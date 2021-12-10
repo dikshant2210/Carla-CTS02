@@ -127,7 +127,8 @@ class Rainbow:
             action = self.current_model.act(state)
 
             next_state, reward, done, info = self.env.step(action)
-            self.replay_buffer.push(state, action, reward, next_state, done)
+            clipped_reward = max(min(reward, 1.0), -1.0)
+            self.replay_buffer.push(state, action, clipped_reward, next_state, done)
 
             state = next_state
             episode_reward += reward
