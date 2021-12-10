@@ -26,7 +26,7 @@ class GIDASBenchmark(gym.Env):
         self.action_space = gym.spaces.Discrete(Config.N_DISCRETE_ACTIONS)
         height = int(Config.segcam_image_x)
         width = int(Config.segcam_image_y)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(height, width, 3), dtype=np.uint8)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(3, height, width), dtype=np.uint8)
 
         pygame.init()
         pygame.font.init()
