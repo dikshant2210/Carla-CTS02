@@ -19,6 +19,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark()
+    test_env = GIDASBenchmark(port=2200)
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -31,13 +32,17 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 
 
 def run_server():
+    # train environment
     port = "-carla-port={}".format(Config.port)
+    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
+    # test environment
+    port = "-carla-port={}".format(2200)
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 

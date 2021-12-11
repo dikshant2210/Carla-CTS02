@@ -14,7 +14,7 @@ class BaseAgent(ABC):
                  memory_size=1000000, gamma=0.99, multi_step=1,
                  target_entropy_ratio=0.98, start_steps=20000,
                  update_interval=4, target_update_interval=8000,
-                 use_per=False, num_eval_steps=125000, max_episode_steps=27000,
+                 use_per=False, num_eval_steps=125000, max_episode_steps=27000, save_interval=100000,
                  log_interval=10, eval_interval=1000, cuda=True, seed=0, display=False):
         super().__init__()
         self.env = env
@@ -71,6 +71,7 @@ class BaseAgent(ABC):
         self.log_interval = log_interval
         self.eval_interval = eval_interval
         self.display = display
+        self.save_interval = save_interval
 
     def run(self):
         while True:
@@ -169,7 +170,9 @@ class BaseAgent(ABC):
 
             if self.steps % self.eval_interval == 0:
                 self.evaluate()
-                self.save_models(os.path.join(self.model_dir, 'final'))
+
+            if self.steps % self.save_interval == 0:
+                self.save_models(os.path.join(self.model_dir, str(self.steps)))
 
         # We log running mean of training rewards.
         self.train_return.append(episode_return)
@@ -212,15 +215,18 @@ class BaseAgent(ABC):
         num_episodes = 0
         num_steps = 0
         total_return = 0.0
+        print('-' * 60)
 
         while True:
             state = self.test_env.reset()
             episode_steps = 0
             episode_return = 0.0
             done = False
+            action_count = {0: 0, 1: 0, 2: 0}
             while (not done) and episode_steps <= self.max_episode_steps:
                 action = self.exploit(state)
-                next_state, reward, done, _ = self.test_env.step(action)
+                next_state, reward, done, info = self.test_env.step(action)
+                action_count[action] += 1
                 num_steps += 1
                 episode_steps += 1
                 episode_return += reward
@@ -228,6 +234,9 @@ class BaseAgent(ABC):
 
             num_episodes += 1
             total_return += episode_return
+            print("Speed: {:.2f}m/s, Dist.: {:.2f}m, Return: {:.4f}".format(
+                info['ped_speed'], info['ped_distance'], episode_return))
+            print("Goal: {}, Accident: {}, Act Dist.: {}".format(info['goal'], info['accident'], action_count))
 
             if num_steps > self.num_eval_steps:
                 break
@@ -238,7 +247,6 @@ class BaseAgent(ABC):
             self.best_eval_score = mean_return
             self.save_models(os.path.join(self.model_dir, 'best'))
 
-        print('-' * 60)
         print(f'Num steps: {self.steps:<5}  '
               f'return: {mean_return:<5.1f}')
         print('-' * 60)

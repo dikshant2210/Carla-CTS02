@@ -20,7 +20,7 @@ from agents.tools.connector import Connector
 
 
 class GIDASBenchmark(gym.Env):
-    def __init__(self):
+    def __init__(self, port=Config.port):
         super(GIDASBenchmark, self).__init__()
         random.seed(100)
         self.action_space = gym.spaces.Discrete(Config.N_DISCRETE_ACTIONS)
@@ -31,7 +31,7 @@ class GIDASBenchmark(gym.Env):
         pygame.init()
         pygame.font.init()
 
-        self.client = carla.Client(Config.host, Config.port)
+        self.client = carla.Client(Config.host, port)
         self.client.set_timeout(60.0)
 
         self.control = None
