@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import numpy as np
 import torch
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 from SAC_Discrete.sacd.memory import LazyMultiStepMemory, LazyPrioritizedMultiStepMemory
 from SAC_Discrete.sacd.utils import update_params, RunningMeanStats
@@ -53,6 +53,7 @@ class BaseAgent(ABC):
         if not os.path.exists(self.summary_dir):
             os.makedirs(self.summary_dir)
 
+        self.writer = SummaryWriter(log_dir=self.summary_dir)
         self.train_return = RunningMeanStats(log_interval)
 
         self.steps = 0
@@ -177,6 +178,10 @@ class BaseAgent(ABC):
         # We log running mean of training rewards.
         self.train_return.append(episode_return)
 
+        if self.episodes % self.log_interval == 0:
+            self.writer.add_scalar(
+                'reward/train', self.train_return.get(), self.steps)
+
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
@@ -211,6 +216,30 @@ class BaseAgent(ABC):
         if self.use_per:
             self.memory.update_priority(errors)
 
+        if self.learning_steps % self.log_interval == 0:
+            self.writer.add_scalar(
+                'loss/Q1', q1_loss.detach().item(),
+                self.learning_steps)
+            self.writer.add_scalar(
+                'loss/Q2', q2_loss.detach().item(),
+                self.learning_steps)
+            self.writer.add_scalar(
+                'loss/policy', policy_loss.detach().item(),
+                self.learning_steps)
+            self.writer.add_scalar(
+                'loss/alpha', entropy_loss.detach().item(),
+                self.learning_steps)
+            self.writer.add_scalar(
+                'stats/alpha', self.alpha.detach().item(),
+                self.learning_steps)
+            self.writer.add_scalar(
+                'stats/mean_Q1', mean_q1, self.learning_steps)
+            self.writer.add_scalar(
+                'stats/mean_Q2', mean_q2, self.learning_steps)
+            self.writer.add_scalar(
+                'stats/entropy', entropies.detach().mean().item(),
+                self.learning_steps)
+
     def evaluate(self):
         num_episodes = 0
         num_steps = 0
@@ -223,7 +252,7 @@ class BaseAgent(ABC):
             episode_return = 0.0
             done = False
             action_count = {0: 0, 1: 0, 2: 0}
-            while (not done) and episode_steps <= self.max_episode_steps:
+            while (not done) and episode_steps < self.max_episode_steps:
                 action = self.exploit(state)
                 next_state, reward, done, info = self.test_env.step(action)
                 action_count[action] += 1
@@ -246,6 +275,8 @@ class BaseAgent(ABC):
         if mean_return > self.best_eval_score:
             self.best_eval_score = mean_return
             self.save_models(os.path.join(self.model_dir, 'best'))
+        self.writer.add_scalar(
+            'reward/test', mean_return, self.steps)
 
         print(f'Num steps: {self.steps:<5}  '
               f'return: {mean_return:<5.1f}')

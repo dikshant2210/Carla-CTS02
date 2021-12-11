@@ -45,7 +45,7 @@ def run_server():
 
 def run_test_server():
     # test environment
-    port = "-carla-port={}".format(2200)
+    port = "-carla-port={}".format(Config.port + 100)
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
@@ -57,7 +57,10 @@ if __name__ == '__main__':
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--port', type=int, default=2000)
     args = parser.parse_args()
+
+    Config.port = args.port
 
     p = Process(target=run_server)
     p.start()
