@@ -61,6 +61,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     Config.port = args.port
+    print('Env. port: {}'.format(Config.port))
 
     p = Process(target=run_server)
     p.start()
