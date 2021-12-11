@@ -19,7 +19,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark()
-    test_env = GIDASBenchmark(port=2200)
+    # test_env = GIDASBenchmark(port=2200)
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -32,7 +32,7 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 
@@ -63,8 +63,8 @@ if __name__ == '__main__':
     p.start()
     time.sleep(5)
 
-    p2 = Process(target=run_test_server)
-    p2.start()
-    time.sleep(5)
+    # p2 = Process(target=run_test_server)
+    # p2.start()
+    # time.sleep(5)
 
     run(args)

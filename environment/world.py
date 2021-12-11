@@ -4,6 +4,9 @@ Time: 23.03.21 14:27
 """
 import sys
 import random
+
+import carla
+
 from utils import find_weather_presets
 from environment.sensors import *
 
@@ -162,6 +165,8 @@ class World(object):
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
             elif self.scenario[0] in [4, 5, 7, 8, 6]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
+                if self.walker.get_location().x < -4.5:
+                    self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
             elif self.scenario[0] == 10:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
