@@ -41,6 +41,9 @@ def run_server():
     # train environment
     port = "-carla-port={}".format(Config.port)
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
+
+
+def run_test_server():
     # test environment
     port = "-carla-port={}".format(2200)
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
@@ -58,6 +61,10 @@ if __name__ == '__main__':
 
     p = Process(target=run_server)
     p.start()
+    time.sleep(5)
+
+    p2 = Process(target=run_test_server)
+    p2.start()
     time.sleep(5)
 
     run(args)
