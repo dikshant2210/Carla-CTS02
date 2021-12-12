@@ -6,6 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from SAC_Discrete.sacd.memory import LazyMultiStepMemory, LazyPrioritizedMultiStepMemory
 from SAC_Discrete.sacd.utils import update_params, RunningMeanStats
+from config import Config
 
 
 class BaseAgent(ABC):
@@ -129,6 +130,9 @@ class BaseAgent(ABC):
         action_count = {0: 0, 1: 0, 2: 0}
         action_count_critic = {0: 0, 1: 0, 2: 0}
 
+        t = np.zeros(6)  # reward, vx, vt, onehot last action
+        t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
+
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
@@ -136,7 +140,7 @@ class BaseAgent(ABC):
                 action = self.env.action_space.sample()
                 critic_action = action
             else:
-                action, critic_action = self.explore(state)
+                action, critic_action = self.explore((state, t))
 
             next_state, reward, done, info = self.env.step(action)
             action_count[action] += 1
@@ -146,24 +150,30 @@ class BaseAgent(ABC):
             clipped_reward = max(min(reward, 2.0), -2.0)
             if episode_steps + 1 == self.max_episode_steps:
                 mask = False
-                # reward -= 0.7
             else:
                 mask = done
             # mask = False if episode_steps + 1 == self.max_episode_steps else done
 
+            t_new = np.zeros(6)
+            t_new[0] = clipped_reward
+            t_new[1] = info['velocity'].x / Config.max_speed
+            t_new[2] = info['velocity'].y / Config.max_speed
+            t_new[3 + action] = 1.0
+
             # To calculate efficiently, set priority=max_priority here.
-            self.memory.append(state, action, clipped_reward, next_state, mask)
+            self.memory.append((state, t), action, clipped_reward, (next_state, t_new), mask)
 
             self.steps += 1
             episode_steps += 1
             episode_return += reward
             state = next_state
+            t = t_new
             nearmiss = nearmiss or info['near miss']
             accident = accident or info['accident']
             goal = info['goal']
             done = done or accident
 
-            if self.is_update():
+            if self.is_update() or True:
                 self.learn()
 
             if self.steps % self.target_update_interval == 0:
@@ -212,6 +222,7 @@ class BaseAgent(ABC):
         update_params(self.alpha_optim, entropy_loss)
 
         self.alpha = self.log_alpha.exp()
+        print("Updated!")
 
         if self.use_per:
             self.memory.update_priority(errors)
@@ -252,14 +263,22 @@ class BaseAgent(ABC):
             episode_return = 0.0
             done = False
             action_count = {0: 0, 1: 0, 2: 0}
+            t = np.zeros(6)  # reward, vx, vt, onehot last action
+            t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
+
             while (not done) and episode_steps < self.max_episode_steps:
-                action = self.exploit(state)
+                action = self.exploit((state, t))
                 next_state, reward, done, info = self.test_env.step(action)
                 action_count[action] += 1
                 num_steps += 1
                 episode_steps += 1
                 episode_return += reward
                 state = next_state
+                t = np.zeros(6)
+                t[0] = max(min(reward, 2.0), -2.0)
+                t[1] = info['velocity'].x / Config.max_speed
+                t[2] = info['velocity'].y / Config.max_speed
+                t[3 + action] = 1.0
 
             num_episodes += 1
             total_return += episode_return

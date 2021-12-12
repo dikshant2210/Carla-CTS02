@@ -59,37 +59,46 @@ class SharedSacdAgent(BaseAgent):
 
     def explore(self, state):
         # Act with randomness.
-        state = torch.ByteTensor(
-            state[None, ...]).to(self.device).float() / 255.
+        state, t = state
+        state = torch.ByteTensor(state[None, ...]).to(self.device).float() / 255.
+        t = torch.FloatTensor(t[None, ...]).to(self.device)
         with torch.no_grad():
-            action, _, _ = self.policy.sample(self.conv(state))
-            curr_q1 = self.online_critic.Q1(self.conv(state))
-            curr_q2 = self.online_critic.Q2(self.conv(state))
+            state = self.conv(state)
+            state = torch.cat([state, t], dim=1)
+            action, _, _ = self.policy.sample(state)
+            curr_q1 = self.online_critic.Q1(state)
+            curr_q2 = self.online_critic.Q2(state)
             q = torch.min(curr_q1, curr_q2)
             critic_action = torch.argmax(q, dim=1)
         return action.item(), critic_action.item()
 
     def exploit(self, state):
         # Act without randomness.
-        state = torch.ByteTensor(
-            state[None, ...]).to(self.device).float() / 255.
+        state, t = state
+        state = torch.ByteTensor(state[None, ...]).to(self.device).float() / 255.
+        t = torch.FloatTensor(t[None, ...]).to(self.device)
         with torch.no_grad():
-            action = self.policy.act(self.conv(state))
+            state = self.conv(state)
+            state = torch.cat([state, t], dim=1)
+            action = self.policy.act(state)
         return action.item()
 
     def update_target(self):
         self.target_critic.load_state_dict(self.online_critic.state_dict())
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
+        states, t = states
         states = self.conv(states)
+        states = torch.cat([states, t], dim=-1)
         curr_q1 = self.online_critic.Q1(states).gather(1, actions.long())
-        curr_q2 = self.online_critic.Q2(
-            states.detach()).gather(1, actions.long())
+        curr_q2 = self.online_critic.Q2(states.detach()).gather(1, actions.long())
         return curr_q1, curr_q2
 
     def calc_target_q(self, states, actions, rewards, next_states, dones):
         with torch.no_grad():
+            next_states, t_new = next_states
             next_states = self.conv(next_states)
+            next_states = torch.cat([next_states, t_new], dim=1)
             _, action_probs, log_action_probs = self.policy.sample(next_states)
             next_q1, next_q2 = self.target_critic(next_states)
             next_q = (action_probs * (
@@ -118,9 +127,11 @@ class SharedSacdAgent(BaseAgent):
 
     def calc_policy_loss(self, batch, weights):
         states, actions, rewards, next_states, dones = batch
+        states, t = states
 
         with torch.no_grad():
             states = self.conv(states)
+        states = torch.cat([states, t], dim=1)
 
         # (Log of) probabilities to calculate expectations of Q and entropies.
         _, action_probs, log_action_probs = self.policy.sample(states)

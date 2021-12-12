@@ -91,24 +91,27 @@ class LazyMemory(dict):
     def _sample(self, indices, batch_size):
         bias = -self._p if self._n == self.capacity else 0
 
-        states = np.empty(
-            (batch_size, *self.state_shape), dtype=np.uint8)
-        next_states = np.empty(
-            (batch_size, *self.state_shape), dtype=np.uint8)
+        states = np.empty((batch_size, *self.state_shape), dtype=np.uint8)
+        t = np.empty((batch_size, 6), dtype=np.float)
+        next_states = np.empty((batch_size, *self.state_shape), dtype=np.uint8)
+        t_new = np.empty((batch_size, 6), dtype=np.float)
 
         for i, index in enumerate(indices):
             _index = np.mod(index+bias, self.capacity)
-            states[i, ...] = self['state'][_index]
-            next_states[i, ...] = self['next_state'][_index]
+            states[i, ...] = self['state'][_index][0]
+            t[i, ...] = self['state'][_index][1]
+            next_states[i, ...] = self['next_state'][_index][0]
+            t_new[i, ...] = self['next_state'][_index][1]
 
         states = torch.ByteTensor(states).to(self.device).float() / 255.
-        next_states = torch.ByteTensor(
-            next_states).to(self.device).float() / 255.
+        t = torch.FloatTensor(t).to(self.device)
+        next_states = torch.ByteTensor(next_states).to(self.device).float() / 255.
+        t_new = torch.FloatTensor(t_new).to(self.device)
         actions = torch.LongTensor(self['action'][indices]).to(self.device)
         rewards = torch.FloatTensor(self['reward'][indices]).to(self.device)
         dones = torch.FloatTensor(self['done'][indices]).to(self.device)
 
-        return states, actions, rewards, next_states, dones
+        return (states, t), actions, rewards, (next_states, t_new), dones
 
     def __len__(self):
         return self._n
