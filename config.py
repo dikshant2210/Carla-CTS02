@@ -84,7 +84,7 @@ class Config:
     gama = 1.7
     despot_port = 1245
     N_DISCRETE_ACTIONS = 3
-    max_speed = 50
+    max_speed = 50 * 0.27778  # in m/s
     hit_penalty = 1000
     goal_reward = 1000
     braking_penalty = 1
