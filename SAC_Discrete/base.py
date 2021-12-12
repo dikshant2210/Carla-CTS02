@@ -173,7 +173,7 @@ class BaseAgent(ABC):
             goal = info['goal']
             done = done or accident
 
-            if self.is_update() or True:
+            if self.is_update():
                 self.learn()
 
             if self.steps % self.target_update_interval == 0:
@@ -222,7 +222,6 @@ class BaseAgent(ABC):
         update_params(self.alpha_optim, entropy_loss)
 
         self.alpha = self.log_alpha.exp()
-        print("Updated!")
 
         if self.use_per:
             self.memory.update_priority(errors)
