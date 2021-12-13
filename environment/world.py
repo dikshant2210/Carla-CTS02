@@ -93,8 +93,8 @@ class World(object):
         # Keep same camera config if the camera manager exists.
         cam_index = self.camera_manager.index if self.camera_manager is not None else 0
         semseg_index = self.semseg_sensor.index if self.semseg_sensor is not None else 5
-        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
-        semseg_pos_index = self.semseg_sensor.transform_index if self.semseg_sensor is not None else 1
+        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 3
+        semseg_pos_index = self.semseg_sensor.transform_index if self.semseg_sensor is not None else 3
 
         # Spawn the player.
         start = self.scenario[3]
