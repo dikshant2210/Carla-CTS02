@@ -11,7 +11,7 @@ target_update_interval: 3000
 use_per: True
 dueling_net: True
 num_eval_steps: 3000
-max_episode_steps: 300
+max_episode_steps: 400
 log_interval: 10
 eval_interval: 10000
 save_interval: 100000
