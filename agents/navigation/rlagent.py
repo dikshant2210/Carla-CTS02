@@ -113,10 +113,10 @@ class RLAgent(Agent):
         if speed > 1.0:
             if speed <= 20:
                 ped_hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                            front_margin=1, side_margin=0.75)
+                                            front_margin=1, side_margin=0.5)
             else:
                 ped_hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                            front_margin=2, side_margin=1.2)
+                                            front_margin=2, side_margin=0.5)
             if ped_hit:
                 # scale penalty by impact speed
                 hit = True
@@ -185,7 +185,7 @@ class RLAgent(Agent):
         # hit = hit or self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
         #                                front_margin=0, side_margin=0, back_margin=0)
         hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                front_margin=0.2, side_margin=0.2, back_margin=0.1) or hit
+                                front_margin=0.2, side_margin=0.2, back_margin=0.1)
         nearmiss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                      front_margin=1.5, side_margin=0.5, back_margin=0.5)
         return reward, goal, hit, nearmiss, terminal

@@ -27,11 +27,13 @@ class ISDespotP(RLAgent):
         p.start()
         self.conn.establish_connection()
         m = self.conn.receive_message()
-        print(m)  # START
+        print(m)  # RESET
 
     def get_reward(self, action):
         _, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
-        reward = -0.1
+        reward = 0
+        if goal:
+            reward += 1.0
         return reward, goal, hit, nearmiss, terminal
 
     def run_step(self, debug=False):
@@ -82,15 +84,20 @@ class ISDespotP(RLAgent):
         angle = transform.rotation.yaw
         car_pos = [self.vehicle.get_location().x, self.vehicle.get_location().y]
         car_velocity = self.vehicle.get_velocity()
-        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
         pedestrian_positions = [[self.world.walker.get_location().x, self.world.walker.get_location().y]]
 
         if len(path) == 0:
-            control.throttle = -0.6
+            control.brake = 0.6
+            self.prev_speed = 2
+        elif np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) > 50.0:
+            control.throttle = 0.6
         else:
-            t0 = time.time()
             self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
             m = self.conn.receive_message()
+            if m == "START":
+                self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
+                m = self.conn.receive_message()
             self.prev_speed = 1
             if m[0] == '0':
                 control.throttle = 0.6

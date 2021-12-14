@@ -7,10 +7,16 @@ Time: 16.08.21 23:55
 
 import heapq as hq
 import math
+import matplotlib.pyplot as plt
 import numpy as np
+import time
+from assets.occupancy_grid import OccupancyGrid
+import pickle as pkl
 
 
+# total cost f(n) = actual cost g(n) + heuristic cost h(n)
 class HybridAStar:
+
     def __init__(self, min_x, max_x, min_y, max_y, obstacle=(), vehicle_length=2):
         self.min_x = min_x
         self.max_x = max_x
@@ -18,7 +24,7 @@ class HybridAStar:
         self.max_y = max_y
         self.obstacle = obstacle
         self.vehicle_length = vehicle_length
-        print("Vehicle length: {}".format(vehicle_length))
+        print("Vehicle length: {:.2f}".format(vehicle_length))
 
         self.obstacles = set(self.obstacle)
 
@@ -26,9 +32,11 @@ class HybridAStar:
         # Euclidean distance
         output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) + (
                 math.radians(position[2]) - math.radians(target[2])) ** 2)
-
-        cost = occupancy_grid[round(position[0] - self.min_x), round(position[1] - self.min_y)]
-        return float(output + cost)  # total cost f(n) = actual cost g(n) + heuristic cost h(n)
+        x = round(position[0] - self.min_x)
+        location = [min(x, occupancy_grid.shape[0] - 1),
+                    min(round(position[1] - self.min_y), occupancy_grid.shape[1] - 1)]
+        cost = occupancy_grid[location[0], location[1]]
+        return float(output + cost)
 
     def dist(self, position, target):
         output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) +
@@ -54,13 +62,14 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations):
+    def find_path(self, start, end, occupancy_grid, agent_locations, m=1):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
         steering_inputs = []
-        for i in range(-50, 51, 10):
+        for i in range(-50, 51, 25):
             steering_inputs.append(i)
         # print(steering_inputs)
+        # print(occupancy_grid.shape)
 
         speed_inputs = [1.05]
         # cost_speed_inputs = [0]
@@ -82,6 +91,7 @@ class HybridAStar:
 
         open_diction[start] = (cost_to_neighbour_from_start + heuristic_cost, start, (start, start))
 
+        paths = list()
         while len(open_heap) > 0:
             while True:
                 chosen_d_node = open_heap[0][1]
@@ -95,24 +105,35 @@ class HybridAStar:
             visited_diction[chosen_d_node] = open_diction[chosen_d_node]
 
             if self.dist(chosen_d_node, end) < 1:
-
+                m -= 1  # Found one path to goal
                 rev_final_path = [end]  # reverse of final path
+                rev_final_path_d = [end]  # reverse of discrete final path
                 node = chosen_d_node
-                m = 1
-                while m == 1:
+                while True:
                     # visited_diction
                     open_node_contents = visited_diction[node]  # (cost,node_c,(parent_d,parent_c))
                     parent_of_node = open_node_contents[2][1]
 
                     rev_final_path.append(parent_of_node)
+                    rev_final_path_d.append(open_node_contents[2][0])
                     node = open_node_contents[2][0]
                     if node == start:
                         rev_final_path.append(start)
                         break
-                return rev_final_path
+                paths.append(rev_final_path)
+                if m == 0:
+                    return paths
+                open_heap = []
+                visited_diction = {}
+                heuristic_cost = self.hgcost(start, end, occupancy_grid)
+                hq.heappush(open_heap, (cost_to_neighbour_from_start + heuristic_cost, start))
+                for p in rev_final_path_d[:-1]:
+                    visited_diction[p] = open_diction[p]
+                open_diction = dict()
+                open_diction[start] = (heuristic_cost, start, (start, start))
+                continue
 
             hq.heappop(open_heap)
-
             for i in range(len(steering_inputs)):
                 for j in range(len(speed_inputs)):
 
@@ -141,10 +162,9 @@ class HybridAStar:
                             and (neighbour_x_d <= self.max_x) and (neighbour_y_d >= self.min_y) and
                             (neighbour_y_d <= self.max_y)):
 
-                        heurestic = self.hgcost((neighbour_x_d, neighbour_y_d, neighbour_theta_d), end, occupancy_grid)
-                        # cost_to_neighbour_from_start = abs(velocity) + cost_to_neighbour_from_start
-
-                        # adding the unit action cost
+                        heurestic = self.hgcost((neighbour_x_d, neighbour_y_d, neighbour_theta_d), end,
+                                                occupancy_grid)
+                        # adding the unit action cost and distance travelled
                         action_cost = 1.0
                         cost_to_neighbour_from_start = action_cost + cost_to_neighbour_from_start
 

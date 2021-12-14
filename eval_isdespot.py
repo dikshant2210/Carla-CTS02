@@ -48,18 +48,26 @@ def eval_isdespot(arg):
         total_acc_decc = 0
         ped_data = []
         step_num = 0
+        prev_action = 1
 
         for step_num in range(Config.num_steps):
             ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
             if Config.display:
                 env.render()
 
-            if env.control.throttle != 0 or env.control.brake != 0:
-                total_acc_decc += 1
-
             start_time = time.time()
             observation, reward, done, info = env.step(action=None)
             exec_time += (time.time() - start_time)
+
+            if env.control.throttle != 0:
+                action = 0
+            elif env.control.brake != 0:
+                action = 2
+            else:
+                action = 1
+            if action != 1 and prev_action != action:
+                total_acc_decc += 1
+            prev_action = action
 
             velocity = info['velocity']
             velocity_x = velocity.x
