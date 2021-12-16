@@ -20,7 +20,7 @@ from agents.tools.connector import Connector
 
 
 class GIDASBenchmark(gym.Env):
-    def __init__(self, port=Config.port):
+    def __init__(self, port=Config.port, setting="normal"):
         super(GIDASBenchmark, self).__init__()
         random.seed(100)
         self.action_space = gym.spaces.Discrete(Config.N_DISCRETE_ACTIONS)
@@ -68,14 +68,23 @@ class GIDASBenchmark(gym.Env):
         self.episodes = list()
         print(Config.scenarios)
         for scenario in Config.scenarios:
-            for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
-                for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
-                    self.episodes.append((scenario, speed, distance))
+            if setting == "special":
+                self._get_special_scenes(scenario)
+            else:
+                for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
+                    for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
+                        self.episodes.append((scenario, speed, distance))
+
+    def _get_special_scenes(self, scenario):
+        episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 3.3, 17.0), (scenario, 3.6, 18.0),
+                    (scenario, 2.9, 21.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0), (scenario, 3.0, 19.0),
+                    (scenario, 1.6, 36.0), (scenario, 3.5, 18.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
+        self.episodes = episodes
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 1.3  # Debug Settings
-        # ped_distance = 40
+        # ped_speed = 3.5  # Debug Settings
+        # ped_distance = 32
         # scenario_id = "04"
         self.scenario = scenario_id
         self.speed = ped_speed
@@ -95,7 +104,7 @@ class GIDASBenchmark(gym.Env):
     def step(self, action):
         self.world.tick(self.clock)
         if action == 0:
-            self.control.throttle = 0.7
+            self.control.throttle = 0.6
         elif action == 2:
             self.control.brake = 0.6
         elif action == 1:

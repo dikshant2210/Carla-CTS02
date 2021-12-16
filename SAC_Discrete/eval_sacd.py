@@ -60,6 +60,7 @@ class EvalSacdAgent(BaseAgent):
             episode_steps = 0
             episode_return = 0.0
             done = False
+            nearmiss = False
             action_count = {0: 0, 1: 0, 2: 0}
             t = np.zeros(6)  # reward, vx, vt, onehot last action
             t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
@@ -68,6 +69,7 @@ class EvalSacdAgent(BaseAgent):
                 self.test_env.render()
                 action = self.exploit((state, t))
                 next_state, reward, done, info = self.test_env.step(action)
+                done = done or info["accident"]
                 action_count[action] += 1
                 num_steps += 1
                 episode_steps += 1
@@ -78,12 +80,14 @@ class EvalSacdAgent(BaseAgent):
                 t[1] = info['velocity'].x / Config.max_speed
                 t[2] = info['velocity'].y / Config.max_speed
                 t[3 + action] = 1.0
+                nearmiss = nearmiss or info["near miss"]
 
             num_episodes += 1
             total_return += episode_return
             print("Speed: {:.2f}m/s, Dist.: {:.2f}m, Ep. steps: {}, Return: {:.4f}".format(
                 info['ped_speed'], info['ped_distance'], episode_steps, episode_return))
-            print("Goal: {}, Accident: {}, Act Dist.: {}".format(info['goal'], info['accident'], action_count))
+            print("Goal: {}, Accident: {}, Nearmiss: {}, Act Dist.: {}".format(
+                info['goal'], info['accident'], nearmiss, action_count))
 
             if num_steps > self.num_eval_steps:
                 break

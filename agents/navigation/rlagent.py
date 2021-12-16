@@ -98,9 +98,7 @@ class RLAgent(Agent):
     def get_reward(self, action):
         reward = 0
         goal = False
-        hit = False
         terminal = False
-        nearmiss = False
 
         velocity = self.vehicle.get_velocity()
         speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5) * 3.6  # in kmph
@@ -119,11 +117,11 @@ class RLAgent(Agent):
                                             front_margin=2, side_margin=0.5)
             if ped_hit:
                 # scale penalty by impact speed
-                hit = True
-                scaling = self.linmap(0, Config.max_speed, 0, 1, min(speed, Config.max_speed))
+                # hit = True
+                scaling = self.linmap(0, Config.max_speed, 0, 1, min(speed * 0.27778, Config.max_speed))  # in m/s
                 collision_reward = Config.hit_penalty * (scaling + 0.1)
-                if collision_reward >= 700:
-                    terminal = True
+                # if collision_reward >= 700:
+                #     terminal = True
                 reward -= collision_reward
 
         reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
@@ -174,16 +172,9 @@ class RLAgent(Agent):
             goal = True
             terminal = True
 
-        # incentive breaking if pedestrian nearby
-        # if self.in_near_miss(start[0], start[1], start[2], walker_x, walker_y, front_margin=5, side_margin=1.0):
-        #     if action == 2:
-        #         reward += 100
-
         # Normalize reward
         reward = reward / 1000.0
 
-        # hit = hit or self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-        #                                front_margin=0, side_margin=0, back_margin=0)
         hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                 front_margin=0.2, side_margin=0.2, back_margin=0.1)
         nearmiss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
