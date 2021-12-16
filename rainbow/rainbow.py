@@ -7,8 +7,8 @@ import torch
 import numpy as np
 from torch import optim
 import matplotlib.pyplot as plt
-from Rainbow.common.replay_buffer import ReplayBuffer
-from Rainbow.model import RainbowCnnDQN, USE_CUDA
+from rainbow.common.replay_buffer import ReplayBuffer
+from rainbow.model import RainbowCnnDQN, USE_CUDA
 
 
 class Rainbow:

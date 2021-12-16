@@ -4,8 +4,8 @@ import torch
 from torch.optim import Adam
 
 from .base import BaseAgent
-from SAC_Discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
-from SAC_Discrete.sacd.utils import disable_gradients
+from sac_discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
+from sac_discrete.sacd.utils import disable_gradients
 
 
 class SharedSacdAgent(BaseAgent):

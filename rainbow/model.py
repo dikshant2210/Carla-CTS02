@@ -8,7 +8,7 @@ import torch.nn as nn
 import numpy as np
 from torch import autograd
 import torch.nn.functional as F
-from Rainbow.common.layers import NoisyLinear
+from rainbow.common.layers import NoisyLinear
 
 USE_CUDA = torch.cuda.is_available()
 

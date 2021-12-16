@@ -7,8 +7,8 @@ from datetime import datetime
 from multiprocessing import Process
 
 
-from SAC_Discrete.sacd_agent import SacdAgent
-from SAC_Discrete.shared_sacd import SharedSacdAgent
+from sac_discrete.sacd_agent import SacdAgent
+from sac_discrete.shared_sacd import SharedSacdAgent
 from environment import GIDASBenchmark
 from config import Config
 
@@ -52,7 +52,7 @@ def run_test_server():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--config', type=str, default=os.path.join('SAC_Discrete/config', 'sacd.yaml'))
+        '--config', type=str, default=os.path.join('sac_discrete/config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
     parser.add_argument('--cuda', action='store_true')

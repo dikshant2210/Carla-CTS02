@@ -7,8 +7,8 @@ import time
 from collections import deque
 from multiprocessing import Process
 
-from SAC.sac import SAC
-from SAC.replay_memory import Memory
+from temp_check.SAC.sac import SAC
+from temp_check.SAC.replay_memory import Memory
 from environment import GIDASBenchmark
 from config import Config
 

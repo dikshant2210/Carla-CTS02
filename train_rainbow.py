@@ -9,7 +9,7 @@ import time
 from multiprocessing import Process
 
 from environment import GIDASBenchmark
-from Rainbow.rainbow import Rainbow
+from rainbow.rainbow import Rainbow
 from config import Config
 
 

@@ -9,7 +9,7 @@ import os
 
 from .base import BaseAgent
 from config import Config
-from SAC_Discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
+from sac_discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
 
 
 class EvalSacdAgent(BaseAgent):
