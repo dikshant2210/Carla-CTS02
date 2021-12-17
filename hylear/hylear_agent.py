@@ -111,7 +111,7 @@ class SharedSacdAgent(BaseAgent):
         t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
 
         while (not done) and episode_steps < self.max_episode_steps:
-            if self.display or True:
+            if self.display:
                 self.env.render()
             if self.start_steps > self.steps and False:
                 action = self.env.action_space.sample()
