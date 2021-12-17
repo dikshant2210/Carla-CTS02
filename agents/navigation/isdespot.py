@@ -29,8 +29,15 @@ class ISDespotP(RLAgent):
         m = self.conn.receive_message()
         print(m)  # RESET
 
-    def get_reward(self, action):
-        _, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
+    # def get_reward(self, action):
+    #     base_reward, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
+    #     reward = 0
+    #     if goal:
+    #         reward += 1.0
+    #     return reward, goal, hit, nearmiss, terminal
+
+    def get_reward_despot(self, action):
+        base_reward, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
         reward = 0
         if goal:
             reward += 1.0
@@ -75,7 +82,7 @@ class ISDespotP(RLAgent):
 
         # Best speed action for the given path
         if self.prev_action is not None:
-            reward, goal, hit, near_miss, terminal = self.get_reward(self.prev_speed)
+            reward, goal, hit, near_miss, terminal = self.get_reward_despot(self.prev_speed)
             terminal = goal or hit
         else:
             # handling first instance

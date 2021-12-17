@@ -8,7 +8,7 @@ from multiprocessing import Process
 
 
 from sac_discrete.sacd_agent import SacdAgent
-from sac_discrete.shared_sacd import SharedSacdAgent
+from hylear.hylear_agent import SharedSacdAgent
 from environment import GIDASBenchmark
 from config import Config
 
@@ -19,7 +19,8 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
-    test_env = GIDASBenchmark(port=Config.port + 100)
+    env.reset_agent('isdespot')
+    # test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -32,7 +33,7 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 

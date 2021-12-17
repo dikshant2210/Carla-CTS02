@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from torch.optim import Adam
 
+from config import Config
 from sac_discrete.base import BaseAgent
 from sac_discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
 from sac_discrete.sacd.utils import disable_gradients
@@ -63,15 +64,16 @@ class SharedSacdAgent(BaseAgent):
         self.alpha = self.log_alpha.exp()
         self.alpha_optim = Adam([self.log_alpha], lr=lr)
 
-    def explore(self, state):
+    def explore(self, state, probs=None):
         # Act with randomness.
         state, t = state
         state = torch.ByteTensor(state[None, ...]).to(self.device).float() / 255.
         t = torch.FloatTensor(t[None, ...]).to(self.device)
+        probs = torch.FloatTensor(probs[None, ...]).to(self.device)
         with torch.no_grad():
             state = self.conv(state)
             state = torch.cat([state, t], dim=1)
-            action, _, _ = self.policy.sample(state)
+            action, _, _ = self.policy.sample(state, probs)
             curr_q1 = self.online_critic.Q1(state)
             curr_q2 = self.online_critic.Q2(state)
             q = torch.min(curr_q1, curr_q2)
@@ -91,6 +93,95 @@ class SharedSacdAgent(BaseAgent):
 
     def update_target(self):
         self.target_critic.load_state_dict(self.online_critic.state_dict())
+
+    def train_episode(self):
+        self.episodes += 1
+        episode_return = 0.
+        episode_steps = 0
+
+        done = False
+        nearmiss = False
+        accident = False
+        goal = False
+        state = self.env.reset()
+        action_count = {0: 0, 1: 0, 2: 0}
+        action_count_critic = {0: 0, 1: 0, 2: 0}
+
+        t = np.zeros(6)  # reward, vx, vt, onehot last action
+        t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
+
+        while (not done) and episode_steps < self.max_episode_steps:
+            if self.display or True:
+                self.env.render()
+            if self.start_steps > self.steps and False:
+                action = self.env.action_space.sample()
+                critic_action = action
+            else:
+                if self.env.control.throttle > 0:
+                    symbolic_action = 0
+                elif self.env.control.brake > 0:
+                    symbolic_action = 2
+                else:
+                    symbolic_action = 1
+                symbolic_probs = torch.FloatTensor([0.1, 0.1, 0.1])
+                symbolic_probs[symbolic_action] = 0.8
+                action, critic_action = self.explore((state, t), symbolic_probs)
+
+            next_state, reward, done, info = self.env.step(action)
+            action_count[action] += 1
+            action_count_critic[critic_action] += 1
+
+            # Clip reward to [-1.0, 1.0].
+            clipped_reward = max(min(reward, 1.0), -1.0)
+            if episode_steps + 1 == self.max_episode_steps:
+                mask = False
+            else:
+                mask = done
+            # mask = False if episode_steps + 1 == self.max_episode_steps else done
+
+            t_new = np.zeros(6)
+            t_new[0] = clipped_reward
+            t_new[1] = info['velocity'].x / Config.max_speed
+            t_new[2] = info['velocity'].y / Config.max_speed
+            t_new[3 + action] = 1.0
+
+            # To calculate efficiently, set priority=max_priority here.
+            self.memory.append((state, t), action, clipped_reward, (next_state, t_new), mask)
+
+            self.steps += 1
+            episode_steps += 1
+            episode_return += reward
+            state = next_state
+            t = t_new
+            nearmiss = nearmiss or info['near miss']
+            accident = accident or info['accident']
+            goal = info['goal']
+            done = done or accident
+
+            if self.is_update():
+                self.learn()
+
+            if self.steps % self.target_update_interval == 0:
+                self.update_target()
+
+            if self.steps % self.eval_interval == 0:
+                self.evaluate()
+
+            if self.steps % self.save_interval == 0:
+                self.save_models(os.path.join(self.model_dir, str(self.steps)))
+
+        # We log running mean of training rewards.
+        self.train_return.append(episode_return)
+
+        if self.episodes % self.log_interval == 0:
+            self.writer.add_scalar(
+                'reward/train', self.train_return.get(), self.steps)
+
+        print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
+            self.episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
+        print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
+        print("Policy; ", action_count, "Critic: ", action_count_critic, "Alpha: {:.4f}".format(self.alpha.item()))
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
         states, t = states

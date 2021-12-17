@@ -122,11 +122,13 @@ class CateoricalPolicy(BaseNetwork):
             action_logits, dim=1, keepdim=True)
         return greedy_actions
 
-    def sample(self, states):
+    def sample(self, states, probs=None):
         if not self.shared:
             states = self.conv(states)
 
         action_probs = F.softmax(self.head(states), dim=1)
+        if probs is not None:
+            action_probs = probs
         action_dist = Categorical(action_probs)
         actions = action_dist.sample().view(-1, 1)
 
