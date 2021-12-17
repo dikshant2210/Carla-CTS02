@@ -20,7 +20,7 @@ def run(args):
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
     env.reset_agent('isdespot')
-    # test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
+    test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -33,7 +33,7 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 
