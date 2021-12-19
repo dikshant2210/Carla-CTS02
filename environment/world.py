@@ -4,7 +4,6 @@ Time: 23.03.21 14:27
 """
 import sys
 import random
-
 import carla
 
 from utils import find_weather_presets
@@ -160,7 +159,7 @@ class World(object):
         dist_walker = abs(self.player.get_location().y - self.walker.get_location().y)
         car_velocity = self.player.get_velocity()
         car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
-        if dist_walker < self.ped_distance and car_speed > 0:
+        if dist_walker < self.ped_distance:  # and car_speed > 0:
             if self.scenario[0] in [1, 2, 3]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
             elif self.scenario[0] in [4, 5, 7, 8, 6]:

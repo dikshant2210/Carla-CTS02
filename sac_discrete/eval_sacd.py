@@ -106,13 +106,13 @@ class EvalSacdAgent(BaseAgent):
             num_episodes += 1
             total_return += episode_return
             exec_time = exec_time / episode_steps
-            time_to_goal = episode_steps* Config.simulation_step
+            time_to_goal = episode_steps * Config.simulation_step
             print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
                 num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
             self.file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
                 num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
-            print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(
-                info['goal'], info['accident'], nearmiss))
+            print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
+                info['goal'], info['accident'], nearmiss, episode_return))
             self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(
                 info['goal'], info['accident'], nearmiss))
             print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
