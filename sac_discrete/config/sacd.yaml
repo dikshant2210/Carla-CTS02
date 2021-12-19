@@ -1,6 +1,6 @@
 num_steps: 3000000
 batch_size: 128
-lr: 0.0001
+lr: 0.00005
 memory_size: 60000
 gamma: 0.99
 multi_step: 1
