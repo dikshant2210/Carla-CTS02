@@ -27,7 +27,7 @@ test_annotations = 'data/testing annotations/'
 
 observed_frame_num = 15
 predicting_frame_num = 20
-batch_size = 100
+batch_size = 1024
 train_samples = 1
 test_samples = 1
 epochs = 100
