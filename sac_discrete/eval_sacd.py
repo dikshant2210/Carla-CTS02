@@ -80,7 +80,7 @@ class EvalSacdAgent(BaseAgent):
             t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
 
             while (not done) and episode_steps < self.max_episode_steps:
-                # self.test_env.render()
+                self.test_env.render()
 
                 start_time = time.time()
                 action = self.exploit((state, t))
@@ -115,8 +115,8 @@ class EvalSacdAgent(BaseAgent):
                 info['goal'], info['accident'], nearmiss, episode_return))
             self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(
                 info['goal'], info['accident'], nearmiss))
-            print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
-                time_to_goal, total_acc_decc, exec_time * 1000))
+            print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms, Action: {}'.format(
+                time_to_goal, total_acc_decc, exec_time * 1000, action_count))
             self.file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
                 time_to_goal, total_acc_decc, exec_time * 1000))
 

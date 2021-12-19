@@ -278,6 +278,7 @@ class BaseAgent(ABC):
                 t[1] = info['velocity'].x / Config.max_speed
                 t[2] = info['velocity'].y / Config.max_speed
                 t[3 + action] = 1.0
+                done = done or info["accident"]
 
             num_episodes += 1
             total_return += episode_return
