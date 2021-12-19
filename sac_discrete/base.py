@@ -182,8 +182,8 @@ class BaseAgent(ABC):
             if self.steps % self.eval_interval == 0:
                 self.evaluate()
 
-            if self.steps % self.save_interval == 0:
-                self.save_models(os.path.join(self.model_dir, str(self.steps)))
+            # if self.steps % self.save_interval == 0:
+            #     self.save_models(os.path.join(self.model_dir, str(self.steps)))
 
         # We log running mean of training rewards.
         self.train_return.append(episode_return)
@@ -293,6 +293,7 @@ class BaseAgent(ABC):
         if mean_return > self.best_eval_score:
             self.best_eval_score = mean_return
             self.save_models(os.path.join(self.model_dir, 'best'))
+        self.save_models(os.path.join(self.model_dir, str(self.steps)))
         self.writer.add_scalar(
             'reward/test', mean_return, self.steps)
 
