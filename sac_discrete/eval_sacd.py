@@ -5,7 +5,8 @@ Time: 13.12.21 11:31
 
 import numpy as np
 import torch
-import os
+from datetime import datetime
+import time
 
 from .base import BaseAgent
 from config import Config
@@ -49,8 +50,16 @@ class EvalSacdAgent(BaseAgent):
         self.conv.eval()
         self.policy.eval()
 
+        filename = "_out/hypal/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+        print(filename)
+        self.file = open(filename, "w")
+        self.file.write(str(vars(Config)) + "\n")
+
     def evaluate(self):
         num_episodes = 0
+        total_episodes = len(self.env.episodes)
+        print("Total testing episodes: {}".format(total_episodes))
+        self.file.write("Total training episodes: {}\n".format(total_episodes))
         num_steps = 0
         total_return = 0.0
         print('-' * 60)
@@ -59,16 +68,28 @@ class EvalSacdAgent(BaseAgent):
             state = self.test_env.reset()
             episode_steps = 0
             episode_return = 0.0
+            exec_time = 0
             done = False
             nearmiss = False
             action_count = {0: 0, 1: 0, 2: 0}
+
+            prev_action = 1
+            total_acc_decc = 0
+
             t = np.zeros(6)  # reward, vx, vt, onehot last action
             t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
 
             while (not done) and episode_steps < self.max_episode_steps:
-                self.test_env.render()
+                # self.test_env.render()
+
+                start_time = time.time()
                 action = self.exploit((state, t))
                 next_state, reward, done, info = self.test_env.step(action)
+                exec_time += (time.time() - start_time)
+                if action != 1 and prev_action != action:
+                    total_acc_decc += 1
+                prev_action = action
+
                 done = done or info["accident"]
                 action_count[action] += 1
                 num_steps += 1
@@ -84,19 +105,23 @@ class EvalSacdAgent(BaseAgent):
 
             num_episodes += 1
             total_return += episode_return
-            print("Speed: {:.2f}m/s, Dist.: {:.2f}m, Ep. steps: {}, Return: {:.4f}".format(
-                info['ped_speed'], info['ped_distance'], episode_steps, episode_return))
-            print("Goal: {}, Accident: {}, Nearmiss: {}, Act Dist.: {}".format(
-                info['goal'], info['accident'], nearmiss, action_count))
+            exec_time = exec_time / episode_steps
+            time_to_goal = episode_steps* Config.simulation_step
+            print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
+                num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
+            self.file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
+                num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
+            print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(
+                info['goal'], info['accident'], nearmiss))
+            self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(
+                info['goal'], info['accident'], nearmiss))
+            print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
+                time_to_goal, total_acc_decc, exec_time * 1000))
+            self.file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
+                time_to_goal, total_acc_decc, exec_time * 1000))
 
-            if num_steps > self.num_eval_steps:
+            if num_episodes > total_episodes:
                 break
-
-        mean_return = total_return / num_episodes
-
-        print(f'Num steps: {self.steps:<5}  '
-              f'return: {mean_return:<5.1f}')
-        print('-' * 60)
 
     def exploit(self, state):
         # Act without randomness.
@@ -110,104 +135,25 @@ class EvalSacdAgent(BaseAgent):
         return action.item()
 
     def explore(self, state):
-        # Act with randomness.
-        state, t = state
-        state = torch.ByteTensor(state[None, ...]).to(self.device).float() / 255.
-        t = torch.FloatTensor(t[None, ...]).to(self.device)
-        with torch.no_grad():
-            state = self.conv(state)
-            state = torch.cat([state, t], dim=1)
-            action, _, _ = self.policy.sample(state)
-            curr_q1 = self.online_critic.Q1(state)
-            curr_q2 = self.online_critic.Q2(state)
-            q = torch.min(curr_q1, curr_q2)
-            critic_action = torch.argmax(q, dim=1)
-        return action.item(), critic_action.item()
+        pass
 
     def update_target(self):
-        self.target_critic.load_state_dict(self.online_critic.state_dict())
+        pass
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
-        states, t = states
-        states = self.conv(states)
-        states = torch.cat([states, t], dim=-1)
-        curr_q1 = self.online_critic.Q1(states).gather(1, actions.long())
-        curr_q2 = self.online_critic.Q2(states.detach()).gather(1, actions.long())
-        return curr_q1, curr_q2
+        pass
 
     def calc_target_q(self, states, actions, rewards, next_states, dones):
-        with torch.no_grad():
-            next_states, t_new = next_states
-            next_states = self.conv(next_states)
-            next_states = torch.cat([next_states, t_new], dim=1)
-            _, action_probs, log_action_probs = self.policy.sample(next_states)
-            next_q1, next_q2 = self.target_critic(next_states)
-            next_q = (action_probs * (
-                torch.min(next_q1, next_q2) - self.alpha * log_action_probs
-                )).sum(dim=1, keepdim=True)
-
-        assert rewards.shape == next_q.shape
-        return rewards + (1.0 - dones) * self.gamma_n * next_q
+        pass
 
     def calc_critic_loss(self, batch, weights):
-        curr_q1, curr_q2 = self.calc_current_q(*batch)
-        target_q = self.calc_target_q(*batch)
-
-        # TD errors for updating priority weights
-        errors = torch.abs(curr_q1.detach() - target_q)
-
-        # We log means of Q to monitor training.
-        mean_q1 = curr_q1.detach().mean().item()
-        mean_q2 = curr_q2.detach().mean().item()
-
-        # Critic loss is mean squared TD errors with priority weights.
-        q1_loss = torch.mean((curr_q1 - target_q).pow(2) * weights)
-        q2_loss = torch.mean((curr_q2 - target_q).pow(2) * weights)
-
-        return q1_loss, q2_loss, errors, mean_q1, mean_q2
+        pass
 
     def calc_policy_loss(self, batch, weights):
-        states, actions, rewards, next_states, dones = batch
-        states, t = states
-
-        with torch.no_grad():
-            states = self.conv(states)
-        states = torch.cat([states, t], dim=1)
-
-        # (Log of) probabilities to calculate expectations of Q and entropies.
-        _, action_probs, log_action_probs = self.policy.sample(states)
-
-        with torch.no_grad():
-            # Q for every actions to calculate expectations of Q.
-            q1, q2 = self.online_critic(states)
-            q = torch.min(q1, q2)
-
-        # Expectations of entropies.
-        entropies = -torch.sum(
-            action_probs * log_action_probs, dim=1, keepdim=True)
-
-        # Expectations of Q.
-        q = torch.sum(torch.min(q1, q2) * action_probs, dim=1, keepdim=True)
-
-        # Policy objective is maximization of (Q + alpha * entropy) with
-        # priority weights.
-        policy_loss = (weights * (- q - self.alpha * entropies)).mean()
-
-        return policy_loss, entropies.detach()
+        pass
 
     def calc_entropy_loss(self, entropies, weights):
-        assert not entropies.requires_grad
-
-        # Intuitively, we increse alpha when entropy is less than target
-        # entropy, vice versa.
-        entropy_loss = -torch.mean(
-            self.log_alpha * (self.target_entropy - entropies)
-            * weights)
-        return entropy_loss
+        pass
 
     def save_models(self, save_dir):
-        super().save_models(save_dir)
-        self.conv.save(os.path.join(save_dir, 'conv.pth'))
-        self.policy.save(os.path.join(save_dir, 'policy.pth'))
-        self.online_critic.save(os.path.join(save_dir, 'online_critic.pth'))
-        self.target_critic.save(os.path.join(save_dir, 'target_critic.pth'))
+        pass
