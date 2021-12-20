@@ -80,7 +80,7 @@ class EvalSacdAgent(BaseAgent):
             t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
 
             while (not done) and episode_steps < self.max_episode_steps:
-                self.test_env.render()
+                # self.test_env.render()
 
                 start_time = time.time()
                 action = self.exploit((state, t))
