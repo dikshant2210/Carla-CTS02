@@ -7,8 +7,8 @@ temp.py
 _out/
 temp_check/
 .ipynb_checkpoints/
-Path Predictor/data/
-Path Predictor/models/
+path_predictor/data/
+path_predictor/models/
 ISDESPOT/isdespot-ped-pred/is-despot/.deps/
 ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/.settings/
 ISDESPOT/isdespot-ped-pred/is-despot/build/

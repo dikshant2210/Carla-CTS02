@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 class PerceivedRisk:
     def __init__(self):
-        # TODO: Check the value for wheel base
         self.wheel_base = 1.9887
         self.tla = 1  # Look ahead time[s]
         self.par1 = 0.0064  # Steepness of the parabola

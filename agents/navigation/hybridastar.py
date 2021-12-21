@@ -190,24 +190,29 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 92, 160, -90
-    gx, gy, gtheta = 75, 1, -180
+    sx, sy, stheta = -1, 220, -90
+    gx, gy, gtheta = -1, 80, -90
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(1.4, 200), (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    obstacle = [(-1.0, 200)]  # (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    # obstacle = []
     occupancy_grid = OccupancyGrid()
 
     g = np.ones((110, 310)) * 1000.0
     g[7:13, 13:] = 1.0
     g[97:103, 13:] = 1.0
     g[7:, 7:13] = 1.0
+
+    # Update cost map with pedestrian information
+    obstacle.append((-2, 200))
+    obstacle.append((-3, 200))
     # plt.imshow(g.T, cmap='gray')
     # plt.show()
     hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
-    print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
+    # print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
     t0 = time.time()
     paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, obstacle)
     if paths:
@@ -226,10 +231,10 @@ def main():
             x.append(pixel_coord[0])
             y.append(pixel_coord[1])
         plt.plot(x, y, "-r")
-        obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[0][0], obstacle[0][1], 0])
-        plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
-        obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
-        plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
+        # obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[0][0], obstacle[0][1], 0])
+        # plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
+        # obstacle_pixel = occupancy_grid.map.convert_to_pixel([obstacle[1][0], obstacle[1][1], 0])
+        # plt.scatter([obstacle_pixel[0]], [obstacle_pixel[1]], c="k")
         plt.imshow(cp, cmap='gray')
         # plt.imshow(cp[x[0]-50:x[0]+50, y[0]-200:y[0]+500], cmap="gray")
         plt.show()
