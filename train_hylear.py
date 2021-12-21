@@ -8,7 +8,7 @@ from multiprocessing import Process
 
 
 from sac_discrete.sacd_agent import SacdAgent
-from sac_discrete.shared_sacd import SharedSacdAgent
+from hylear.hylear_agent import SharedSacdAgent
 from environment import GIDASBenchmark
 from config import Config
 
@@ -19,6 +19,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
+    env.reset_agent('isdespot')
     test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
 
     # Specify the directory to log.

@@ -4,12 +4,10 @@ Time: 10.11.21 01:14
 """
 
 import carla
-import time
 import numpy as np
 from multiprocessing import Process
 from collections import deque
 import subprocess
-from config import Config
 
 from agents.navigation.rlagent import RLAgent
 from path_predictor.m2p3 import path_pred
