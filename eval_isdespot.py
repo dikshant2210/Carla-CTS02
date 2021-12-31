@@ -26,7 +26,7 @@ def eval_isdespot(arg):
     file.write(str(vars(Config)) + "\n")
 
     # Setting up environment
-    env = GIDASBenchmark()
+    env = GIDASBenchmark(port=Config.port)
     env.reset_agent('isdespot')
     env.eval(arg.episode)
     ##############################################################
