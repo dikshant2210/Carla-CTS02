@@ -34,8 +34,8 @@ class Config:
     val_car_speed_range = [6, 9]
 
     test_scenarios = ['04']  # ['01', '02', '03', '04', '05', '06', '07', '08']
-    test_ped_speed_range = [0., 4.0]
-    test_ped_distance_range = [5, 50]
+    test_ped_speed_range = [0.25, 2.85]
+    test_ped_distance_range = [4.75, 49.75]
     test_car_speed_range = [6, 9]
 
     save_freq = 100
