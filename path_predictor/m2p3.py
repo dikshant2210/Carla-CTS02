@@ -142,32 +142,34 @@ def train(model, epochs, batch_gen, input, batch_size):
     model.save_weights('models/CVAE_model.h5')
 
 
-def path_pred(model_path, x, num_samples = 1):
-    model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
-    model.load_weights(model_path)
+class PedPredictions:
+    def __init__(self, model_path):
+        self.model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
+        self.model.load_weights(model_path)
 
-    final_preds = np.zeros((x.shape[0], num_samples * test_samples, predicting_frame_num, 2))
+    def get_pred(self, x, num_samples=1):
+        final_preds = np.zeros((x.shape[0], num_samples * test_samples, predicting_frame_num, 2))
 
-    # make output absolute
-    x_t = x[:, observed_frame_num - 1, :]
-    x_t = np.expand_dims(x_t, axis=1)
-    x_t = np.repeat(x_t, predicting_frame_num, axis=1)
+        # make output absolute
+        x_t = x[:, observed_frame_num - 1, :]
+        x_t = np.expand_dims(x_t, axis=1)
+        x_t = np.repeat(x_t, predicting_frame_num, axis=1)
 
-    # generate num_samples amount of samples (predictions)
-    for sample in range(num_samples):
-        # dummy_y = np.zeros((y_batch_test.shape[0], predicting_frame_num, 4)).astype(np.float32)
-        dummy_y = np.zeros((1, predicting_frame_num, 2)).astype(np.float32)
+        # generate num_samples amount of samples (predictions)
+        for sample in range(num_samples):
+            # dummy_y = np.zeros((y_batch_test.shape[0], predicting_frame_num, 4)).astype(np.float32)
+            dummy_y = np.zeros((1, predicting_frame_num, 2)).astype(np.float32)
 
-        preds = model.predict([x, dummy_y], batch_size=1, verbose=0)
+            preds = self.model.predict([x, dummy_y], batch_size=1, verbose=0)
 
-        # add last observed frame to the relative output to get absolute output
-        preds = preds + x_t
-        final_preds[:, sample, :, :] = preds
+            # add last observed frame to the relative output to get absolute output
+            preds = preds + x_t
+            final_preds[:, sample, :, :] = preds
 
-    if num_samples == 1:
-        final_preds = np.reshape(final_preds, [preds.shape[0], predicting_frame_num, 2])
+        if num_samples == 1:
+            final_preds = np.reshape(final_preds, [preds.shape[0], predicting_frame_num, 2])
 
-    return final_preds
+        return final_preds
 
 
 def test(model, num_samples):

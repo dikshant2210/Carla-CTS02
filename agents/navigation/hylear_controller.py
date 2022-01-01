@@ -10,7 +10,7 @@ from collections import deque
 import subprocess
 
 from agents.navigation.rlagent import RLAgent
-from path_predictor.m2p3 import path_pred
+from path_predictor.m2p3 import PedPredictions
 
 
 def run_server():
@@ -28,7 +28,12 @@ class HyLEAR(RLAgent):
         self.conn.establish_connection()
         m = self.conn.receive_message()
         print(m)  # RESET
-        self.ped_history = deque(list, maxlen=15)
+        self.ped_history = deque(list(), maxlen=15)
+        self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
+
+    def update_scenario(self, scenario):
+        self.scenario = scenario
+        self.ped_history = deque(list(), maxlen=15)
 
     def get_reward_despot(self, action):
         base_reward, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
@@ -61,8 +66,10 @@ class HyLEAR(RLAgent):
 
         if len(self.ped_history) == 15:
             # Use path predictor
-            pedestrian_path = path_pred("path_predictor/models/CVAE_model.h5", self.ped_history)
-            for node in pedestrian_path:
+            ped_path = np.array(self.ped_history)
+            ped_path = ped_path.reshape((1, 15, 2))
+            pedestrian_path = self.ped_pred.get_pred(ped_path)
+            for node in pedestrian_path[0]:
                 if (round(node[0]), round(node[1])) not in obstacles:
                     obstacles.append((round(node[0]), round(node[1])))
         paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
