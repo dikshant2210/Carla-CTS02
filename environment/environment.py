@@ -14,6 +14,8 @@ from environment.hud import HUD
 from agents.navigation.rlagent import RLAgent
 from agents.navigation.reactive_controller import ReactiveController
 from agents.navigation.isdespot import ISDespotP
+from agents.navigation.hylear_controller import HyLEAR
+
 from config import Config
 from agents.tools.scenario import Scenario
 from agents.tools.connector import Connector
@@ -143,6 +145,9 @@ class GIDASBenchmark(gym.Env):
         if agent == 'isdespot':
             conn = Connector(Config.despot_port)
             self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
+        if agent == 'hylear':
+            conn = Connector(Config.despot_port)
+            self.planner_agent = HyLEAR(self.world, self.map, self.scene, conn)
 
     def eval(self, current_episode=0):
         self.mode = "TESTING"

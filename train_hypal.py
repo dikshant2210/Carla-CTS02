@@ -8,7 +8,7 @@ from multiprocessing import Process
 
 
 from sac_discrete.sacd_agent import SacdAgent
-from hylear.hylear_agent import SharedSacdAgent
+from hylear.hypal_agent import SharedSacdAgent
 from environment import GIDASBenchmark
 from config import Config
 

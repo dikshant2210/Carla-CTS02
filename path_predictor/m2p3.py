@@ -2,8 +2,8 @@ import os
 import random
 
 import time
-from utils_ import *
-from visualize_result import *
+from path_predictor.utils_ import *
+# from path_predictor.visualize_result import *
 
 from keras.layers import Input, Dense, Lambda, RepeatVector
 from keras.layers.merge import concatenate

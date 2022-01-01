@@ -18,9 +18,9 @@ def run_server():
                    stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
-class ISDespotP(RLAgent):
+class HyLEAR(RLAgent):
     def __init__(self, world, carla_map, scenario, conn=None):
-        super(ISDespotP, self).__init__(world, carla_map, scenario)
+        super(HyLEAR, self).__init__(world, carla_map, scenario)
 
         self.conn = conn
         p = Process(target=run_server)
@@ -31,7 +31,7 @@ class ISDespotP(RLAgent):
         self.ped_history = deque(list, maxlen=15)
 
     def get_reward_despot(self, action):
-        base_reward, goal, hit, nearmiss, terminal = super(ISDespotP, self).get_reward(action)
+        base_reward, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
         reward = 0
         if goal:
             reward += 1.0

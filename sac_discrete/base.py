@@ -53,6 +53,7 @@ class BaseAgent(ABC):
             os.makedirs(self.model_dir)
         if not os.path.exists(self.summary_dir):
             os.makedirs(self.summary_dir)
+        self.file = open(self.summary_dir + "eval_results.log", "w")
 
         self.writer = SummaryWriter(log_dir=self.summary_dir)
         self.train_return = RunningMeanStats(log_interval)
@@ -285,6 +286,10 @@ class BaseAgent(ABC):
             print("Speed: {:.2f}m/s, Dist.: {:.2f}m, Return: {:.4f}".format(
                 info['ped_speed'], info['ped_distance'], episode_return))
             print("Goal: {}, Accident: {}, Act Dist.: {}".format(info['goal'], info['accident'], action_count))
+            self.file.write("Speed: {:.2f}m/s, Dist.: {:.2f}m, Return: {:.4f}".format(
+                info['ped_speed'], info['ped_distance'], episode_return))
+            self.file.write("Goal: {}, Accident: {}, Act Dist.: {}".format(
+                info['goal'], info['accident'], action_count))
 
             if num_steps > self.num_eval_steps:
                 break
@@ -310,3 +315,4 @@ class BaseAgent(ABC):
     def __del__(self):
         self.env.close()
         self.test_env.close()
+        self.file.close()

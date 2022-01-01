@@ -27,7 +27,7 @@ def eval_isdespot(arg):
 
     # Setting up environment
     env = GIDASBenchmark(port=Config.port)
-    env.reset_agent('isdespot')
+    env.reset_agent('hylear')
     env.eval(arg.episode)
     ##############################################################
 
