@@ -26,16 +26,16 @@ class PerceivedRisk:
         self.grid_cost[7:, 7:13] = 1.0
         self.grid_cost = self.grid_cost / 10000.0
 
-    def get_risk(self, path, player, steering_angle):
+    def get_risk(self, player, steering_angle, costmap):
         risk = 0
-        drf = np.zeros(self.grid_cost.shape)
-        for i in range(self.grid_cost.shape[0]):
-            for j in range(self.grid_cost.shape[1]):
-                risk_field = self.pointwise_risk(i, j, player.get_location().x, player.get_location().y,
-                                                 steering_angle, player.get_rotation().yaw)
-                risk += self.grid_cost[i, j] * risk_field
+        drf = np.zeros(costmap.shape)
+        for i in range(costmap.shape[0]):
+            for j in range(costmap.shape[1]):
+                risk_field = self.pointwise_risk(i, j, player[0] - self.minx, player[1] - self.miny,
+                                                 player[2], 0.5 * steering_angle, player[3])
+                risk += costmap[i, j] * risk_field
                 drf[i, j] = risk_field
-        return risk, drf
+        return risk
 
     def get_risk_dummy(self, path, player, steering_angle):
         risk = 0

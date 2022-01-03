@@ -43,6 +43,13 @@ class RLAgent(Agent):
         self.grid_cost[7:13, 13:] = 1.0
         self.grid_cost[97:103, 13:] = 1.0
         self.grid_cost[7:, 7:13] = 1.0
+        # Sidewalk Network
+
+        # Sidewalk relaxed grid
+        self.sidewalk_relaxed_grid_cost = np.ones((110, 310)) * 1000.0
+        self.sidewalk_relaxed_grid_cost[7:13, 13:] = 1.0
+        self.sidewalk_relaxed_grid_cost[97:103, 13:] = 1.0
+        self.sidewalk_relaxed_grid_cost[7:, 7:13] = 1.0
 
         self.min_x = -10
         self.max_x = 100

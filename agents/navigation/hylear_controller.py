@@ -11,6 +11,7 @@ import subprocess
 
 from agents.navigation.rlagent import RLAgent
 from path_predictor.m2p3 import PedPredictions
+from agents.tools.risk_assesment import PerceivedRisk
 
 
 def run_server():
@@ -30,6 +31,7 @@ class HyLEAR(RLAgent):
         print(m)  # RESET
         self.ped_history = deque(list(), maxlen=15)
         self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
+        self.risk_estimator = PerceivedRisk()
 
     def update_scenario(self, scenario):
         self.scenario = scenario
@@ -47,12 +49,14 @@ class HyLEAR(RLAgent):
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
+        ped_flag = False
 
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
         if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
             self.ped_history.append([walker_x, walker_y])
+            ped_flag = True
             if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
                 obstacles.append((int(walker_x), int(walker_y)))
             elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
@@ -124,3 +128,59 @@ class HyLEAR(RLAgent):
 
         self.prev_action = control
         return control, self.get_car_intention(obstacles, path, start)
+
+    def get_path(self, start, end, obstacles, ped_flag):
+        # ped path prediction: False, Footpath modification: False
+        path1 = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        path1.reverse()
+        if not ped_flag:
+            path = path1
+
+        else:
+            # ped path prediction: False, Footpath modification: True
+            path2 = self.path_planner.find_path(start, end, self.sidewalk_relaxed_grid_cost, obstacles)
+            path2.reverse()
+            if len(self.ped_history) < 15:
+                path = self.path_reasoning([path1, path2], self.grid_cost, start)
+
+            else:
+                # Use path predictor
+                ped_updated_costmap = np.copy(self.grid_cost)
+                ped_path = np.array(self.ped_history)
+                ped_path = ped_path.reshape((1, 15, 2))
+                pedestrian_path = self.ped_pred.get_pred(ped_path)
+                for node in pedestrian_path[0]:
+                    if (round(node[0]), round(node[1])) not in obstacles:
+                        obstacles.append((round(node[0]), round(node[1])))
+                        # Updating costmap with ped path prediction
+                        ped_updated_costmap[round(node[0]), round(node[1])] = 100
+
+                # ped path prediction: True, Footpath modification: False
+                path3 = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+                path3.reverse()
+                # ped path prediction: True, Footpath modification: True
+                path4 = self.path_planner.find_path(start, end, self.sidewalk_relaxed_grid_cost, obstacles)
+                path4.reverse()
+
+                path = self.path_reasoning([path1, path2, path3, path4], ped_updated_costmap, start)
+
+        return path
+
+    def path_reasoning(self, paths, costmap, start):
+        car_velocity = self.vehicle.get_velocity()
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
+        player = [self.vehicle.get_location().x, self.vehicle.get_location().y, car_speed,
+                  self.vehicle.get_transform().rotation.yaw]
+
+        best_path = None
+        lowest_risk = None
+        for path in paths:
+            steering_angle = (path[2][2] - start[2]) / 70.
+            risk = self.risk_estimator.get_risk(player, steering_angle, costmap)
+            if lowest_risk is None:
+                lowest_risk = risk
+                best_path = path
+            elif risk < lowest_risk:
+                lowest_risk = risk
+                best_path = path
+        return best_path
