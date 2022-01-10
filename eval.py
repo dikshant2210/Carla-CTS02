@@ -50,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--port', type=int, default=2000)
+    parser.add_argument('--port', type=int, default=2200)
     args = parser.parse_args()
 
     Config.port = args.port
