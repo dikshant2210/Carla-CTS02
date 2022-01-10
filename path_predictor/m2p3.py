@@ -17,6 +17,8 @@ from tslearn.clustering import TimeSeriesKMeans
 from tslearn.utils import to_time_series_dataset
 from tqdm import tqdm
 import pickle as pkl
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -146,6 +148,10 @@ class PedPredictions:
     def __init__(self, model_path):
         self.model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
         self.model.load_weights(model_path)
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        sess = tf.Session(config=config)
+        set_session(sess)
 
     def get_pred(self, x, num_samples=1):
         final_preds = np.zeros((x.shape[0], num_samples * test_samples, predicting_frame_num, 2))
