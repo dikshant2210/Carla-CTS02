@@ -148,10 +148,22 @@ class PedPredictions:
     def __init__(self, model_path):
         self.model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
         self.model.load_weights(model_path)
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        sess = tf.Session(config=config)
-        set_session(sess)
+        # config = tf.ConfigProto()
+        # config.gpu_options.allow_growth = True
+        # sess = tf.Session(config=config)
+        # set_session(sess)
+        gpus = tf.config.list_physical_devices('GPU')
+        if gpus:
+            # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
+            try:
+                tf.config.set_logical_device_configuration(
+                    gpus[0],
+                    [tf.config.LogicalDeviceConfiguration(memory_limit=1024)])
+                logical_gpus = tf.config.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Virtual devices must be set before GPUs have been initialized
+                print(e)
 
     def get_pred(self, x, num_samples=1):
         final_preds = np.zeros((x.shape[0], num_samples * test_samples, predicting_frame_num, 2))
