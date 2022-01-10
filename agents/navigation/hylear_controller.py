@@ -10,7 +10,7 @@ from collections import deque
 import subprocess
 
 from agents.navigation.rlagent import RLAgent
-from path_predictor.m2p3 import PedPredictions
+# from path_predictor.m2p3 import PedPredictions
 from agents.tools.risk_assesment import PerceivedRisk
 
 
@@ -30,7 +30,7 @@ class HyLEAR(RLAgent):
         m = self.conn.receive_message()
         print(m)  # RESET
         self.ped_history = deque(list(), maxlen=15)
-        self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
+        # self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
         self.risk_estimator = PerceivedRisk()
 
     def update_scenario(self, scenario):
@@ -52,7 +52,7 @@ class HyLEAR(RLAgent):
 
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        path, obstacles = self.get_path_ped_prediction(start, end)
+        path, obstacles = self.get_path_simple(start, end)
 
         control = carla.VehicleControl()
         control.brake = 0.0
