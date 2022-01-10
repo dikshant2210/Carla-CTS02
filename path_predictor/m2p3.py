@@ -160,7 +160,8 @@ class PedPredictions:
             # dummy_y = np.zeros((y_batch_test.shape[0], predicting_frame_num, 4)).astype(np.float32)
             dummy_y = np.zeros((1, predicting_frame_num, 2)).astype(np.float32)
 
-            preds = self.model.predict([x, dummy_y], batch_size=1, verbose=0)
+            # preds = self.model.predict([x, dummy_y], batch_size=1, verbose=0)
+            preds = self.model.predict_on_batch([x, dummy_y])
 
             # add last observed frame to the relative output to get absolute output
             preds = preds + x_t
