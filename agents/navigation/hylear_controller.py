@@ -183,7 +183,7 @@ class HyLEAR(RLAgent):
             path = []
         path.reverse()
 
-        return path
+        return path, obstacles
 
     def get_path_with_reasoning(self, start, end, obstacles, ped_flag):
         # ped path prediction: False, Footpath modification: False
