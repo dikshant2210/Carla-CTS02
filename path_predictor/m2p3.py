@@ -1,6 +1,13 @@
 import os
 import random
 
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.3
+set_session(tf.Session(config=config))
+
 import time
 from path_predictor.utils_ import *
 # from path_predictor.visualize_result import *
@@ -17,8 +24,6 @@ from tslearn.clustering import TimeSeriesKMeans
 from tslearn.utils import to_time_series_dataset
 from tqdm import tqdm
 import pickle as pkl
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -148,23 +153,6 @@ class PedPredictions:
     def __init__(self, model_path):
         self.model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
         self.model.load_weights(model_path)
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        # config.gpu_options.per_process_gpu_memory_fraction = 0.3
-        set_session(tf.Session(config=config))
-
-        # gpus = tf.config.list_physical_devices('GPU')
-        # if gpus:
-        #     # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
-        #     try:
-        #         tf.config.set_logical_device_configuration(
-        #             gpus[0],
-        #             [tf.config.LogicalDeviceConfiguration(memory_limit=1024)])
-        #         logical_gpus = tf.config.list_logical_devices('GPU')
-        #         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-        #     except RuntimeError as e:
-        #         # Virtual devices must be set before GPUs have been initialized
-        #         print(e)
 
     def get_pred(self, x, num_samples=1):
         final_preds = np.zeros((x.shape[0], num_samples * test_samples, predicting_frame_num, 2))
