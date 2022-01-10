@@ -49,39 +49,39 @@ class HyLEAR(RLAgent):
         transform = self.vehicle.get_transform()
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
-        ped_flag = False
 
         # Steering action on the basis of shortest and safest path(Hybrid A*)
-        obstacles = list()
+        # obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
-            self.ped_history.append([walker_x, walker_y])
-            ped_flag = True
-            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [1, 4, 10]:
-                obstacles.append((int(walker_x), int(walker_y)))
-        if self.scenario[0] in [3, 7, 8, 10]:
-            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
-            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
-                obstacles.append((int(car_x), int(car_y)))
-
-        if len(self.ped_history) == 15:
-            # Use path predictor
-            ped_path = np.array(self.ped_history)
-            ped_path = ped_path.reshape((1, 15, 2))
-            pedestrian_path = self.ped_pred.get_pred(ped_path)
-            for node in pedestrian_path[0]:
-                if (round(node[0]), round(node[1])) not in obstacles:
-                    obstacles.append((round(node[0]), round(node[1])))
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
-        if len(paths):
-            path = paths[0]
-        else:
-            path = []
-        path.reverse()
+        # if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
+        #     self.ped_history.append([walker_x, walker_y])
+        #     ped_flag = True
+        #     if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
+        #         obstacles.append((int(walker_x), int(walker_y)))
+        #     elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
+        #         obstacles.append((int(walker_x), int(walker_y)))
+        #     elif self.scenario[0] in [1, 4, 10]:
+        #         obstacles.append((int(walker_x), int(walker_y)))
+        # if self.scenario[0] in [3, 7, 8, 10]:
+        #     car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+        #     if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+        #         obstacles.append((int(car_x), int(car_y)))
+        #
+        # if len(self.ped_history) == 15:
+        #     # Use path predictor
+        #     ped_path = np.array(self.ped_history)
+        #     ped_path = ped_path.reshape((1, 15, 2))
+        #     pedestrian_path = self.ped_pred.get_pred(ped_path)
+        #     for node in pedestrian_path[0]:
+        #         if (round(node[0]), round(node[1])) not in obstacles:
+        #             obstacles.append((round(node[0]), round(node[1])))
+        # paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        # if len(paths):
+        #     path = paths[0]
+        # else:
+        #     path = []
+        # path.reverse()
+        path, obstacles = self.get_path_ped_prediction(start, end)
 
         control = carla.VehicleControl()
         control.brake = 0.0
@@ -129,7 +129,63 @@ class HyLEAR(RLAgent):
         self.prev_action = control
         return control, self.get_car_intention(obstacles, path, start)
 
-    def get_path(self, start, end, obstacles, ped_flag):
+    def get_path_simple(self, start, end):
+        obstacles = list()
+        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
+            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [1, 4, 10]:
+                obstacles.append((int(walker_x), int(walker_y)))
+        if self.scenario[0] in [3, 7, 8, 10]:
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+                obstacles.append((int(car_x), int(car_y)))
+
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        if len(paths):
+            path = paths[0]
+        else:
+            path = []
+        path.reverse()
+        return path, obstacles
+
+    def get_path_ped_prediction(self, start, end):
+        obstacles = list()
+        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
+            self.ped_history.append([walker_x, walker_y])
+            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [1, 4, 10]:
+                obstacles.append((int(walker_x), int(walker_y)))
+        if self.scenario[0] in [3, 7, 8, 10]:
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+                obstacles.append((int(car_x), int(car_y)))
+
+        if len(self.ped_history) == 15:
+            # Use path predictor
+            ped_path = np.array(self.ped_history)
+            ped_path = ped_path.reshape((1, 15, 2))
+            pedestrian_path = self.ped_pred.get_pred(ped_path)
+            for node in pedestrian_path[0]:
+                if (round(node[0]), round(node[1])) not in obstacles:
+                    obstacles.append((round(node[0]), round(node[1])))
+        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
+        if len(paths):
+            path = paths[0]
+        else:
+            path = []
+        path.reverse()
+
+        return path
+
+    def get_path_with_reasoning(self, start, end, obstacles, ped_flag):
         # ped path prediction: False, Footpath modification: False
         path1 = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
         path1.reverse()
