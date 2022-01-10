@@ -148,10 +148,11 @@ class PedPredictions:
     def __init__(self, model_path):
         self.model = get_cvae_model((observed_frame_num, 2), (predicting_frame_num, 2), predicting_frame_num)
         self.model.load_weights(model_path)
-        config = tf.ConfigProto()
+        # config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
-        config.gpu_options.per_process_gpu_memory_fraction = 0.3
-        set_session(tf.Session(config=config))
+        # config.gpu_options.per_process_gpu_memory_fraction = 0.3
+        # set_session(tf.Session(config=config))
+
         # gpus = tf.config.list_physical_devices('GPU')
         # if gpus:
         #     # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
