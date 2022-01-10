@@ -52,7 +52,7 @@ class HyLEAR(RLAgent):
 
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        path, obstacles = self.get_path_simple(start, end)
+        path, obstacles = self.get_path_ped_prediction(start, end)
 
         control = carla.VehicleControl()
         control.brake = 0.0
