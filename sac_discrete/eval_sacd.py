@@ -57,9 +57,9 @@ class EvalSacdAgent(BaseAgent):
 
     def evaluate(self):
         num_episodes = 0
-        total_episodes = 50 # len(self.env.episodes)
+        total_episodes = 10 # len(self.env.episodes)
         print("Total testing episodes: {}".format(total_episodes))
-        self.file.write("Total training episodes: {}\n".format(total_episodes))
+        self.file.write("Total testing episodes: {}\n".format(total_episodes))
         num_steps = 0
         total_return = 0.0
         print('-' * 60)
@@ -122,6 +122,9 @@ class EvalSacdAgent(BaseAgent):
 
             if num_episodes >= total_episodes:
                 break
+
+        print('-' * 60)
+        self.file.close()
 
     def exploit(self, state):
         # Act without randomness.
