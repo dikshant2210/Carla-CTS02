@@ -57,7 +57,7 @@ class EvalSacdAgent(BaseAgent):
 
     def evaluate(self):
         num_episodes = 0
-        total_episodes = len(self.env.episodes)
+        total_episodes = 50 # len(self.env.episodes)
         print("Total testing episodes: {}".format(total_episodes))
         self.file.write("Total training episodes: {}\n".format(total_episodes))
         num_steps = 0
@@ -120,7 +120,7 @@ class EvalSacdAgent(BaseAgent):
             self.file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
                 time_to_goal, total_acc_decc, exec_time * 1000))
 
-            if num_episodes > total_episodes:
+            if num_episodes >= total_episodes:
                 break
 
     def exploit(self, state):
