@@ -57,7 +57,7 @@ class EvalSacdAgent(BaseAgent):
 
     def evaluate(self):
         num_episodes = 0
-        total_episodes = 10 # len(self.env.episodes)
+        total_episodes = len(self.env.episodes)
         print("Total testing episodes: {}".format(total_episodes))
         self.file.write("Total testing episodes: {}\n".format(total_episodes))
         num_steps = 0
