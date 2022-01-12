@@ -44,12 +44,24 @@ class RLAgent(Agent):
         self.grid_cost[97:103, 13:] = 1.0
         self.grid_cost[7:, 7:13] = 1.0
         # Sidewalk Network
+        self.grid_cost[4:7, 4:] = 50.0
+        self.grid_cost[:, 4:7] = 50.0
+        self.grid_cost[13:16, 13:] = 50.0
+        self.grid_cost[94:97, 13:] = 50.0
+        self.grid_cost[103:106, 13:] = 50.0
+        self.grid_cost[13:16, 16:94] = 50.0
 
         # Sidewalk relaxed grid
         self.sidewalk_relaxed_grid_cost = np.ones((110, 310)) * 1000.0
         self.sidewalk_relaxed_grid_cost[7:13, 13:] = 1.0
         self.sidewalk_relaxed_grid_cost[97:103, 13:] = 1.0
         self.sidewalk_relaxed_grid_cost[7:, 7:13] = 1.0
+        self.sidewalk_relaxed_grid_cost[4:7, 4:] = 1.0
+        self.sidewalk_relaxed_grid_cost[:, 4:7] = 1.0
+        self.sidewalk_relaxed_grid_cost[13:16, 13:] = 1.0
+        self.sidewalk_relaxed_grid_cost[94:97, 13:] = 1.0
+        self.sidewalk_relaxed_grid_cost[103:106, 13:] = 1.0
+        self.sidewalk_relaxed_grid_cost[13:16, 16:94] = 1.0
 
         self.min_x = -10
         self.max_x = 100
@@ -340,14 +352,7 @@ class RLAgent(Agent):
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
                 obstacles.append((int(car_x), int(car_y)))
-        t0 = time.time()
-        paths = self.path_planner.find_path(start, end, self.grid_cost, obstacles)
-        if len(paths):
-            path = paths[0]
-        else:
-            path = []
-        # print("Time taken to generate path {:.4f}ms".format((time.time() - t0) * 1000))
-        path.reverse()
+        path = self.find_path(start, end, self.grid_cost, obstacles)
 
         if self.display_costmap:
             self.plot_costmap(obstacles, path)
@@ -360,12 +365,35 @@ class RLAgent(Agent):
         if len(path) == 0:
             control.steer = 0
         else:
-            control.steer = (path[2][2] - start[2]) / 70.
+            target_yaw = path[2][2]
+            yaw = start[2]
+            delta = (180 - abs(target_yaw)) + (180 - abs(yaw))
+            if target_yaw < 0 and yaw > 0:
+                control.steer = delta / 70.
+            elif target_yaw > 0 and yaw < 0:
+                control.steer = -delta / 70.
+            else:
+                control.steer = (path[2][2] - start[2]) / 70.
 
         self.prev_action = control
         velocity = self.vehicle.get_velocity()
         self.prev_speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
         return control, self.get_car_intention(obstacles, path, start)
+
+    def find_path(self, start, end, costmap, obstacles):
+        checkpoint = (92, 10, -90)
+        if self.scenario[0] != 9 or start[1] <= checkpoint[1]:
+            t = time.time()
+            paths = self.path_planner.find_path(start, end, costmap, obstacles)
+            path = paths[0]
+            path.reverse()
+        else:
+            path_segemnt_1 = self.path_planner.find_path(start, checkpoint, costmap, obstacles)
+            path_segemnt_2 = self.path_planner.find_path(checkpoint, end, costmap, obstacles)
+            path_segemnt_2.reverse()
+            path_segemnt_1.reverse()
+            path = path_segemnt_1[:-1] + path_segemnt_2[1:]
+        return path
 
     def plot_costmap(self, obstacles, path):
         cp = self.occupancy_grid.get_costmap([])

@@ -38,7 +38,7 @@ class Scenario:
 
     def scenario09(self):
         start = (92, 160, -90)
-        end = (75, 1, -180)
+        end = (65, -2, -180)
         obstacles = []
 
         walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")

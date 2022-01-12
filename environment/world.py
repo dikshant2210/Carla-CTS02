@@ -170,7 +170,7 @@ class World(object):
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
             elif self.scenario[0] == 9:
-                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
 
     def next_weather(self, reverse=False):
         self._weather_index += -1 if reverse else 1

@@ -59,6 +59,9 @@ class HybridAStar:
             new_y = center_y - math.cos(theta + beta) * radii
             new_theta = theta + beta
 
+        if new_theta > np.pi:
+            new_theta = new_theta - (2 * np.pi)
+
         return new_x, new_y, new_theta
 
     def find_path(self, start, end, occupancy_grid, agent_locations, m=1):
@@ -190,14 +193,16 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = -1, 220, -90
-    gx, gy, gtheta = -1, 80, -90
+    sx, sy, stheta = 92, -2, 175
+    # sx1, sy1, stheta1 = 92, 6, -90
+    gx, gy, gtheta = 70, -2, -180
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
     obstacle = [(-1.0, 200)]  # (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
     occupancy_grid = OccupancyGrid()
 
@@ -205,6 +210,12 @@ def main():
     g[7:13, 13:] = 1.0
     g[97:103, 13:] = 1.0
     g[7:, 7:13] = 1.0
+    g[4:7, 4:] = 50.0
+    g[:, 4:7] = 50.0
+    g[13:16, 13:] = 50.0
+    g[94:97, 13:] = 50.0
+    g[103:106, 13:] = 50.0
+    g[13:16, 16:94] = 50.0
 
     # Update cost map with pedestrian information
     obstacle.append((-2, 200))
@@ -214,17 +225,23 @@ def main():
     hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
     # print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
     t0 = time.time()
+    # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
     paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, obstacle)
     if paths:
         path = paths[0]
     else:
         path = []
+
+    # first_path = first_path[0]
+    # first_path.reverse()
     print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
     path.reverse()
+    # path = first_path[:-1] + path[1:]
+    print(path)
     print(len(path))
 
     cp = occupancy_grid.get_costmap([])
-    for path in paths:
+    for path in [path]:
         x, y = list(), list()
         for node in path:
             pixel_coord = occupancy_grid.map.convert_to_pixel(node)
