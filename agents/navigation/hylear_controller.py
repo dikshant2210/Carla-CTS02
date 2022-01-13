@@ -31,7 +31,7 @@ class HyLEAR(RLAgent):
         print(m)  # RESET
         self.ped_history = deque(list(), maxlen=15)
         self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
-        print(self.ped_pred.model.summary())
+        # print(self.ped_pred.model.summary())
         self.risk_estimator = PerceivedRisk()
 
     def update_scenario(self, scenario):
@@ -94,7 +94,7 @@ class HyLEAR(RLAgent):
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
         if len(obstacles):
-            path = self.get_path_ped_prediction(start, end, obstacles)
+            path = self.get_path_simple(start, end, obstacles)
         else:
             path = self.get_path_simple(start, end, obstacles)
 
