@@ -193,35 +193,36 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 92, -2, 175
+    sx, sy, stheta = 1.8, 228, -93
     # sx1, sy1, stheta1 = 92, 6, -90
-    gx, gy, gtheta = 70, -2, -180
+    gx, gy, gtheta = 2, 150, -90
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(-1.0, 200)]  # (-1.5, 190)]  # , (2, 231), (1, 230), (1, 231), (3, 230), (3, 231)]
+    obstacle = [(3, 218), (2, 219), (3, 219), (1, 219)]
+    obstacle.append((-1, 209))
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
     occupancy_grid = OccupancyGrid()
 
     g = np.ones((110, 310)) * 1000.0
+    sidewalk_cost = 50.0
     g[7:13, 13:] = 1.0
     g[97:103, 13:] = 1.0
     g[7:, 7:13] = 1.0
-    g[4:7, 4:] = 50.0
-    g[:, 4:7] = 50.0
-    g[13:16, 13:] = 50.0
-    g[94:97, 13:] = 50.0
-    g[103:106, 13:] = 50.0
-    g[13:16, 16:94] = 50.0
+    g[4:7, 4:] = sidewalk_cost
+    g[:, 4:7] = sidewalk_cost
+    g[13:16, 13:] = sidewalk_cost
+    g[94:97, 13:] = sidewalk_cost
+    g[103:106, 13:] = sidewalk_cost
+    g[13:16, 16:94] = sidewalk_cost
 
-    # Update cost map with pedestrian information
-    obstacle.append((-2, 200))
-    obstacle.append((-3, 200))
-    # plt.imshow(g.T, cmap='gray')
-    # plt.show()
+    y = round(sy)
+    g[13:16, y-20:y+20] = 0
+    g[4:7, y - 20:y + 20] = 0
+
     hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
     # print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
     t0 = time.time()

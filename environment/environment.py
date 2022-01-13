@@ -8,6 +8,7 @@ import numpy as np
 import carla
 import pygame
 import random
+from PIL import Image
 
 from environment.world import World
 from environment.hud import HUD
@@ -22,7 +23,7 @@ from agents.tools.connector import Connector
 
 
 class GIDASBenchmark(gym.Env):
-    def __init__(self, port=Config.port, setting="normal"):
+    def __init__(self, port=Config.port, setting="normal", record=False):
         super(GIDASBenchmark, self).__init__()
         random.seed(100)
         self.action_space = gym.spaces.Discrete(Config.N_DISCRETE_ACTIONS)
@@ -41,6 +42,7 @@ class GIDASBenchmark(gym.Env):
         self.scenario = None
         self.speed = None
         self.distance = None
+        self.record = record
         self.mode = "TRAINING"
         self._max_episode_steps = 500
         self.clock = pygame.time.Clock()
@@ -85,9 +87,9 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 3.5  # Debug Settings
-        # ped_distance = 32
-        # scenario_id = "04"
+        # ped_speed = 1.6  # Debug Settings
+        # ped_distance = 15
+        # scenario_id = "10"
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance
@@ -114,6 +116,9 @@ class GIDASBenchmark(gym.Env):
         self.world.player.apply_control(self.control)
         if Config.synchronous:
             frame_num = self.client.get_world().tick()
+            if self.record:
+                im = Image.fromarray(self.world.camera_manager.array.copy())
+                im.save("_out/recordings/frame_{:03d}.png".format(frame_num))
 
         observation = self._get_observation()
         reward, goal, accident, near_miss, terminal = self.planner_agent.get_reward(action)

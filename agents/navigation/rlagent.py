@@ -385,7 +385,10 @@ class RLAgent(Agent):
         if self.scenario[0] != 9 or start[1] <= checkpoint[1]:
             t = time.time()
             paths = self.path_planner.find_path(start, end, costmap, obstacles)
-            path = paths[0]
+            if len(paths):
+                path = paths[0]
+            else:
+                path = []
             path.reverse()
         else:
             path_segemnt_1 = self.path_planner.find_path(start, checkpoint, costmap, obstacles)

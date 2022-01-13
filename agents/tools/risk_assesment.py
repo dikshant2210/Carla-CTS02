@@ -25,6 +25,15 @@ class PerceivedRisk:
         self.grid_cost[97:103, 13:] = 1.0
         self.grid_cost[7:, 7:13] = 1.0
         self.grid_cost = self.grid_cost / 10000.0
+        # Sidewalk Network
+        self.grid_cost[4:7, 4:] = 50.0
+        self.grid_cost[:, 4:7] = 50.0
+        self.grid_cost[13:16, 13:] = 50.0
+        self.grid_cost[94:97, 13:] = 50.0
+        self.grid_cost[103:106, 13:] = 50.0
+        self.grid_cost[13:16, 16:94] = 50.0
+
+        # self.risk_field = np.vectorize(self.pointwise_risk)
 
     def get_risk(self, player, steering_angle, costmap):
         risk = 0
