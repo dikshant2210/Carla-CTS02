@@ -44,6 +44,7 @@ class GIDASBenchmark(gym.Env):
         self.distance = None
         self.record = record
         self.mode = "TRAINING"
+        self.setting = setting
         self._max_episode_steps = 500
         self.clock = pygame.time.Clock()
 
@@ -72,8 +73,10 @@ class GIDASBenchmark(gym.Env):
         self.episodes = list()
         print(Config.scenarios)
         for scenario in Config.scenarios:
-            if setting == "special":
+            if self.setting == "special":
                 self._get_special_scenes(scenario)
+                self.mode = "TESTING"
+                self.test_episodes = iter(self.episodes)
             else:
                 for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
                     for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
