@@ -252,12 +252,13 @@ class BaseAgent(ABC):
                 self.learning_steps)
 
     def evaluate(self):
-        num_episodes = 0
+        num_episodes = len(self.test_env.episodes)
         num_steps = 0
         total_return = 0.0
+        total_goal = 0
         print('-' * 60)
 
-        while True:
+        for _ in range(num_episodes):
             state = self.test_env.reset()
             episode_steps = 0
             episode_return = 0.0
@@ -283,6 +284,7 @@ class BaseAgent(ABC):
 
             num_episodes += 1
             total_return += episode_return
+            total_goal += int(info['goal'])
             print("Speed: {:.2f}m/s, Dist.: {:.2f}m, Return: {:.4f}".format(
                 info['ped_speed'], info['ped_distance'], episode_return))
             print("Goal: {}, Accident: {}, Act Dist.: {}".format(info['goal'], info['accident'], action_count))
@@ -291,20 +293,27 @@ class BaseAgent(ABC):
             self.file.write("Goal: {}, Accident: {}, Act Dist.: {}".format(
                 info['goal'], info['accident'], action_count))
 
-            if num_steps > self.num_eval_steps:
-                break
+            # if num_steps > self.num_eval_steps:
+            #     break
 
         mean_return = total_return / num_episodes
 
-        if mean_return > self.best_eval_score:
-            self.best_eval_score = mean_return
+        # if mean_return > self.best_eval_score:
+        if total_goal > self.best_eval_score:
+            self.best_eval_score = total_goal
             self.save_models(os.path.join(self.model_dir, 'best'))
         self.save_models(os.path.join(self.model_dir, str(self.steps)))
         self.writer.add_scalar(
             'reward/test', mean_return, self.steps)
+        self.writer.add_scalar(
+            'reward/goal', total_goal, self.steps)
+
+        self.test_env.test_episodes = iter(self.test_env.episodes)
 
         print(f'Num steps: {self.steps:<5}  '
               f'return: {mean_return:<5.1f}')
+        print(f'Num steps: {self.steps:<5}  '
+              f'goal return: {total_goal}')
         print('-' * 60)
 
     @abstractmethod
