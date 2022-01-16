@@ -64,9 +64,10 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations, m=1):
+    def find_path(self, start, end, occupancy_grid, agent_locations):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
+        m = 1
         steering_inputs = []
         for i in range(-50, 51, 25):
             steering_inputs.append(i)
@@ -193,7 +194,7 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 1.8, 228, -93
+    sx, sy, stheta = 2.0, 228, -90
     # sx1, sy1, stheta1 = 92, 6, -90
     gx, gy, gtheta = 2, 150, -90
 
@@ -201,11 +202,12 @@ def main():
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(3, 218), (2, 219), (3, 219), (1, 219)]
-    obstacle.append((-1, 209))
+    obstacle = [(3, 218)]
+    # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
     occupancy_grid = OccupancyGrid()
+    hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
 
     g = np.ones((110, 310)) * 1000.0
     sidewalk_cost = 50.0
@@ -219,27 +221,58 @@ def main():
     g[103:106, 13:] = sidewalk_cost
     g[13:16, 16:94] = sidewalk_cost
 
+    # K-path estimation with risk
     y = round(sy)
-    g[13:16, y-20:y+20] = 0
-    g[4:7, y - 20:y + 20] = 0
+    relaxed_g = g.copy()
+    relaxed_g[13:16, y-20:y+20] = 0
+    relaxed_g[4:7, y-20:y+20] = 0
 
-    hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
-    # print(hy_a_star.hgcost((sx, sy, stheta), (gx, gy, gtheta), g))
-    t0 = time.time()
+    from multiprocessing import Pool
+    from agents.tools.risk_assesment import PerceivedRisk
+    risk_estimator = PerceivedRisk()
+    cmp = g.copy()
+    cmp[3, 218] = 1000
+    cmp[1:4, 219] = 1000
+
+    # params = [[(sx, sy, stheta), (gx, gy, gtheta), g, obstacle],
+    #           [(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle]]
+    obstacle = obstacle + [(2, 219), (3, 219), (1, 219)]
+    # params.append([(sx, sy, stheta), (gx, gy, gtheta), g, obstacle])
+    # params.append([(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle])
+    #
+    # pool = Pool(processes=len(params))
+    #
+    # t0 = time.time()
+    # paths = pool.starmap(hy_a_star.find_path, params)
+    # print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
+    #
+    # for p in paths:
+    #     path = p[0]
+    #     p[0].reverse()
+    #     steering_angle = (path[2][2] - stheta)
+    #     player = [sx, sy, 20, stheta]
+    #     risk = risk_estimator.get_risk(player, steering_angle, cmp)
+    #     print(risk, steering_angle)
+
     # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
+
+    t0 = time.time()
     paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, obstacle)
     if paths:
         path = paths[0]
     else:
         path = []
+    path.reverse()
+    steering_angle = (path[2][2] - stheta)
+    player = [sx, sy, 20, stheta]
+    risk = risk_estimator.get_risk(player, steering_angle, cmp)
 
     # first_path = first_path[0]
     # first_path.reverse()
-    print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
-    path.reverse()
+    print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000), risk)
     # path = first_path[:-1] + path[1:]
-    print(path)
-    print(len(path))
+    # print(path)
+    # print(len(path))
 
     cp = occupancy_grid.get_costmap([])
     for path in [path]:
@@ -256,24 +289,6 @@ def main():
         plt.imshow(cp, cmap='gray')
         # plt.imshow(cp[x[0]-50:x[0]+50, y[0]-200:y[0]+500], cmap="gray")
         plt.show()
-
-    # k = 1
-    # for _ in range(k):
-    #     for node in path[5:-5]:
-    #         obstacle.append((int(node[0]), int(node[1])))
-    #         # ox.append(int(node[0]))
-    #         # oy.append(int(node[1]))
-    #     print(len(obstacle))
-    #     t0 = time.time()
-    #     paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), grid_cost, obstacle)
-    #     print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
-    #     for path in paths:
-    #         x, y = list(), list()
-    #         for node in path:
-    #             pixel_coord = occupancy_grid.map.convert_to_pixel(node)
-    #             x.append(pixel_coord[0] + 340)
-    #             y.append(pixel_coord[1])
-    #         plt.plot(x, y, "-b")
 
 
 if __name__ == '__main__':

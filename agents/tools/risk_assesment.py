@@ -2,8 +2,9 @@
 Author: Dikshant Gupta
 Time: 23.08.21 21:52
 """
-
+import numpy
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 
 
@@ -36,25 +37,20 @@ class PerceivedRisk:
         # self.risk_field = np.vectorize(self.pointwise_risk)
 
     def get_risk(self, player, steering_angle, costmap):
-        risk = 0
-        drf = np.zeros(costmap.shape)
-        for i in range(costmap.shape[0]):
-            for j in range(costmap.shape[1]):
-                risk_field = self.pointwise_risk(i, j, player[0] - self.minx, player[1] - self.miny,
-                                                 player[2], 0.5 * steering_angle, player[3])
-                risk += costmap[i, j] * risk_field
-                drf[i, j] = risk_field
-        return risk
-
-    def get_risk_dummy(self, path, player, steering_angle):
-        risk = 0
-        drf = np.zeros(self.grid_cost.shape)
-        for i in range(self.grid_cost.shape[0]):
-            for j in range(self.grid_cost.shape[1]):
-                risk_field = self.pointwise_risk(i, j, player[0] - self.minx, player[1] - self.miny,
-                                                 player[2], 0.5 * steering_angle, player[3])
-                risk += self.grid_cost[i, j] * risk_field
-                drf[i, j] = risk_field
+        drf = numpy.fromfunction(lambda i, j: self.pointwise_risk(i, j, player[0] - self.minx, player[1] - self.miny,
+                                                                  player[2] * 0.5, 0.5 * steering_angle,
+                                                                  player[3]), (110, 310))
+        # drf glitch
+        # drf[round(player[0] - self.minx + 10):, :] = 0
+        risk = (drf * costmap).sum()
+        # risk = 0
+        # drf = np.zeros(costmap.shape)
+        # for i in range(costmap.shape[0]):
+        #     for j in range(costmap.shape[1]):
+        #         risk_field = self.pointwise_risk(i, j, player[0] - self.minx, player[1] - self.miny,
+        #                                          player[2] * 0.5, 0.5 * steering_angle, player[3])
+        #         risk += costmap[i, j] * risk_field
+        #         drf[i, j] = risk_field
         return risk, drf
 
     def get_phi(self, phi):
@@ -114,6 +110,8 @@ class PerceivedRisk:
         mag_v = np.sqrt((x - xc) * (x - xc) + (y - yc) * (y - yc))
         dot_pro = (xv - xc) * (x - xc) + (yv - yc) * (y - yc)
         costheta = dot_pro / (mag_u * mag_v + 1e-6)
+        # costheta = min(1.0, max(-1.0, costheta))
+        costheta = np.clip(costheta, -1.0, 1.0)
         theta_abs = abs(np.arccos(costheta))
         sign_theta = np.sign((xv - xc) * (y - yc) - (x - xc) * (yv - yc))
         theta_pos_neg = np.sign(delta) * sign_theta * theta_abs
@@ -134,7 +132,28 @@ class PerceivedRisk:
 
 if __name__ == "__main__":
     pr = PerceivedRisk()
-    risk, drf = pr.get_risk_dummy([], [2.0, 240.0, 13, -90], 0)
-    print(risk, drf)
-    plt.imshow(drf.T)
+    sx, sy, stheta = 2.0, 228, -90
+    player = [sx, sy, 30, stheta]
+    steering_angle = -20
+
+    g = np.ones((110, 310)) * 0.0
+    sidewalk_cost = 50.0
+    g[7:13, 13:] = 1.0
+    g[97:103, 13:] = 1.0
+    g[7:, 7:13] = 1.0
+    g[4:7, 4:] = sidewalk_cost
+    g[:, 4:7] = sidewalk_cost
+    g[13:16, 13:] = sidewalk_cost
+    g[94:97, 13:] = sidewalk_cost
+    g[103:106, 13:] = sidewalk_cost
+    g[13:16, 16:94] = sidewalk_cost
+    cmp = g.copy()
+    cmp[3 + 10, 218 + 10] = 1000
+    cmp[1 + 10:4 + 10, 217 + 10] = 1000
+    t0 = time.time()
+    r, d = pr.get_risk(player, steering_angle, costmap=cmp)
+    print(cmp[1 + 10:4 + 10, 217 + 10], d[1 + 10:4 + 10, 217 + 10])
+    print(f'Time taken: {(time.time() - t0) * 1000}ms')
+    print(r)
+    plt.imshow(d.T)
     plt.show()

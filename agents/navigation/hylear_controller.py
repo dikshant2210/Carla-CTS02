@@ -5,13 +5,14 @@ Time: 10.11.21 01:14
 
 import carla
 import numpy as np
-from multiprocessing import Process
+from multiprocessing import Process, Pool
 from collections import deque
 import subprocess
 
 from agents.navigation.rlagent import RLAgent
 from path_predictor.m2p3 import PedPredictions
 from agents.tools.risk_assesment import PerceivedRisk
+from agents.navigation.risk_aware_path import PathPlanner
 
 
 def run_server():
@@ -33,6 +34,19 @@ class HyLEAR(RLAgent):
         self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
         # print(self.ped_pred.model.summary())
         self.risk_estimator = PerceivedRisk()
+        self.risk_path_planner = PathPlanner()
+        self.risk_cmp = np.zeros((110, 310))
+        # Road Network
+        self.risk_cmp[7:13, 13:] = 1.0
+        self.risk_cmp[97:103, 13:] = 1.0
+        self.risk_cmp[7:, 7:13] = 1.0
+        # Sidewalk Network
+        self.risk_cmp[4:7, 4:] = 50.0
+        self.risk_cmp[:, 4:7] = 50.0
+        self.risk_cmp[13:16, 13:] = 50.0
+        self.risk_cmp[94:97, 13:] = 50.0
+        self.risk_cmp[103:106, 13:] = 50.0
+        self.risk_cmp[13:16, 16:94] = 50.0
 
     def update_scenario(self, scenario):
         self.scenario = scenario
@@ -94,7 +108,7 @@ class HyLEAR(RLAgent):
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
         if len(obstacles):
-            path = self.get_path_simple(start, end, obstacles)
+            path = self.get_path_with_reasoning(start, end, obstacles)
         else:
             path = self.get_path_simple(start, end, obstacles)
 
@@ -134,37 +148,56 @@ class HyLEAR(RLAgent):
         return path
 
     def get_path_with_reasoning(self, start, end, obstacles):
-        # ped path prediction: False, Footpath modification: False
-        path1 = self.find_path(start, end, self.grid_cost, obstacles)
+        car_velocity = self.vehicle.get_velocity()
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
+        yaw = self.vehicle.get_transform().rotation.yaw
+        relaxed_sidewalk = self.grid_cost.copy()
+        y = round(start[1])
+        # Relax sidewalk
+        relaxed_sidewalk[13:16, y - 20: y + 20] = 0
+        relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
-        # ped path prediction: False, Footpath modification: True
-        path2 = self.find_path(start, end, self.sidewalk_relaxed_grid_cost, obstacles)
-        # path2.reverse()
         if len(self.ped_history) < 15:
-            path = self.path_reasoning([path1, path2], self.grid_cost, start)
+            # ped path prediction: False, Footpath modification: False
+            params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
+                      [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp]]
+            # ped path prediction: False, Footpath modification: True
 
+            pool = Pool(processes=len(params))
+            paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+            path = min(paths, key=lambda t: t[1])
+            return path[0]
         else:
             # Use path predictor
-            ped_updated_costmap = np.copy(self.grid_cost)
+            ped_updated_risk_cmp = self.risk_cmp.copy()
             ped_path = np.array(self.ped_history)
             ped_path = ped_path.reshape((1, 15, 2))
             pedestrian_path = self.ped_pred.get_pred(ped_path)
+            new_obs = [obs for obs in obstacles]
             for node in pedestrian_path[0]:
-                if (round(node[0]), round(node[1])) not in obstacles:
-                    obstacles.append((round(node[0]), round(node[1])))
-                    # Updating costmap with ped path prediction
-                    ped_updated_costmap[round(node[0]), round(node[1])] = 100
+                if (round(node[0]), round(node[1])) not in new_obs:
+                    new_obs.append((round(node[0]), round(node[1])))
+            for pos in new_obs:
+                ped_updated_risk_cmp[pos[0], pos[1]] = 1000
+            params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
+                      [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
+                      [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
+                      [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
+            pool = Pool(processes=len(params))
+            paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+            path = min(paths, key=lambda t: t[1])
+            return path[0]
 
-            # ped path prediction: True, Footpath modification: False
-            path3 = self.find_path(start, end, self.grid_cost, obstacles)
-            # path3.reverse()
-            # ped path prediction: True, Footpath modification: True
-            path4 = self.find_path(start, end, self.sidewalk_relaxed_grid_cost, obstacles)
-            # path4.reverse()
-
-            path = self.path_reasoning([path1, path2, path3, path4], ped_updated_costmap, start)
-
-        return path
+    def find_path_with_risk(self, start, end, costmap, obstacles, car_speed, yaw, risk_map):
+        path = self.find_path(start, end, costmap, obstacles)
+        if len(path):
+            player = [start[0], start[1], car_speed, yaw]
+            steering_angle = path[2][2] - start[2]
+            risk, drf = self.risk_estimator.get_risk(player, steering_angle, risk_map)
+        else:
+            risk = np.inf
+            # TODO: DRF in this case
+        return path, risk
 
     def path_reasoning(self, paths, costmap, start):
         car_velocity = self.vehicle.get_velocity()
