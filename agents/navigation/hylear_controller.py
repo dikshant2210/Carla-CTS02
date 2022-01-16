@@ -2,6 +2,7 @@
 Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
+import multiprocessing
 
 import carla
 import numpy as np
@@ -163,8 +164,8 @@ class HyLEAR(RLAgent):
                       [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp]]
             # ped path prediction: False, Footpath modification: True
 
-            pool = Pool(processes=len(params))
-            paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+            with multiprocessing.Pool(processes=len(params)) as pool:
+                paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
             path = min(paths, key=lambda t: t[1])
             return path[0]
         else:
@@ -183,8 +184,8 @@ class HyLEAR(RLAgent):
                       [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
                       [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
                       [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
-            pool = Pool(processes=len(params))
-            paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+            with multiprocessing.Pool(processes=len(params)) as pool:
+                paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
             path = min(paths, key=lambda t: t[1])
             return path[0]
 
