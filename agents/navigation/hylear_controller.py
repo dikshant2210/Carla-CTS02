@@ -22,15 +22,17 @@ def run_server():
 
 
 class HyLEAR(RLAgent):
-    def __init__(self, world, carla_map, scenario, conn=None):
+    def __init__(self, world, carla_map, scenario, conn=None, eval_mode=False):
         super(HyLEAR, self).__init__(world, carla_map, scenario)
 
         self.conn = conn
-        p = Process(target=run_server)
-        p.start()
-        self.conn.establish_connection()
-        m = self.conn.receive_message()
-        print(m)  # RESET
+        self.eval_mode = eval_mode
+        if not self.eval_mode:
+            p = Process(target=run_server)
+            p.start()
+            self.conn.establish_connection()
+            m = self.conn.receive_message()
+            print(m)  # RESET
         self.ped_history = deque(list(), maxlen=15)
         self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
         # print(self.ped_pred.model.summary())
@@ -124,7 +126,9 @@ class HyLEAR(RLAgent):
             control.steer = (path[2][2] - start[2]) / 70.
 
         # Best speed action for the given path
-        control = self.get_speed_action(path, control)
+        if not self.eval_mode:
+            control = self.get_speed_action(path, control)
+        self.prev_action = control
         return control, self.get_car_intention(obstacles, path, start)
 
     def get_path_simple(self, start, end, obstacles):
