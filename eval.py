@@ -18,7 +18,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
-    env.eval()
+    env.eval(current_episode=455)
     env.reset_agent('hylear')
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
