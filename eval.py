@@ -18,7 +18,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
-    env.eval(current_episode=455)
+    env.eval(current_episode=args.episode)
     env.reset_agent('hylear')
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
@@ -32,7 +32,7 @@ def run(args):
 
     # Create the agent.
     agent = EvalSacdAgent(
-        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda, current_episode=455,
+        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda, current_episode=args.episode,
         seed=args.seed, **config)
     agent.evaluate()
 
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--port', type=int, default=2200)
+    parser.add_argument('--episode', dtype=int, default=0)
     args = parser.parse_args()
 
     Config.port = args.port
