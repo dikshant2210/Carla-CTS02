@@ -188,9 +188,12 @@ class HyLEAR(RLAgent):
                       [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
                       [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
                       [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
-            with multiprocessing.Pool(processes=len(params)) as pool:
-                paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
-            path = min(paths, key=lambda t: t[1])
+            try:
+                with multiprocessing.Pool(processes=len(params)) as pool:
+                    paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+                    path = min(paths, key=lambda t: t[1])
+            except:
+                path = []
             return path[0]
 
     def find_path_with_risk(self, start, end, costmap, obstacles, car_speed, yaw, risk_map):
