@@ -160,3 +160,6 @@ class EvalSacdAgent(BaseAgent):
 
     def save_models(self, save_dir):
         pass
+
+    def __del__(self):
+        self.file.close()
