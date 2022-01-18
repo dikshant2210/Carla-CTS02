@@ -21,7 +21,7 @@ class EvalSacdAgent(BaseAgent):
                  update_interval=4, target_update_interval=8000,
                  use_per=False, dueling_net=False, num_eval_steps=125000, save_interval=100000,
                  max_episode_steps=27000, log_interval=10, eval_interval=1000,
-                 cuda=True, seed=0):
+                 cuda=True, seed=0, current_episode=0):
         super().__init__(
             env, test_env, log_dir, num_steps, batch_size, memory_size, gamma,
             multi_step, target_entropy_ratio, start_steps, update_interval,
@@ -54,9 +54,10 @@ class EvalSacdAgent(BaseAgent):
         print(filename)
         self.file = open(filename, "w")
         self.file.write(str(vars(Config)) + "\n")
+        self.current_episode = current_episode
 
     def evaluate(self):
-        num_episodes = 0
+        num_episodes = self.current_episode
         total_episodes = len(self.env.episodes)
         print("Total testing episodes: {}".format(total_episodes))
         self.file.write("Total testing episodes: {}\n".format(total_episodes))
