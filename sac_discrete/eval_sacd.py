@@ -50,7 +50,7 @@ class EvalSacdAgent(BaseAgent):
         self.conv.eval()
         self.policy.eval()
 
-        filename = "_out/hypal/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+        filename = "_out/hylear/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
         print(filename)
         self.file = open(filename, "w")
         self.file.write(str(vars(Config)) + "\n")

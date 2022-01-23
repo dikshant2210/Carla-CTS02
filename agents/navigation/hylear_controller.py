@@ -51,7 +51,7 @@ class HyLEAR(RLAgent):
         self.risk_cmp[13:16, 16:94] = 50.0
 
     def update_scenario(self, scenario):
-        self.scenario = scenario
+        super(HyLEAR, self).update_scenario(scenario)
         self.ped_history = deque(list(), maxlen=15)
 
     def get_reward_despot(self, action):

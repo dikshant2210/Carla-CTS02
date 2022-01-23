@@ -19,7 +19,7 @@ def run(args):
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
     env.eval(current_episode=args.episode)
-    # env.reset_agent('hylear')
+    env.reset_agent('hylear')
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
     # Specify the directory to log.
