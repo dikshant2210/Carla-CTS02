@@ -7,8 +7,8 @@ temp.py
 _out/
 temp_check/
 .ipynb_checkpoints/
-path_predictor/data/
-path_predictor/models/
+temp_check/path_predictor/data/
+temp_check/path_predictor/models/
 ISDESPOT/isdespot-ped-pred/is-despot/.deps/
 ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/.settings/
 ISDESPOT/isdespot-ped-pred/is-despot/build/
@@ -19,4 +19,5 @@ agents/path_planner/hybridastar.cpython-36m-x86_64-linux-gnu.so
 agents/path_planner/hybridastar.py
 motivation_videos/
 path_predictor/*.pkl
-path_predictor/get_prediction.py
+temp_check/path_predictor/get_prediction.py
+data/

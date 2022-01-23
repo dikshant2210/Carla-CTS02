@@ -257,7 +257,7 @@ def main():
     # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
 
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, obstacle)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle)
     if paths:
         path = paths[0]
     else:
@@ -265,11 +265,14 @@ def main():
     path.reverse()
     steering_angle = (path[2][2] - stheta)
     player = [sx, sy, 20, stheta]
-    risk = risk_estimator.get_risk(player, steering_angle, cmp)
+    t = time.time()
+    risk, _ = risk_estimator.get_risk(player, steering_angle, cmp)
+    t_taken = (time.time() - t) * 1000
 
     # first_path = first_path[0]
     # first_path.reverse()
     print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000), risk)
+    print(t_taken)
     # path = first_path[:-1] + path[1:]
     # print(path)
     # print(len(path))

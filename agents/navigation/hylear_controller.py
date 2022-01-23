@@ -3,6 +3,7 @@ Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
 import multiprocessing
+import time
 
 import carla
 import numpy as np
@@ -11,8 +12,7 @@ from collections import deque
 import subprocess
 
 from agents.navigation.rlagent import RLAgent
-from path_predictor.m2p3 import PedPredictions
-from agents.tools.risk_assesment import PerceivedRisk
+from ped_path_predictor.m2p3 import PathPredictor
 from agents.navigation.risk_aware_path import PathPlanner
 
 
@@ -34,9 +34,8 @@ class HyLEAR(RLAgent):
             m = self.conn.receive_message()
             print(m)  # RESET
         self.ped_history = deque(list(), maxlen=15)
-        self.ped_pred = PedPredictions("path_predictor/models/CVAE_model.h5")
-        # print(self.ped_pred.model.summary())
-        self.risk_estimator = PerceivedRisk()
+        self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_70797.pth")
+        self.ped_pred.model.eval()
         self.risk_path_planner = PathPlanner()
         self.risk_cmp = np.zeros((110, 310))
         # Road Network
@@ -162,24 +161,27 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk[13:16, y - 20: y + 20] = 0
         relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
-        if len(self.ped_history) < 15:
-            # ped path prediction: False, Footpath modification: False
-            params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
-                      [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp]]
-            # ped path prediction: False, Footpath modification: True
+        if len(self.ped_history) < 15 or True:
+            try:
+                paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                    yaw, self.risk_cmp),  # Normal
+                         self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
+                                                                    yaw, self.risk_cmp)]  # Sidewalk relaxed
+                path, _ = min(paths, key=lambda t: t[1])
+                return path
+            except:
+                return []
 
-            with multiprocessing.Pool(processes=len(params)) as pool:
-                paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
-            path = min(paths, key=lambda t: t[1])
-            return path[0]
         else:
             # Use path predictor
             ped_updated_risk_cmp = self.risk_cmp.copy()
             ped_path = np.array(self.ped_history)
-            ped_path = ped_path.reshape((1, 15, 2))
-            pedestrian_path = self.ped_pred.get_pred(ped_path)
+            ped_path = ped_path.reshape((15, 2))
+            t0 = time.time()
+            pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
+            time_taken = (time.time() - t0) * 1000
             new_obs = [obs for obs in obstacles]
-            for node in pedestrian_path[0]:
+            for node in pedestrian_path:
                 if (round(node[0]), round(node[1])) not in new_obs:
                     new_obs.append((round(node[0]), round(node[1])))
             for pos in new_obs:
@@ -188,43 +190,18 @@ class HyLEAR(RLAgent):
                       [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
                       [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
                       [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
+
+            t0 = time.time()
             try:
                 with multiprocessing.Pool(processes=len(params)) as pool:
                     paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
                     path = min(paths, key=lambda t: t[1])
+                    p = path[0]
             except:
-                path = []
-            return path[0]
-
-    def find_path_with_risk(self, start, end, costmap, obstacles, car_speed, yaw, risk_map):
-        path = self.find_path(start, end, costmap, obstacles)
-        if len(path):
-            player = [start[0], start[1], car_speed, yaw]
-            steering_angle = path[2][2] - start[2]
-            risk, drf = self.risk_estimator.get_risk(player, steering_angle, risk_map)
-        else:
-            risk = np.inf
-            # TODO: DRF in this case
-        return path, risk
-
-    def path_reasoning(self, paths, costmap, start):
-        car_velocity = self.vehicle.get_velocity()
-        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
-        player = [self.vehicle.get_location().x, self.vehicle.get_location().y, car_speed,
-                  self.vehicle.get_transform().rotation.yaw]
-
-        best_path = None
-        lowest_risk = None
-        for path in paths:
-            steering_angle = (path[2][2] - start[2]) / 70.
-            risk = self.risk_estimator.get_risk(player, steering_angle, costmap)
-            if lowest_risk is None:
-                lowest_risk = risk
-                best_path = path
-            elif risk < lowest_risk:
-                lowest_risk = risk
-                best_path = path
-        return best_path
+                p = []
+            print("Time taken(with prediction): {:.4f}ms, Prediction time: {:.4f}ms".format((time.time() - t0) * 1000,
+                                                                                            time_taken))
+            return p
 
     def get_obstacles(self, start):
         obstacles = list()
