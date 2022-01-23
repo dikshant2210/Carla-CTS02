@@ -2,7 +2,7 @@
 Author: Dikshant Gupta
 Time: 22.01.22 10:57
 """
-
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
@@ -57,6 +57,7 @@ def train():
     optim = torch.optim.Adam(lr=0.0001, params=model.parameters())
     writer = SummaryWriter(log_dir="_out/m2p3/")
     count = 0
+    best_eval = np.Inf
 
     for epoch in range(epochs):
         num_batches = int(np.floor(input_train.shape[1] / batch_size))
@@ -91,6 +92,8 @@ def train():
                     y = torch.from_numpy(y).cuda()
                     eval_loss += evaluate(model, x, y)
                 eval_loss /= test_batches
+                if eval_loss < best_eval:
+                    torch.save(model.state_dict(), '_out/m2p3_{}.pth'.format(epoch * num_batches + i))
                 writer.add_scalar("eval_loss", eval_loss, count)
                 count += 1
 
