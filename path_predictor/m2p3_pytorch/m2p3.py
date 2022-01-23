@@ -94,6 +94,7 @@ def train():
                 eval_loss /= test_batches
                 if eval_loss < best_eval:
                     torch.save(model.state_dict(), '_out/m2p3_{}.pth'.format(epoch * num_batches + i))
+                    best_eval = eval_loss
                 writer.add_scalar("eval_loss", eval_loss, count)
                 count += 1
 
