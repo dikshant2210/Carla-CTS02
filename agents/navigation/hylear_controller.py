@@ -161,7 +161,7 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk[13:16, y - 20: y + 20] = 0
         relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
-        if len(self.ped_history) < 15:
+        if len(self.ped_history) < 15 or True:
             paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                 yaw, self.risk_cmp),  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
