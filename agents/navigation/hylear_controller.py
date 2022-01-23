@@ -161,7 +161,7 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk[13:16, y - 20: y + 20] = 0
         relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
-        if len(self.ped_history) < 15 or True:
+        if len(self.ped_history) < 15:
             paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                 yaw, self.risk_cmp),  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
@@ -189,25 +189,8 @@ class HyLEAR(RLAgent):
                                                                 yaw, self.risk_cmp),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                                                                 yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
-            path = min(paths, key=lambda t: t[1])
+            path, _ = min(paths, key=lambda t: t[1])
             return path
-
-            # params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
-            #           [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
-            #           [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
-            #           [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
-            #
-            # t0 = time.time()
-            # try:
-            #     with multiprocessing.Pool(processes=len(params)) as pool:
-            #         paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
-            #         path = min(paths, key=lambda t: t[1])
-            #         p = path[0]
-            # except:
-            #     p = []
-            # print("Time taken(with prediction): {:.4f}ms, Prediction time: {:.4f}ms".format((time.time() - t0) * 1000,
-            #                                                                                 time_taken))
-            # return p
 
     def get_obstacles(self, start):
         obstacles = list()
