@@ -8,8 +8,8 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import train_test_split
 
-from path_predictor.m2p3_pytorch.model import M2P3
-from path_predictor.m2p3_pytorch.utils import *
+from model import M2P3
+from utils import *
 
 train_annotations = 'data/training_annotations/'
 
