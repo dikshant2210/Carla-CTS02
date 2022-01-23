@@ -29,12 +29,15 @@ class PathPlanner:
         return path
 
     def find_path_with_risk(self, start, end, costmap, obstacles, car_speed, yaw, risk_map):
-        path = self.find_path(start, end, costmap, obstacles)
-        if len(path):
-            player = [start[0], start[1], car_speed, yaw]
-            steering_angle = path[2][2] - start[2]
-            risk, drf = self.risk_estimator.get_risk(player, steering_angle, risk_map)
-        else:
-            risk = np.inf
-            # TODO: DRF in this case
+        try:
+            path = self.find_path(start, end, costmap, obstacles)
+            if len(path):
+                player = [start[0], start[1], car_speed, yaw]
+                steering_angle = path[2][2] - start[2]
+                risk, drf = self.risk_estimator.get_risk(player, steering_angle, risk_map)
+            else:
+                risk = np.inf
+                # TODO: DRF in this case
+        except:
+            path, risk = [], np.inf
         return path, risk

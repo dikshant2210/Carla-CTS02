@@ -162,46 +162,52 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
         if len(self.ped_history) < 15 or True:
-            try:
-                paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                    yaw, self.risk_cmp),  # Normal
-                         self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
-                                                                    yaw, self.risk_cmp)]  # Sidewalk relaxed
-                path, _ = min(paths, key=lambda t: t[1])
-                return path
-            except:
-                return []
-
+            paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                yaw, self.risk_cmp),  # Normal
+                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
+                                                                yaw, self.risk_cmp)]  # Sidewalk relaxed
+            path, _ = min(paths, key=lambda t: t[1])
+            return path
         else:
             # Use path predictor
             ped_updated_risk_cmp = self.risk_cmp.copy()
             ped_path = np.array(self.ped_history)
             ped_path = ped_path.reshape((15, 2))
-            t0 = time.time()
             pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
-            time_taken = (time.time() - t0) * 1000
             new_obs = [obs for obs in obstacles]
             for node in pedestrian_path:
                 if (round(node[0]), round(node[1])) not in new_obs:
                     new_obs.append((round(node[0]), round(node[1])))
             for pos in new_obs:
                 ped_updated_risk_cmp[pos[0], pos[1]] = 1000
-            params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
-                      [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
-                      [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
-                      [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
 
-            t0 = time.time()
-            try:
-                with multiprocessing.Pool(processes=len(params)) as pool:
-                    paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
-                    path = min(paths, key=lambda t: t[1])
-                    p = path[0]
-            except:
-                p = []
-            print("Time taken(with prediction): {:.4f}ms, Prediction time: {:.4f}ms".format((time.time() - t0) * 1000,
-                                                                                            time_taken))
-            return p
+            paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                yaw, self.risk_cmp),  # Normal
+                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
+                                                                yaw, self.risk_cmp),  # Sidewalk relaxed
+                     self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
+                                                                yaw, self.risk_cmp),  # ped pred
+                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
+                                                                yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
+            path = min(paths, key=lambda t: t[1])
+            return path
+
+            # params = [[start, end, self.grid_cost, obstacles, car_speed, yaw, self.risk_cmp],
+            #           [start, end, relaxed_sidewalk, obstacles, car_speed, yaw, self.risk_cmp],
+            #           [start, end, self.grid_cost, new_obs, car_speed, yaw, self.risk_cmp],
+            #           [start, end, relaxed_sidewalk, new_obs, car_speed, yaw, self.risk_cmp]]
+            #
+            # t0 = time.time()
+            # try:
+            #     with multiprocessing.Pool(processes=len(params)) as pool:
+            #         paths = pool.starmap(self.risk_path_planner.find_path_with_risk, params)
+            #         path = min(paths, key=lambda t: t[1])
+            #         p = path[0]
+            # except:
+            #     p = []
+            # print("Time taken(with prediction): {:.4f}ms, Prediction time: {:.4f}ms".format((time.time() - t0) * 1000,
+            #                                                                                 time_taken))
+            # return p
 
     def get_obstacles(self, start):
         obstacles = list()
