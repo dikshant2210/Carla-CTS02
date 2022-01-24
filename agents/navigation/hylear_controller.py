@@ -183,14 +183,22 @@ class HyLEAR(RLAgent):
 
             paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                 yaw, self.risk_cmp),  # Normal
-                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
-                                                                yaw, self.risk_cmp),  # Sidewalk relaxed
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
                                                                 yaw, self.risk_cmp),  # ped pred
-                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
-                                                                yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
+                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
+                                                                yaw, self.risk_cmp)]  # Sidewalk relaxed
+                     # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
+                     #                                            yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
             path, _ = min(paths, key=lambda t: t[1])
             return path
+
+    @staticmethod
+    def rulebook(paths):
+        # No sidewalk
+        paths = paths[:-1]
+        # Lowest risk
+        path, _ = min(paths, key=lambda t: t[1])
+        return path
 
     def get_obstacles(self, start):
         obstacles = list()
