@@ -27,7 +27,7 @@ class HyLEAR(RLAgent):
 
         self.conn = conn
         self.eval_mode = eval_mode
-        if not self.eval_mode or True:
+        if not self.eval_mode:
             p = Process(target=run_server)
             p.start()
             self.conn.establish_connection()
