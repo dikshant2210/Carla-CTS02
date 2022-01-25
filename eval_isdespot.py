@@ -96,7 +96,7 @@ def eval_isdespot(arg):
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
         file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
-            time_to_goal, total_acc_decc, exec_time))
+            time_to_goal, total_acc_decc, exec_time * 1000))
         file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
             time_to_goal, total_acc_decc, exec_time * 1000))
 
