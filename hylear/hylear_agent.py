@@ -245,9 +245,14 @@ class SharedSacdAgent(BaseAgent):
         # Expectations of Q.
         q = torch.sum(torch.min(q1, q2) * action_probs, dim=1, keepdim=True)
 
+        # Cross entropy loss
+        # print(log_action_probs.size(), actions.size())
+        loss = torch.nn.NLLLoss()
+        ce_loss = loss(log_action_probs, actions.squeeze())
+
         # Policy objective is maximization of (Q + alpha * entropy) with
         # priority weights.
-        policy_loss = (weights * (- q - self.alpha * entropies)).mean()
+        policy_loss = (weights * (- q - self.alpha * entropies)).mean() + ce_loss
 
         return policy_loss, entropies.detach()
 
