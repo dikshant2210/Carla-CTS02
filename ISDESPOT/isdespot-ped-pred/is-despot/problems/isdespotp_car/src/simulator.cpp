@@ -237,7 +237,7 @@ public:
 };
 
 int main(int argc, char** argv) {
-    int port = 1245;
+    int port = 1255;
 
 	if (argc >= 2){
         port = atoi(argv[1]);
