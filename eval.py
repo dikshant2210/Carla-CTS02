@@ -17,8 +17,8 @@ def run(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # Create environments.
-    env = GIDASBenchmark(port=Config.port, setting="special")
-    # env.eval(current_episode=args.episode)
+    env = GIDASBenchmark(port=Config.port)
+    env.eval(current_episode=args.episode)
     env.reset_agent('hylear')
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
