@@ -160,6 +160,14 @@ class GIDASBenchmark(gym.Env):
                    [ scenario  ,  3.65, 13.75],
                    [ scenario  ,  3.75, 19.75]]
 
+        episodes = [[ scenario  ,  1.15, 39.75],
+                   [ scenario  ,  1.45, 33.75],
+                   [ scenario  ,  1.45, 35.75],
+                   [ scenario  ,  1.75, 28.75],
+                   [ scenario  ,  1.8, 29.75],
+                   [ scenario  ,  1.85, 30.75],
+                   [ scenario  ,  2.15, 25.75]]
+
         self.episodes = episodes
 
     def reset(self):
