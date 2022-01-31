@@ -132,12 +132,12 @@ class PerceivedRisk:
 
 if __name__ == "__main__":
     pr = PerceivedRisk()
-    sx, sy, stheta = 2.0, 228, -90
-    player = [sx, sy, 30, stheta]
-    steering_angle = -20
+    sx, sy, stheta = -2.0, 213.47, -90
+    player = [sx, sy, 37.65, stheta]
+    steering_angle = -17.15
 
-    g = np.ones((110, 310)) * 0.0
-    sidewalk_cost = 50.0
+    g = np.zeros((110, 310))
+    sidewalk_cost = 25.0
     g[7:13, 13:] = 1.0
     g[97:103, 13:] = 1.0
     g[7:, 7:13] = 1.0
@@ -148,12 +148,12 @@ if __name__ == "__main__":
     g[103:106, 13:] = sidewalk_cost
     g[13:16, 16:94] = sidewalk_cost
     cmp = g.copy()
-    cmp[3 + 10, 218 + 10] = 1000
-    cmp[1 + 10:4 + 10, 217 + 10] = 1000
+    cmp[0 + 10, 209 + 10] = 10000
+    cmp[-1 + 10, 209 + 10] = 10000
     t0 = time.time()
     r, d = pr.get_risk(player, steering_angle, costmap=cmp)
-    print(cmp[1 + 10:4 + 10, 217 + 10], d[1 + 10:4 + 10, 217 + 10])
+    # print(cmp[1 + 10:4 + 10, 217 + 10], d[1 + 10:4 + 10, 217 + 10])
     print(f'Time taken: {(time.time() - t0) * 1000}ms')
     print(r)
-    plt.imshow(d.T)
-    plt.show()
+    # plt.imshow(d.T)
+    # plt.show()

@@ -17,8 +17,8 @@ def run(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
     # Create environments.
-    env = GIDASBenchmark(port=Config.port)
-    env.eval(current_episode=args.episode)
+    env = GIDASBenchmark(port=Config.port, setting="special")
+    # env.eval(current_episode=args.episode)
     env.reset_agent('hylear')
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
@@ -28,7 +28,7 @@ def run(args):
         name = 'shared-' + name
     time = datetime.now().strftime("%Y%m%d-%H%M")
     log_dir = os.path.join(
-        '_out', args.env_id, f'{name}-seed{args.seed}-{time}')
+        '_out', args.env_id, 'eval', f'{name}-seed{args.seed}-{time}')
 
     # Create the agent.
     agent = EvalSacdAgent(

@@ -194,15 +194,15 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2.0, 228, -90
+    sx, sy, stheta = -2.0, 214, -90
     # sx1, sy1, stheta1 = 92, 6, -90
-    gx, gy, gtheta = 2, 150, -90
+    gx, gy, gtheta = -2.0, 150, -90
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(3, 218)]
+    obstacle = [(0, 209)]
     # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
@@ -230,13 +230,23 @@ def main():
     from multiprocessing import Pool
     from agents.tools.risk_assesment import PerceivedRisk
     risk_estimator = PerceivedRisk()
-    cmp = g.copy()
-    cmp[3, 218] = 1000
-    cmp[1:4, 219] = 1000
+    cmp = np.ones((110, 310)) * 0.0
+    sidewalk_cost = 50.0
+    cmp[7:13, 13:] = 1.0
+    cmp[97:103, 13:] = 1.0
+    cmp[7:, 7:13] = 1.0
+    cmp[4:7, 4:] = sidewalk_cost
+    cmp[:, 4:7] = sidewalk_cost
+    cmp[13:16, 13:] = sidewalk_cost
+    cmp[94:97, 13:] = sidewalk_cost
+    cmp[103:106, 13:] = sidewalk_cost
+    cmp[13:16, 16:94] = sidewalk_cost
 
     # params = [[(sx, sy, stheta), (gx, gy, gtheta), g, obstacle],
     #           [(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle]]
-    obstacle = obstacle + [(2, 219), (3, 219), (1, 219)]
+    new_obs = obstacle + [(-1, 209)]
+    for obs in new_obs:
+        cmp[obs[0] + 10, obs[1] + 10] = 1000
     # params.append([(sx, sy, stheta), (gx, gy, gtheta), g, obstacle])
     # params.append([(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle])
     #
@@ -257,22 +267,23 @@ def main():
     # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
 
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, new_obs)
     if paths:
         path = paths[0]
     else:
         path = []
     path.reverse()
     steering_angle = (path[2][2] - stheta)
-    player = [sx, sy, 20, stheta]
+    player = [sx, sy, 30, stheta]
     t = time.time()
     risk, _ = risk_estimator.get_risk(player, steering_angle, cmp)
     t_taken = (time.time() - t) * 1000
+    print(len(path), risk, steering_angle)
 
     # first_path = first_path[0]
     # first_path.reverse()
-    print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000), risk)
-    print(t_taken)
+    # print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000), risk)
+    # print(t_taken)
     # path = first_path[:-1] + path[1:]
     # print(path)
     # print(len(path))

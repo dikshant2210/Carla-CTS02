@@ -83,15 +83,89 @@ class GIDASBenchmark(gym.Env):
                         self.episodes.append((scenario, speed, distance))
 
     def _get_special_scenes(self, scenario):
-        episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 3.3, 17.0), (scenario, 3.6, 18.0),
-                    (scenario, 2.9, 21.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0), (scenario, 3.0, 19.0),
-                    (scenario, 1.6, 36.0), (scenario, 3.5, 18.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
+        # episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 3.3, 17.0), (scenario, 3.6, 18.0),
+        #             (scenario, 2.9, 21.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0), (scenario, 3.0, 19.0),
+        #             (scenario, 1.6, 36.0), (scenario, 3.5, 18.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
+
+        episodes = [[ scenario  ,  0.95, 45.75],
+                   [ scenario  ,  1.05, 42.75],
+                   [ scenario  ,  1.15, 39.75],
+                   [ scenario  ,  1.45, 31.75],
+                   [ scenario  ,  1.45, 33.75],
+                   [ scenario  ,  1.45, 35.75],
+                   [ scenario  ,  1.55, 30.75],
+                   [ scenario  ,  1.55, 31.75],
+                   [ scenario  ,  1.55, 32.75],
+                   [ scenario  ,  1.55, 34.75],
+                   [ scenario  ,  1.65, 29.75],
+                   [ scenario  ,  1.65, 30.75],
+                   [ scenario  ,  1.75, 28.75],
+                   [ scenario  ,  1.75, 29.75],
+                   [ scenario  ,  1.85, 29.75],
+                   [ scenario  ,  1.85, 30.75],
+                   [ scenario  ,  1.95, 26.75],
+                   [ scenario  ,  1.95, 28.75],
+                   [ scenario  ,  1.95, 29.75],
+                   [ scenario  ,  2.05, 24.75],
+                   [ scenario  ,  2.05, 25.75],
+                   [ scenario  ,  2.05, 26.75],
+                   [ scenario  ,  2.05, 28.75],
+                   [ scenario  ,  2.05, 29.75],
+                   [ scenario  ,  2.15, 25.75],
+                   [ scenario  ,  2.15, 28.75],
+                   [ scenario  ,  2.35, 23.75],
+                   [ scenario  ,  2.35, 26.75],
+                   [ scenario  ,  2.35, 27.75],
+                   [ scenario  ,  2.45, 24.75],
+                   [ scenario  ,  2.45, 27.75],
+                   [ scenario  ,  2.45, 29.75],
+                   [ scenario  ,  2.55, 19.75],
+                   [ scenario  ,  2.55, 24.75],
+                   [ scenario  ,  2.55, 25.75],
+                   [ scenario  ,  2.55, 29.75],
+                   [ scenario  ,  2.55, 30.75],
+                   [ scenario  ,  2.65, 19.75],
+                   [ scenario  ,  2.65, 20.75],
+                   [ scenario  ,  2.65, 23.75],
+                   [ scenario  ,  2.65, 24.75],
+                   [ scenario  ,  2.65, 25.75],
+                   [ scenario  ,  2.75, 23.75],
+                   [ scenario  ,  2.75, 26.75],
+                   [ scenario  ,  2.85, 17.75],
+                   [ scenario  ,  2.85, 22.75],
+                   [ scenario  ,  2.85, 23.75],
+                   [ scenario  ,  2.85, 26.75],
+                   [ scenario  ,  2.95, 16.75],
+                   [ scenario  ,  2.95, 21.75],
+                   [ scenario  ,  2.95, 23.75],
+                   [ scenario  ,  3.05, 16.75],
+                   [ scenario  ,  3.05, 17.75],
+                   [ scenario  ,  3.05, 22.75],
+                   [ scenario  ,  3.05, 23.75],
+                   [ scenario  ,  3.15, 15.75],
+                   [ scenario  ,  3.15, 16.75],
+                   [ scenario  ,  3.15, 17.75],
+                   [ scenario  ,  3.15, 21.75],
+                   [ scenario  ,  3.15, 23.75],
+                   [ scenario  ,  3.25, 15.75],
+                   [ scenario  ,  3.25, 20.75],
+                   [ scenario  ,  3.25, 22.75],
+                   [ scenario  ,  3.35, 20.75],
+                   [ scenario  ,  3.35, 21.75],
+                   [ scenario  ,  3.35, 22.75],
+                   [ scenario  ,  3.45, 14.75],
+                   [ scenario  ,  3.45, 20.75],
+                   [ scenario  ,  3.55, 13.75],
+                   [ scenario  ,  3.55, 19.75],
+                   [ scenario  ,  3.65, 13.75],
+                   [ scenario  ,  3.75, 19.75]]
+
         self.episodes = episodes
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 1.6  # Debug Settings
-        # ped_distance = 15
+        # ped_speed = 1.45  # Debug Settings
+        # ped_distance = 39.75
         # scenario_id = "04"
         self.scenario = scenario_id
         self.speed = ped_speed

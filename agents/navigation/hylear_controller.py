@@ -37,18 +37,20 @@ class HyLEAR(RLAgent):
         self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_70797.pth")
         self.ped_pred.model.eval()
         self.risk_path_planner = PathPlanner()
+
         self.risk_cmp = np.zeros((110, 310))
         # Road Network
         self.risk_cmp[7:13, 13:] = 1.0
         self.risk_cmp[97:103, 13:] = 1.0
         self.risk_cmp[7:, 7:13] = 1.0
         # Sidewalk Network
-        self.risk_cmp[4:7, 4:] = 50.0
-        self.risk_cmp[:, 4:7] = 50.0
-        self.risk_cmp[13:16, 13:] = 50.0
-        self.risk_cmp[94:97, 13:] = 50.0
-        self.risk_cmp[103:106, 13:] = 50.0
-        self.risk_cmp[13:16, 16:94] = 50.0
+        sidewalk_cost = 50.0
+        self.risk_cmp[4:7, 4:] = sidewalk_cost
+        self.risk_cmp[:, 4:7] = sidewalk_cost
+        self.risk_cmp[13:16, 13:] = sidewalk_cost
+        self.risk_cmp[94:97, 13:] = sidewalk_cost
+        self.risk_cmp[103:106, 13:] = sidewalk_cost
+        self.risk_cmp[13:16, 16:94] = sidewalk_cost
 
     def update_scenario(self, scenario):
         super(HyLEAR, self).update_scenario(scenario)
@@ -153,8 +155,8 @@ class HyLEAR(RLAgent):
 
     def get_path_with_reasoning(self, start, end, obstacles):
         car_velocity = self.vehicle.get_velocity()
-        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2)
-        yaw = self.vehicle.get_transform().rotation.yaw
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
+        yaw = start[2]
         relaxed_sidewalk = self.grid_cost.copy()
         y = round(start[1])
         # Relax sidewalk
@@ -179,14 +181,14 @@ class HyLEAR(RLAgent):
                 if (round(node[0]), round(node[1])) not in new_obs:
                     new_obs.append((round(node[0]), round(node[1])))
             for pos in new_obs:
-                ped_updated_risk_cmp[pos[0], pos[1]] = 1000
+                ped_updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
 
             paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                yaw, self.risk_cmp),  # Normal
+                                                                yaw, ped_updated_risk_cmp),  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
-                                                                yaw, self.risk_cmp),  # ped pred
+                                                                yaw, ped_updated_risk_cmp),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
-                                                                yaw, self.risk_cmp)]  # Sidewalk relaxed
+                                                                yaw, ped_updated_risk_cmp)]  # Sidewalk relaxed
                      # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                      #                                            yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
             path, _ = min(paths, key=lambda t: t[1])
