@@ -93,6 +93,7 @@ class EvalSacdAgent(BaseAgent):
                 prev_action = action
 
                 done = done or info["accident"]
+                # done = info["accident"]
                 action_count[action] += 1
                 num_steps += 1
                 episode_steps += 1
