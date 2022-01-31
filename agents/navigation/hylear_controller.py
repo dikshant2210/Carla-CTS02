@@ -112,7 +112,7 @@ class HyLEAR(RLAgent):
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
         if len(obstacles):
-            path = self.get_path_with_reasoning(start, end, obstacles)
+            path = self.get_path_simple(start, end, obstacles)
         else:
             path = self.get_path_simple(start, end, obstacles)
 
