@@ -194,8 +194,10 @@ class RLAgent(Agent):
         # Normalize reward
         reward = reward / 1000.0
 
+        # hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
+        #                         front_margin=0.2, side_margin=0.2, back_margin=0.1)
         hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                front_margin=0.2, side_margin=0.2, back_margin=0.1)
+                                front_margin=0.01, side_margin=0.01, back_margin=0.01)
         nearmiss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                      front_margin=1.5, side_margin=0.5, back_margin=0.5)
         return reward, goal, hit, nearmiss, terminal
