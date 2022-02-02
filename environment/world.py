@@ -162,6 +162,8 @@ class World(object):
         if dist_walker < self.ped_distance:  # and car_speed > 0:
             if self.scenario[0] in [1, 2, 3]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(self.ped_speed, 0, 0), 1))
+                if self.walker.get_location().x > 4.5:
+                    self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
             elif self.scenario[0] in [4, 5, 7, 8, 6]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
                 if self.walker.get_location().x < -4.5:

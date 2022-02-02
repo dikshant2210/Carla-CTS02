@@ -2,8 +2,6 @@
 Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
-import multiprocessing
-import time
 
 import carla
 import numpy as np
@@ -33,7 +31,6 @@ class HyLEAR(RLAgent):
             self.conn.establish_connection()
             m = self.conn.receive_message()
             print(m)  # RESET
-        self.ped_history = deque(list(), maxlen=15)
         self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_70797.pth")
         self.ped_pred.model.eval()
         self.risk_path_planner = PathPlanner()
@@ -51,10 +48,6 @@ class HyLEAR(RLAgent):
         self.risk_cmp[94:97, 13:] = sidewalk_cost
         self.risk_cmp[103:106, 13:] = sidewalk_cost
         self.risk_cmp[13:16, 16:94] = sidewalk_cost
-
-    def update_scenario(self, scenario):
-        super(HyLEAR, self).update_scenario(scenario)
-        self.ped_history = deque(list(), maxlen=15)
 
     def get_reward_despot(self, action):
         base_reward, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
@@ -137,23 +130,6 @@ class HyLEAR(RLAgent):
         path = self.find_path(start, end, self.grid_cost, obstacles)
         return path
 
-    def get_path_ped_prediction(self, start, end, obstacles):
-        if len(self.ped_history) == 15:
-            # Use path predictor
-            ped_path = np.array(self.ped_history)
-            ped_path = ped_path.reshape((1, 15, 2))
-            pedestrian_path = self.ped_pred.get_pred(ped_path)
-            for node in pedestrian_path[0]:
-                if (round(node[0]), round(node[1])) not in obstacles and round(node[0]) <= obstacles[0][0]:
-                    obstacles.append((round(node[0]), round(node[1])))
-        print(obstacles, start)
-        costmap = self.grid_cost.copy()
-        y = round(start[1])
-        costmap[13:16, y - 20: y + 20] = 0
-        costmap[4:7, y - 20: y + 20] = 0
-        path = self.find_path(start, end, costmap, obstacles)
-        return path
-
     def get_path_with_reasoning(self, start, end, obstacles):
         car_velocity = self.vehicle.get_velocity()
         car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
@@ -204,21 +180,3 @@ class HyLEAR(RLAgent):
             return path
         else:
             return paths[0][0]
-
-    def get_obstacles(self, start):
-        obstacles = list()
-        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
-            self.ped_history.append([walker_x, walker_y])
-            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [1, 4, 10]:
-                obstacles.append((int(walker_x), int(walker_y)))
-        if self.scenario[0] in [3, 7, 8, 10]:
-            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
-            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
-                obstacles.append((int(car_x), int(car_y)))
-
-        return obstacles

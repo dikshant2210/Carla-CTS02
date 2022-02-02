@@ -8,6 +8,7 @@ import datetime
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import deque
 
 from agents.navigation.agent import Agent
 from config import Config
@@ -31,7 +32,8 @@ class RLAgent(Agent):
         self.prev_action = None
         self.prev_speed = None
         self.folder = datetime.datetime.now().timestamp()
-        self.past_trajectory = []
+        self.ped_history = deque(list(), maxlen=15)
+        self.past_trajectory = list()
         # os.mkdir("_out/{}".format(self.folder))
 
         obstacle = []
@@ -71,7 +73,8 @@ class RLAgent(Agent):
 
     def update_scenario(self, scenario):
         self.scenario = scenario
-        self.past_trajectory = []
+        self.ped_history = deque(list(), maxlen=15)
+        self.past_trajectory = list()
 
     def in_rectangle(self, x, y, theta, ped_x, ped_y, front_margin=1.5, side_margin=0.5, back_margin=0.5, debug=False):
         theta = theta / (2 * np.pi)
@@ -341,19 +344,7 @@ class RLAgent(Agent):
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
 
-        obstacles = list()
-        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
-            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
-                obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [1, 2, 4, 5, 6, 9, 10]:
-                obstacles.append((int(walker_x), int(walker_y)))
-        if self.scenario[0] in [3, 7, 8, 10]:
-            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
-            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
-                obstacles.append((int(car_x), int(car_y)))
+        obstacles = self.get_obstacles(start)
         path = self.find_path(start, end, self.grid_cost, obstacles)
 
         if self.display_costmap:
@@ -417,3 +408,27 @@ class RLAgent(Agent):
         plt.draw()
         plt.pause(0.1)
         self.fig.clear()
+
+    def get_obstacles(self, start):
+        obstacles = list()
+        walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0:
+            self.ped_history.append([walker_x, walker_y])
+            if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
+                obstacles.append((int(walker_x), int(walker_y)))
+            elif self.scenario[0] in [1, 4, 10]:
+                obstacles.append((int(walker_x), int(walker_y)))
+        if self.scenario[0] in [3, 7, 8, 10]:
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+                xmin = round(car_x - self.vehicle_width / 2)
+                xmax = round(car_x + self.vehicle_width / 2)
+                ymin = round(car_y - self.vehicle_length / 2)
+                ymax = round(car_y + self.vehicle_length / 2)
+                for x in range(xmin, xmax):
+                    for y in range(ymin, ymax):
+                        obstacles.append((int(x), int(y)))
+
+        return obstacles
