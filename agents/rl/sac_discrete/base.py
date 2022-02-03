@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from sac_discrete.sacd.memory import LazyMultiStepMemory, LazyPrioritizedMultiStepMemory
-from sac_discrete.sacd.utils import update_params, RunningMeanStats
+from agents.rl.sac_discrete.sacd.memory import LazyMultiStepMemory, LazyPrioritizedMultiStepMemory
+from agents.rl.sac_discrete.sacd.utils import update_params, RunningMeanStats
 from config import Config
 
 

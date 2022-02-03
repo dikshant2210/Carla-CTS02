@@ -10,7 +10,7 @@ import time
 
 from .base import BaseAgent
 from config import Config
-from sac_discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
+from agents.rl.sac_discrete.sacd.model import DQNBase, TwinnedQNetwork, CateoricalPolicy
 
 
 class EvalSacdAgent(BaseAgent):
