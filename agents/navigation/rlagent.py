@@ -34,6 +34,7 @@ class RLAgent(Agent):
         self.folder = datetime.datetime.now().timestamp()
         self.ped_history = deque(list(), maxlen=15)
         self.past_trajectory = list()
+        self.pedestrian_observable = False
         # os.mkdir("_out/{}".format(self.folder))
 
         obstacle = []
@@ -53,18 +54,6 @@ class RLAgent(Agent):
         self.grid_cost[103:106, 13:] = 50.0
         self.grid_cost[13:16, 16:94] = 50.0
 
-        # Sidewalk relaxed grid
-        self.sidewalk_relaxed_grid_cost = np.ones((110, 310)) * 1000.0
-        self.sidewalk_relaxed_grid_cost[7:13, 13:] = 1.0
-        self.sidewalk_relaxed_grid_cost[97:103, 13:] = 1.0
-        self.sidewalk_relaxed_grid_cost[7:, 7:13] = 1.0
-        self.sidewalk_relaxed_grid_cost[4:7, 4:] = 1.0
-        self.sidewalk_relaxed_grid_cost[:, 4:7] = 1.0
-        self.sidewalk_relaxed_grid_cost[13:16, 13:] = 1.0
-        self.sidewalk_relaxed_grid_cost[94:97, 13:] = 1.0
-        self.sidewalk_relaxed_grid_cost[103:106, 13:] = 1.0
-        self.sidewalk_relaxed_grid_cost[13:16, 16:94] = 1.0
-
         self.min_x = -10
         self.max_x = 100
         self.min_y = -10
@@ -75,6 +64,7 @@ class RLAgent(Agent):
         self.scenario = scenario
         self.ped_history = deque(list(), maxlen=15)
         self.past_trajectory = list()
+        self.pedestrian_observable = False
 
     def in_rectangle(self, x, y, theta, ped_x, ped_y, front_margin=1.5, side_margin=0.5, back_margin=0.5, debug=False):
         theta = theta / (2 * np.pi)
@@ -148,13 +138,22 @@ class RLAgent(Agent):
 
         reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
 
-        # TODO: Replace the below with all grid positions of incoming_car in player rectangle
+        # All grid positions of incoming_car in player rectangle
         # Cost of collision with obstacles
         grid = self.grid_cost.copy()
         if self.scenario[0] in [3, 7, 8, 10]:
-            x = self.world.incoming_car.get_location().x
-            y = self.world.incoming_car.get_location().y
-            grid[round(x), round(y)] = 100
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            xmin = round(car_x - self.vehicle_width / 2)
+            xmax = round(car_x + self.vehicle_width / 2)
+            ymin = round(car_y - self.vehicle_length / 2)
+            ymax = round(car_y + self.vehicle_length / 2)
+            for x in range(xmin, xmax):
+                for y in range(ymin, ymax):
+                    grid[round(x), round(y)] = 100
+            # print(xmin, xmax, ymin, ymax)
+            # x = self.world.incoming_car.get_location().x
+            # y = self.world.incoming_car.get_location().y
+            # grid[round(x), round(y)] = 100
 
         # cost of occupying road/non-road tile
         # Penalizing for hitting an obstacle
@@ -198,9 +197,10 @@ class RLAgent(Agent):
         reward = reward / 1000.0
 
         # hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-        #                         front_margin=0.2, side_margin=0.2, back_margin=0.1)
-        hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
-                                front_margin=0.01, side_margin=0.01, back_margin=0.01)
+        #                         front_margin=0.2, side_margin=0.2, back_margin=0.1) or obstacle_cost > 50.0
+        # hit = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
+        #                         front_margin=0.01, side_margin=0.01, back_margin=0.01) or obstacle_cost > 50.0
+        hit = self.world.collision_sensor.flag or obstacle_cost > 50.0
         nearmiss = self.in_rectangle(start[0], start[1], start[2], walker_x, walker_y,
                                      front_margin=1.5, side_margin=0.5, back_margin=0.5)
         return reward, goal, hit, nearmiss, terminal
@@ -416,10 +416,13 @@ class RLAgent(Agent):
             self.ped_history.append([walker_x, walker_y])
             if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
                 obstacles.append((int(walker_x), int(walker_y)))
+                self.pedestrian_observable = True
             elif self.scenario[0] in [7, 8] and walker_x <= self.world.incoming_car.get_location().x:
                 obstacles.append((int(walker_x), int(walker_y)))
-            elif self.scenario[0] in [1, 4, 10]:
+                self.pedestrian_observable = True
+            elif self.scenario[0] in [1, 2, 4, 5, 6, 9, 10]:
                 obstacles.append((int(walker_x), int(walker_y)))
+                self.pedestrian_observable = True
         if self.scenario[0] in [3, 7, 8, 10]:
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:

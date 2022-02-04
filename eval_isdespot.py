@@ -93,7 +93,8 @@ def eval_isdespot(arg):
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
+            info['goal'], accident, nearmiss, total_episode_reward))
         file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
             time_to_goal, total_acc_decc, exec_time * 1000))

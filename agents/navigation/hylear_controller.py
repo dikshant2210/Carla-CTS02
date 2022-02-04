@@ -77,7 +77,7 @@ class HyLEAR(RLAgent):
         if len(path) == 0:
             control.brake = 0.6
             self.prev_speed = 2
-        elif np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) > 50.0:
+        elif not self.pedestrian_observable:
             control.throttle = 0.6
         else:
             self.conn.send_message(terminal, reward, angle, car_pos, car_speed, pedestrian_positions, path)
