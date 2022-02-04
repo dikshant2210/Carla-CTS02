@@ -26,7 +26,7 @@ class Config:
     ped_distance_range = [10, 40]
     car_speed_range = [6, 9]
     # scenarios = ['01', '02', '03', '04', '05', '06', '07', '08']
-    scenarios = ['04']
+    scenarios = ['04', '03']
 
     val_scenarios = ['01']
     val_ped_speed_range = [0., 4.0]
