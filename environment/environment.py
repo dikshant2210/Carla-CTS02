@@ -168,7 +168,7 @@ class GIDASBenchmark(gym.Env):
         #            [ scenario  ,  1.85, 30.75],
         #            [ scenario  ,  2.15, 25.75]]
 
-        self.episodes = episodes
+        self.episodes += episodes
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
