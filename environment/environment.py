@@ -235,12 +235,12 @@ class GIDASBenchmark(gym.Env):
         if agent == 'isdespot':
             conn = Connector(Config.despot_port)
             self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
-        if agent == 'hylear':
+        if agent == 'hylear' or agent == 'hypal':
             conn = Connector(Config.despot_port)
             eval_mode = False
             if self.mode == "TESTING":
                 eval_mode = True
-            self.planner_agent = HyLEAR(self.world, self.map, self.scene, conn, eval_mode)
+            self.planner_agent = HyLEAR(self.world, self.map, self.scene, conn, eval_mode, agent)
 
     def eval(self, current_episode=0):
         self.mode = "TESTING"

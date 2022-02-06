@@ -19,7 +19,7 @@ def run(args):
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
     env.eval(current_episode=args.episode)
-    env.reset_agent('hylear')
+    env.reset_agent(args.agent)
     # env = GIDASBenchmark(port=Config.port, setting="special")
 
     # Specify the directory to log.
@@ -49,6 +49,7 @@ if __name__ == '__main__':
         '--config', type=str, default=os.path.join('agents/rl/sac_discrete/config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
+    parser.add_argument('--agent', type=str, default='hylear')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--port', type=int, default=2200)

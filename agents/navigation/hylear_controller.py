@@ -20,11 +20,12 @@ def run_server():
 
 
 class HyLEAR(RLAgent):
-    def __init__(self, world, carla_map, scenario, conn=None, eval_mode=False):
+    def __init__(self, world, carla_map, scenario, conn=None, eval_mode=False, agent='hylear'):
         super(HyLEAR, self).__init__(world, carla_map, scenario)
 
         self.conn = conn
         self.eval_mode = eval_mode
+        self.agent = agent
         if not self.eval_mode:
             p = Process(target=run_server)
             p.start()
@@ -105,8 +106,10 @@ class HyLEAR(RLAgent):
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
         if len(obstacles):
-            path = self.get_path_with_reasoning(start, end, obstacles)
-            # path = self.get_path_simple(start, end, obstacles)
+            if self.agent == 'hypal':
+                path = self.get_path_simple(start, end, obstacles)
+            else:
+                path = self.get_path_with_reasoning(start, end, obstacles)
         else:
             path = self.get_path_simple(start, end, obstacles)
 
