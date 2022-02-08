@@ -170,11 +170,12 @@ class World(object):
                     self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
             elif self.scenario[0] == 10:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
-                self.incoming_car.set_target_velocity(carla.Vector3D(0, 10, 0))  # Set target velocity for experiment
             elif self.scenario[0] == 9:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
         if self.scenario[0] == 10:
-            if self.incoming_car.get_location().y > 250:
+            flag = (0 < (self.walker.get_location().y - self.incoming_car.get_location().y) < 5) and \
+                   (self.walker.get_location().x > -4.4)
+            if self.incoming_car.get_location().y > 250 or flag:
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 0, 0))
             else:
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 9, 0))  # Set target velocity for experiment
