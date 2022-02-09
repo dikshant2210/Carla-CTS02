@@ -33,7 +33,7 @@ class Config:
     val_ped_distance_range = [0, 40]
     val_car_speed_range = [6, 9]
 
-    test_scenarios = ['03']  # ['01', '02', '03', '04', '05', '06', '07', '08']
+    test_scenarios = ['01']  # ['01', '02', '03', '04', '05', '06', '07', '08']
     test_ped_speed_range = [0.25, 2.85]
     test_ped_distance_range = [4.75, 49.75]
     test_car_speed_range = [6, 9]
@@ -82,7 +82,7 @@ class Config:
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
-    despot_port = 1255
+    despot_port = 1250
     N_DISCRETE_ACTIONS = 3
     max_speed = 50 * 0.27778  # in m/s
     hit_penalty = 1000
