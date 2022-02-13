@@ -178,6 +178,7 @@ class HyLEAR(RLAgent):
     @staticmethod
     def rulebook(paths):
         # No sidewalk
+        # print(paths[0][1], paths[1][1], paths[2][1])
         if paths[0][1] > 300:
             path, _ = min(paths, key=lambda t: t[1])
             return path
