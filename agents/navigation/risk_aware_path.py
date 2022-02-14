@@ -19,7 +19,7 @@ class PathPlanner:
         self.risk_estimator = PerceivedRisk()
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y, [], self.vehicle_length)
 
-    def find_path(self, start, end, costmap, obstacles):
+    def find_path(self, start, end, costmap, obstacles, car_speed):
         paths = self.path_planner.find_path(start, end, costmap, obstacles)
         if len(paths):
             path = paths[0]
@@ -30,7 +30,7 @@ class PathPlanner:
 
     def find_path_with_risk(self, start, end, costmap, obstacles, car_speed, yaw, risk_map):
         try:
-            path = self.find_path(start, end, costmap, obstacles)
+            path = self.find_path(start, end, costmap, obstacles, car_speed / 3.6)
             if len(path):
                 player = [start[0], start[1], car_speed, yaw]
                 steering_angle = path[2][2] - start[2]

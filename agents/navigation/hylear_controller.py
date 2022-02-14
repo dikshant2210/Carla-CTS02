@@ -143,9 +143,13 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk[13:16, y - 20: y + 20] = 0
         relaxed_sidewalk[4:7, y - 20: y + 20] = 0
 
+        path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                 yaw, self.risk_cmp)
+        if path_normal[1] < 300:
+            return path_normal[0]
+
         if len(self.ped_history) < 15:
-            paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                yaw, self.risk_cmp),  # Normal
+            paths = [path_normal,
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp)]  # Sidewalk relaxed
             path, _ = min(paths, key=lambda t: t[1])
@@ -163,8 +167,7 @@ class HyLEAR(RLAgent):
             for pos in new_obs:
                 ped_updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
 
-            paths = [self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                yaw, ped_updated_risk_cmp),  # Normal
+            paths = [path_normal,  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
                                                                 yaw, ped_updated_risk_cmp),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
@@ -178,9 +181,5 @@ class HyLEAR(RLAgent):
     @staticmethod
     def rulebook(paths):
         # No sidewalk
-        # print(paths[0][1], paths[1][1], paths[2][1])
-        if paths[0][1] > 300:
-            path, _ = min(paths, key=lambda t: t[1])
-            return path
-        else:
-            return paths[0][0]
+        path, _ = min(paths, key=lambda t: t[1])
+        return path

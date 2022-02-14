@@ -430,8 +430,8 @@ class RLAgent(Agent):
                 xmax = round(car_x + self.vehicle_width / 2)
                 ymin = round(car_y - self.vehicle_length / 2)
                 ymax = round(car_y + self.vehicle_length / 2)
-                for x in range(xmin, xmax):
-                    for y in range(ymin, ymax):
+                for x in range(xmin, xmax + 1):
+                    for y in range(ymin, ymax + 1):
                         obstacles.append((int(x), int(y)))
 
         return obstacles

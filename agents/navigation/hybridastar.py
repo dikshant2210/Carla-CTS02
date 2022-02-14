@@ -64,7 +64,7 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations):
+    def find_path(self, start, end, occupancy_grid, agent_locations, speed=1.05):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
         m = 1
@@ -74,7 +74,7 @@ class HybridAStar:
         # print(steering_inputs)
         # print(occupancy_grid.shape)
 
-        speed_inputs = [1.05]
+        speed_inputs = [min(3.0, max(speed, 1.05))]
         # cost_speed_inputs = [0]
 
         start = (float(start[0]), float(start[1]), float(start[2]))
@@ -194,15 +194,15 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = -2.0, 214, -90
+    sx, sy, stheta = 1.0, 217, -99
     # sx1, sy1, stheta1 = 92, 6, -90
-    gx, gy, gtheta = -2.0, 150, -90
+    gx, gy, gtheta = 2.0, 150, -90
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(0, 209)]
+    obstacle = [(2, 212)] + [(-2, 205), (-2, 206), (-2, 207), (-2, 208), (-2, 209), (-1, 205), (-1, 206), (-1, 207), (-1, 208), (-1, 209)]
     # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
@@ -244,7 +244,7 @@ def main():
 
     # params = [[(sx, sy, stheta), (gx, gy, gtheta), g, obstacle],
     #           [(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle]]
-    new_obs = obstacle + [(-1, 209)]
+    new_obs = obstacle + [(1, 212), (0, 212)]
     for obs in new_obs:
         cmp[obs[0] + 10, obs[1] + 10] = 1000
     # params.append([(sx, sy, stheta), (gx, gy, gtheta), g, obstacle])
@@ -267,7 +267,7 @@ def main():
     # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
 
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, new_obs)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, new_obs, speed=2.0)
     if paths:
         path = paths[0]
     else:
