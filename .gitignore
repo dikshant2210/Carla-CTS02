@@ -22,3 +22,6 @@ path_predictor/*.pkl
 temp_check/path_predictor/get_prediction.py
 data/
 ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/cmake-build-debug/
+/hyleap/smart-car-sim-master/is-despot/.deps/
+/hyleap/smart-car-sim-master/is-despot/problems/hybridVisual_car/.settings/
+/hyleap/smart-car-sim-master/is-despot/build/
