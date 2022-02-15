@@ -78,11 +78,11 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = True
+    display = False
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
-    despot_port = 1250
+    despot_port = 1245
     N_DISCRETE_ACTIONS = 3
     max_speed = 50 * 0.27778  # in m/s
     hit_penalty = 1000
