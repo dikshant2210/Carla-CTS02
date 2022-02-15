@@ -168,7 +168,9 @@ class World(object):
                     self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
             elif self.scenario[0] in [4, 5, 7, 8, 6]:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
-                if self.walker.get_location().x < -4.5:
+                if self.walker.get_location().x < -4.5 and self.scenario[0] in [4, 7, 8]:
+                    self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
+                if self.scenario[0] in [5, 6] and self.walker.get_location().x < 85.0:
                     self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
             elif self.scenario[0] == 10:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))

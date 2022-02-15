@@ -119,8 +119,8 @@ class Scenario:
         return 6, obstacles, end, start
 
     def scenario05(self):
-        start = (88.5, 260, -90)
-        end = (89, 140, -90)
+        start = (88.0, 260, -90)
+        end = (88.0, 140, -90)
         obstacles = []
 
         walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
