@@ -249,6 +249,7 @@ int main(int argc, char** argv) {
 
 	cout << "Maximum search_depth: " << Globals::config.search_depth
 	    << ", num_scenarios" << Globals::config.num_scenarios << "\n";
+    cout << "Despot port: " << port << "\n";
 
     Seeds::root_seed(get_time_second());
     double seed = Seeds::Next();
