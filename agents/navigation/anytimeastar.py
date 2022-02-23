@@ -104,7 +104,7 @@ class HybridAStar:
         t = time.time()
 
         while len(open_heap) > 0:
-            if (time.time() - t) * 1000 > 50:
+            if (time.time() - t) * 1000 > 50.0:
                 break
             chosen_d_node = open_heap[0][1]
             current_node = open_diction[chosen_d_node]
@@ -138,7 +138,7 @@ class HybridAStar:
                             if d < dist:
                                 dist = d
 
-                        if g + f < upper_bound and dist > 1.5:
+                        if g + f < upper_bound and dist > 1.5 and current_node.node_d != neighbour_d:
                             if self.dist(neighbour_d, end) < 3:
                                 f = g
                                 incumbent = neighbour_d
@@ -184,7 +184,7 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2.0, 208.0, -90.0
+    sx, sy, stheta = 2.067845106124878, 209.1132049560547, -88.49481201171875
     # sx1, sy1, stheta1 = 92, 6, -90
     gx, gy, gtheta = 2.0, 150.0, -90.0
 
@@ -192,7 +192,7 @@ def main():
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(0, 203), (-3, 204), (-3, 205), (-3, 206), (-3, 207), (-3, 208), (-2, 204), (-2, 205), (-2, 206),
+    obstacle = [(2, 203), (-3, 204), (-3, 205), (-3, 206), (-3, 207), (-3, 208), (-2, 204), (-2, 205), (-2, 206),
                 (-2, 207), (-2, 208), (-1, 204), (-1, 205), (-1, 206), (-1, 207), (-1, 208)]
     # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
@@ -241,7 +241,8 @@ def main():
         cmp[obs[0] + 10, obs[1] + 10] = 1000
 
     t0 = time.time()
-    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle, speed=5.0, weight=0.9)
+    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle, speed=1.0, weight=0.9)
+    path = path[0]
     path.reverse()
     print(path)
     steering_angle = (path[2][2] - stheta)
