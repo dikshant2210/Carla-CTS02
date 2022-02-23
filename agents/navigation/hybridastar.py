@@ -29,17 +29,17 @@ class HybridAStar:
 
     def hgcost(self, position, target, occupancy_grid):
         # Euclidean distance
-        output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) + (
-                math.radians(position[2]) - math.radians(target[2])) ** 2)
-        x = round(position[0] - self.min_x)
-        location = [min(x, occupancy_grid.shape[0] - 1),
+        output = self.dist(position, target)
+        location = [min(round(position[0] - self.min_x), occupancy_grid.shape[0] - 1),
                     min(round(position[1] - self.min_y), occupancy_grid.shape[1] - 1)]
         cost = occupancy_grid[location[0], location[1]]
         return float(output + cost)
 
     def dist(self, position, target):
-        output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) +
-                         (math.radians(position[2]) - math.radians(target[2])) ** 2)
+        # output = np.sqrt(((position[0] - target[0]) ** 2) + ((position[1] - target[1]) ** 2) +
+        #                  (math.radians(position[2]) - math.radians(target[2])) ** 2)
+        output = abs(position[0] - target[0]) + abs(position[1] - target[1]) + \
+                 abs(math.radians(position[2]) - math.radians(target[2]))
         return float(output)
 
     def next_node(self, location, aph, d):
@@ -64,7 +64,7 @@ class HybridAStar:
 
         return new_x, new_y, new_theta
 
-    def find_path(self, start, end, occupancy_grid, agent_locations, speed=1.05):
+    def find_path(self, start, end, occupancy_grid, agent_locations, speed=1.05, weight=1.0):
         # steering_inputs = [-50, 0, 50]
         # cost_steering_inputs = [0.1, 0, 0.1]
         m = 1
@@ -90,9 +90,9 @@ class HybridAStar:
         cost_to_neighbour_from_start = 0
 
         heuristic_cost = self.hgcost(start, end, occupancy_grid)
-        hq.heappush(open_heap, (cost_to_neighbour_from_start + heuristic_cost, start))
+        hq.heappush(open_heap, (cost_to_neighbour_from_start + weight * heuristic_cost, start))
 
-        open_diction[start] = (cost_to_neighbour_from_start + heuristic_cost, start, (start, start))
+        open_diction[start] = (cost_to_neighbour_from_start + weight * heuristic_cost, start, (start, start))
 
         paths = list()
         while len(open_heap) > 0:
@@ -107,7 +107,7 @@ class HybridAStar:
 
             visited_diction[chosen_d_node] = open_diction[chosen_d_node]
 
-            if self.dist(chosen_d_node, end) < 1:
+            if self.dist(chosen_d_node, end) < 3:
                 m -= 1  # Found one path to goal
                 rev_final_path = [end]  # reverse of final path
                 rev_final_path_d = [end]  # reverse of discrete final path
@@ -161,9 +161,8 @@ class HybridAStar:
                         d = np.sqrt((neighbour_x_d - obs[0]) ** 2 + (neighbour_y_d - obs[1]) ** 2)
                         if d < dist:
                             dist = d
-                    if ((dist > 1.5) and (neighbour_x_d >= self.min_x)
-                            and (neighbour_x_d <= self.max_x) and (neighbour_y_d >= self.min_y) and
-                            (neighbour_y_d <= self.max_y)):
+                    if ((dist > 1.5) and (self.min_x <= neighbour_x_d <= self.max_x) and
+                            (self.min_y <= neighbour_y_d <= self.max_y)):
 
                         heurestic = self.hgcost((neighbour_x_d, neighbour_y_d, neighbour_theta_d), end,
                                                 occupancy_grid)
@@ -171,7 +170,7 @@ class HybridAStar:
                         action_cost = 1.0
                         cost_to_neighbour_from_start = action_cost + cost_to_neighbour_from_start
 
-                        total_cost = heurestic + cost_to_neighbour_from_start
+                        total_cost = weight * heurestic + cost_to_neighbour_from_start
 
                         skip = 0
 
@@ -194,26 +193,28 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 1.0, 217, -99
+    sx, sy, stheta = 2.0, 208.0, -90.0
     # sx1, sy1, stheta1 = 92, 6, -90
-    gx, gy, gtheta = 2.0, 150, -90
+    gx, gy, gtheta = 2.0, 150.0, -90.0
 
     # sx, sy, stheta = 100, 1, -180
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(2, 212)] + [(-2, 205), (-2, 206), (-2, 207), (-2, 208), (-2, 209), (-1, 205), (-1, 206), (-1, 207), (-1, 208), (-1, 209)]
+    obstacle = [(0, 203), (-3, 204), (-3, 205), (-3, 206), (-3, 207), (-3, 208), (-2, 204), (-2, 205), (-2, 206),
+                (-2, 207), (-2, 208), (-1, 204), (-1, 205), (-1, 206), (-1, 207), (-1, 208)]
     # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
     occupancy_grid = OccupancyGrid()
-    hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4)
+    hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4.18)
 
     g = np.ones((110, 310)) * 1000.0
     sidewalk_cost = 50.0
-    g[7:13, 13:] = 1.0
-    g[97:103, 13:] = 1.0
-    g[7:, 7:13] = 1.0
+    road_cost = 1.0
+    g[7:13, 13:] = road_cost
+    g[97:103, 13:] = road_cost
+    g[7:, 7:13] = road_cost
     g[4:7, 4:] = sidewalk_cost
     g[:, 4:7] = sidewalk_cost
     g[13:16, 13:] = sidewalk_cost
@@ -224,8 +225,9 @@ def main():
     # K-path estimation with risk
     y = round(sy)
     relaxed_g = g.copy()
-    relaxed_g[13:16, y-20:y+20] = 0
-    relaxed_g[4:7, y-20:y+20] = 0
+    sidewalk_cost = -1.0
+    relaxed_g[13:16, y-10:y+10] = sidewalk_cost
+    relaxed_g[4:7, y-10:y+10] = sidewalk_cost
 
     from multiprocessing import Pool
     from agents.tools.risk_assesment import PerceivedRisk
@@ -242,51 +244,24 @@ def main():
     cmp[103:106, 13:] = sidewalk_cost
     cmp[13:16, 16:94] = sidewalk_cost
 
-    # params = [[(sx, sy, stheta), (gx, gy, gtheta), g, obstacle],
-    #           [(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle]]
-    new_obs = obstacle + [(1, 212), (0, 212)]
+    new_obs = obstacle + [(1, 203), (2, 203)]
+    # new_obs = []
     for obs in new_obs:
         cmp[obs[0] + 10, obs[1] + 10] = 1000
-    # params.append([(sx, sy, stheta), (gx, gy, gtheta), g, obstacle])
-    # params.append([(sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle])
-    #
-    # pool = Pool(processes=len(params))
-    #
-    # t0 = time.time()
-    # paths = pool.starmap(hy_a_star.find_path, params)
-    # print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000))
-    #
-    # for p in paths:
-    #     path = p[0]
-    #     p[0].reverse()
-    #     steering_angle = (path[2][2] - stheta)
-    #     player = [sx, sy, 20, stheta]
-    #     risk = risk_estimator.get_risk(player, steering_angle, cmp)
-    #     print(risk, steering_angle)
-
-    # first_path = hy_a_star.find_path((sx, sy, stheta), (sx1, sy1, stheta1), g, obstacle)
 
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), g, new_obs, speed=2.0)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, new_obs, speed=3.0, weight=0.9)
     if paths:
         path = paths[0]
     else:
         path = []
     path.reverse()
     steering_angle = (path[2][2] - stheta)
-    player = [sx, sy, 30, stheta]
+    player = [sx, sy, 35, stheta]
     t = time.time()
     risk, _ = risk_estimator.get_risk(player, steering_angle, cmp)
-    t_taken = (time.time() - t) * 1000
-    print(len(path), risk, steering_angle)
-
-    # first_path = first_path[0]
-    # first_path.reverse()
-    # print("Time taken: {:.4f}ms".format((time.time() - t0) * 1000), risk)
-    # print(t_taken)
-    # path = first_path[:-1] + path[1:]
-    # print(path)
-    # print(len(path))
+    t_taken = (time.time() - t0) * 1000
+    print(len(path), risk, steering_angle, t_taken)
 
     cp = occupancy_grid.get_costmap([])
     for path in [path]:

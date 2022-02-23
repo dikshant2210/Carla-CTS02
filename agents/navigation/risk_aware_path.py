@@ -5,7 +5,8 @@ Time: 16.01.22 23:11
 
 import numpy as np
 
-from agents.navigation.hybridastar import HybridAStar
+# from agents.navigation.hybridastar import HybridAStar
+from agents.navigation.anytimeastar import HybridAStar
 from agents.tools.risk_assesment import PerceivedRisk
 
 
@@ -19,8 +20,8 @@ class PathPlanner:
         self.risk_estimator = PerceivedRisk()
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y, [], self.vehicle_length)
 
-    def find_path(self, start, end, costmap, obstacles, car_speed):
-        paths = self.path_planner.find_path(start, end, costmap, obstacles)
+    def find_path(self, start, end, costmap, obstacles, speed):
+        paths = self.path_planner.find_path(start, end, costmap, obstacles, speed, weight=0.9)
         if len(paths):
             path = paths[0]
         else:

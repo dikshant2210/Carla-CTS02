@@ -26,7 +26,7 @@ latent_dim = 24
 
 class PathPredictor:
     def __init__(self, model_path=None):
-        self.model = M2P3().cuda()
+        self.model = M2P3(predict_frames=predicting_frame_num).cuda()
         if model_path:
             self.model.load_state_dict(torch.load(model_path))
         self.optim = torch.optim.Adam(lr=0.0001, params=self.model.parameters())

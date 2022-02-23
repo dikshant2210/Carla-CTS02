@@ -2,7 +2,8 @@
 Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
-
+import random
+import time
 import carla
 import numpy as np
 from multiprocessing import Process, Pool
@@ -103,6 +104,7 @@ class HyLEAR(RLAgent):
         start = (self.vehicle.get_location().x, self.vehicle.get_location().y, transform.rotation.yaw)
         end = self.scenario[2]
 
+        # t = time.time()
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
         if len(obstacles):
@@ -112,6 +114,7 @@ class HyLEAR(RLAgent):
                 path = self.get_path_with_reasoning(start, end, obstacles)
         else:
             path = self.get_path_simple(start, end, obstacles)
+        # print("time taken: ", time.time() - t)
 
         control = carla.VehicleControl()
         control.brake = 0.0
@@ -140,15 +143,15 @@ class HyLEAR(RLAgent):
         relaxed_sidewalk = self.grid_cost.copy()
         y = round(start[1])
         # Relax sidewalk
-        relaxed_sidewalk[13:16, y - 20: y + 20] = 0
-        relaxed_sidewalk[4:7, y - 20: y + 20] = 0
-
-        path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                 yaw, self.risk_cmp)
-        if path_normal[1] < 300:
-            return path_normal[0]
+        sidewalk_cost = -1.0
+        relaxed_sidewalk[13:16, y - 10: y + 10] = sidewalk_cost
+        relaxed_sidewalk[4:7, y - 10: y + 10] = sidewalk_cost
 
         if len(self.ped_history) < 15:
+            path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                     yaw, self.risk_cmp)
+            if path_normal[1] < 300:
+                return path_normal[0]
             paths = [path_normal,
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp)]  # Sidewalk relaxed
@@ -167,14 +170,22 @@ class HyLEAR(RLAgent):
             for pos in new_obs:
                 ped_updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
 
+            path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                                     yaw, ped_updated_risk_cmp)
+            if path_normal[1] < 300:
+                return path_normal[0]
+            # print(start, end, obstacles)
             paths = [path_normal,  # Normal
-                     self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
-                                                                yaw, ped_updated_risk_cmp),  # ped pred
+                     # self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
+                     #                                            yaw, ped_updated_risk_cmp),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, ped_updated_risk_cmp)]  # Sidewalk relaxed
                      # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                      #                                            yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
             # path, _ = min(paths, key=lambda t: t[1])
+            # print("Risk: ", paths[0][1], paths[1][1])
+            # print("Steering: ", paths[0][0][2][2] - start[2], paths[1][0][2][2] - start[2])
+            # print("Length: ", len(paths[0][0]), len(paths[1][0]), start, end, obstacles)
             path = self.rulebook(paths)
             return path
 
