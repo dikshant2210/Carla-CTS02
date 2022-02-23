@@ -9,6 +9,7 @@ import numpy as np
 from multiprocessing import Process, Pool
 from collections import deque
 import subprocess
+from config import Config
 
 from agents.navigation.rlagent import RLAgent
 from ped_path_predictor.m2p3 import PathPredictor
@@ -16,8 +17,8 @@ from agents.navigation.risk_aware_path import PathPlanner
 
 
 def run_server():
-    subprocess.run(['cd ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/ && ./car'], shell=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run(['cd ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/ && ./car {}'.format(
+        Config.despot_port)], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
 class HyLEAR(RLAgent):
