@@ -100,12 +100,12 @@ class HybridAStar:
         open_diction[start] = Node(f, g, prev=start, prev_d=start, node_c=start, node_d=start, weight=weight)
 
         incumbent = None
+        last_visited_node = None
         upper_bound = 1e5
         t = time.time()
 
         while len(open_heap) > 0:
             if (time.time() - t) * 1000 > 50.0:
-                incumbent = open_heap[0][1]
                 break
             chosen_d_node = open_heap[0][1]
             current_node = open_diction[chosen_d_node]
@@ -113,6 +113,7 @@ class HybridAStar:
 
             if incumbent is None or f < upper_bound:
                 visited_diction[chosen_d_node] = open_diction[chosen_d_node]
+                last_visited_node = chosen_d_node
 
                 for i in range(len(steering_inputs)):
                     for j in range(len(speed_inputs)):
@@ -161,23 +162,22 @@ class HybridAStar:
                                 hq.heappush(open_heap, (open_diction[neighbour_d].f_prime, neighbour_d))
 
         if incumbent is None:
-            return []
-        else:
-            paths = []
-            node = incumbent
-            rev_final_path = [node]  # reverse of final path
-            rev_final_path_d = [node]  # reverse of discrete final path
-            while True:
-                # visited_diction
-                open_node_contents = visited_diction[node]  # (Node)
-                rev_final_path.append(open_node_contents.prev)
-                rev_final_path_d.append(open_node_contents.prev_d)
-                node = open_node_contents.prev_d
-                if node == start:
-                    rev_final_path.append(start)
-                    break
-            paths.append(rev_final_path)
-            return paths
+            incumbent = last_visited_node
+        paths = []
+        node = incumbent
+        rev_final_path = [node]  # reverse of final path
+        rev_final_path_d = [node]  # reverse of discrete final path
+        while True:
+            # visited_diction
+            open_node_contents = visited_diction[node]  # (Node)
+            rev_final_path.append(open_node_contents.prev)
+            rev_final_path_d.append(open_node_contents.prev_d)
+            node = open_node_contents.prev_d
+            if node == start:
+                rev_final_path.append(start)
+                break
+        paths.append(rev_final_path)
+        return paths
 
 
 def main():
