@@ -105,6 +105,7 @@ class HybridAStar:
 
         while len(open_heap) > 0:
             if (time.time() - t) * 1000 > 50.0:
+                incumbent = open_heap[0][1]
                 break
             chosen_d_node = open_heap[0][1]
             current_node = open_diction[chosen_d_node]
