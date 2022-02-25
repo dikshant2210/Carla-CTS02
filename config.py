@@ -33,7 +33,7 @@ class Config:
     val_ped_distance_range = [0, 40]
     val_car_speed_range = [6, 9]
 
-    test_scenarios = ['04']  # ['01', '02', '03', '04', '05', '06', '07', '08']
+    test_scenarios = ['10']  # ['01', '02', '03', '04', '05', '06', '07', '08']
     test_ped_speed_range = [0.25, 2.85]
     test_ped_distance_range = [4.75, 49.75]
     test_car_speed_range = [6, 9]
@@ -78,7 +78,7 @@ class Config:
     port = 2000
     width = 1280
     height = 720
-    display = False
+    display = True
     filter = 'vehicle.audi.tt'
     rolename = 'hero'
     gama = 1.7
