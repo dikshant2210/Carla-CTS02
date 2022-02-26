@@ -110,11 +110,11 @@ class HyLEAR(RLAgent):
         obstacles = self.get_obstacles(start)
         if len(obstacles):
             if self.agent == 'hypal':
-                path = self.get_path_simple(start, end, obstacles)
+                path, intention = self.get_path_simple(start, end, obstacles)
             else:
-                path = self.get_path_with_reasoning(start, end, obstacles)
+                path, intention = self.get_path_with_reasoning(start, end, obstacles)
         else:
-            path = self.get_path_simple(start, end, obstacles)
+            path, intention = self.get_path_simple(start, end, obstacles)
         # print("time taken: ", time.time() - t)
 
         control = carla.VehicleControl()
@@ -131,11 +131,12 @@ class HyLEAR(RLAgent):
         if not self.eval_mode:
             control = self.get_speed_action(path, control)
         self.prev_action = control
-        return control, self.get_car_intention(obstacles, path, start)
+        return control, intention
 
     def get_path_simple(self, start, end, obstacles):
         path = self.find_path(start, end, self.grid_cost, obstacles)
-        return path
+        intention = self.get_car_intention([], path, start)
+        return path, intention
 
     def get_path_with_reasoning(self, start, end, obstacles):
         car_velocity = self.vehicle.get_velocity()
@@ -152,12 +153,12 @@ class HyLEAR(RLAgent):
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, self.risk_cmp)
             if path_normal[1] < 300:
-                return path_normal[0]
+                return path_normal[0], self.get_car_intention([], path_normal[0], start)
             paths = [path_normal,
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp)]  # Sidewalk relaxed
             path, _ = min(paths, key=lambda t: t[1])
-            return path
+            return path, self.get_car_intention([], path, start)
         else:
             # Use path predictor
             ped_updated_risk_cmp = self.risk_cmp.copy()
@@ -165,16 +166,18 @@ class HyLEAR(RLAgent):
             ped_path = ped_path.reshape((15, 2))
             pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
             new_obs = [obs for obs in obstacles]
+            pedestrian_path_d = list()
             for node in pedestrian_path:
                 if (round(node[0]), round(node[1])) not in new_obs:
                     new_obs.append((round(node[0]), round(node[1])))
+                    pedestrian_path_d.append((round(node[0]), round(node[1])))
             for pos in new_obs:
                 ped_updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
 
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, ped_updated_risk_cmp)
-            if path_normal[1] < 300:
-                return path_normal[0]
+            if path_normal[1] < 300 or car_speed < 15:
+                return path_normal[0], self.get_car_intention(pedestrian_path_d, path_normal[0], start)
             # print(start, end, obstacles)
             paths = [path_normal,  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
@@ -184,11 +187,12 @@ class HyLEAR(RLAgent):
                      # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                      #                                            yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
             # path, _ = min(paths, key=lambda t: t[1])
-            # print("Risk: ", paths[0][1], paths[1][1])
-            # print("Steering: ", paths[0][0][2][2] - start[2], paths[1][0][2][2] - start[2])
+            # print("Risk: ", paths[0][1], paths[1][1], paths[2][1])
+            # print("Steering: ", paths[0][0][2][2] - start[2], paths[1][0][2][2] - start[2], paths[2][0][2][2] - start[2])
             # print("Length: ", len(paths[0][0]), len(paths[1][0]), start, end, obstacles)
             path = self.rulebook(paths)
-            return path
+            # print(path[2][2] - start[2])
+            return path, self.get_car_intention(pedestrian_path_d, path, start)
 
     @staticmethod
     def rulebook(paths):
