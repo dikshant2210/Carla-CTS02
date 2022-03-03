@@ -45,6 +45,7 @@ def eval_isdespot(arg):
         nearmiss = False
         accident = False
         exec_time = 0
+        count = 0
         total_acc_decc = 0
         ped_data = []
         step_num = 0
@@ -57,7 +58,9 @@ def eval_isdespot(arg):
 
             start_time = time.time()
             observation, reward, done, info = env.step(action=None)
-            exec_time += (time.time() - start_time)
+            if env.planner_agent.pedestrian_observable:
+                exec_time += (time.time() - start_time)
+                count += 1
 
             if env.control.throttle != 0:
                 action = 0
@@ -87,7 +90,7 @@ def eval_isdespot(arg):
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
         time_to_goal = (step_num + 1) * Config.simulation_step
-        exec_time = exec_time / (step_num + 1)
+        exec_time = exec_time / count
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
