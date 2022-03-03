@@ -90,7 +90,10 @@ def eval_isdespot(arg):
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
         time_to_goal = (step_num + 1) * Config.simulation_step
-        exec_time = exec_time / count
+        if count == 0:
+            exec_time = 0
+        else:
+            exec_time = exec_time / count
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
@@ -144,8 +147,12 @@ if __name__ == '__main__':
         default=0,
         type=int,
         help='episode number to resume from')
+    arg_parser.add_argument('--test', type=str, default='01')
+    arg_parser.add_argument('--despot_port', type=int, default=1255)
     args = arg_parser.parse_args()
     Config.port = args.port
+    Config.despot_port = args.despot_port
+    Config.test_scenarios = [args.test]
 
     p = Process(target=run_server)
     p.start()
