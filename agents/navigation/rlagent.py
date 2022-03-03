@@ -412,7 +412,13 @@ class RLAgent(Agent):
     def get_obstacles(self, start):
         obstacles = list()
         walker_x, walker_y = self.world.walker.get_location().x, self.world.walker.get_location().y
-        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0 and walker_y < start[1]:
+        walker_flag = False
+        if self.scenario[0] == 6:
+            if walker_y > start[1]:
+                walker_flag = True
+        elif walker_y < start[1]:
+            walker_flag = True
+        if np.sqrt((start[0] - walker_x) ** 2 + (start[1] - walker_y) ** 2) <= 50.0 and walker_flag:
             self.ped_history.append([walker_x, walker_y])
             if self.scenario[0] == 3 and walker_x >= self.world.incoming_car.get_location().x:
                 obstacles.append((int(walker_x), int(walker_y)))
@@ -423,6 +429,8 @@ class RLAgent(Agent):
             elif self.scenario[0] in [1, 2, 4, 5, 6, 9, 10]:
                 obstacles.append((int(walker_x), int(walker_y)))
                 self.pedestrian_observable = True
+        if not walker_flag:
+            self.pedestrian_observable = False
         if self.scenario[0] in [3, 7, 8, 10]:
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:

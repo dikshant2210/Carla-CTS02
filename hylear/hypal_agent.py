@@ -73,7 +73,7 @@ class SharedSacdAgent(BaseAgent):
         with torch.no_grad():
             state = self.conv(state)
             state = torch.cat([state, t], dim=1)
-            action, _, _ = self.policy.sample(state, probs, self.alpha)
+            action, _, _ = self.policy.sample(state, probs)
             curr_q1 = self.online_critic.Q1(state)
             curr_q2 = self.online_critic.Q2(state)
             q = torch.min(curr_q1, curr_q2)
