@@ -147,12 +147,13 @@ if __name__ == '__main__':
         default=0,
         type=int,
         help='episode number to resume from')
-    arg_parser.add_argument('--test', type=str, default='01')
+    arg_parser.add_argument('--test', type=str, default='')
     arg_parser.add_argument('--despot_port', type=int, default=1255)
     args = arg_parser.parse_args()
     Config.port = args.port
     Config.despot_port = args.despot_port
-    Config.test_scenarios = [args.test]
+    if args.test:
+        Config.test_scenarios = [args.test]
 
     p = Process(target=run_server)
     p.start()
