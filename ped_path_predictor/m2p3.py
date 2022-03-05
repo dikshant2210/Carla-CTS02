@@ -94,7 +94,7 @@ class PathPredictor:
                         eval_loss += evaluate(self.model, x, y)
                     eval_loss /= test_batches
                     if eval_loss < best_eval:
-                        torch.save(self.model.state_dict(), '_out/m2p3_{}.pth'.format(epoch * num_batches + i))
+                        torch.save(self.model.state_dict(), '_out/weights/m2p3_{}.pth'.format(epoch * num_batches + i))
                         best_eval = eval_loss
                     self.writer.add_scalar("eval_loss", eval_loss, count)
                     count += 1
