@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from ped_path_predictor.model import M2P3
 from ped_path_predictor.utils import *
 
-train_annotations = 'data/training_annotations/'
+train_annotations = 'ped_path_predictor/data/training_annotations/'
 
 observed_frame_num = 15
 predicting_frame_num = 20
