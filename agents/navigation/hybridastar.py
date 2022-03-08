@@ -100,8 +100,12 @@ class HybridAStar:
                 chosen_d_node = open_heap[0][1]
                 if chosen_d_node in visited_diction:
                     hq.heappop(open_heap)
+                    if len(open_heap) < 1:
+                        break
                 else:
                     break
+            if len(open_heap) < 1:
+                break
             chosen_node_total_cost = open_heap[0][0]
             chosen_c_node = open_diction[chosen_d_node][1]
 
