@@ -16,6 +16,7 @@ from config import Config
 def run(args):
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
+    config.num_steps = 1e6
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
