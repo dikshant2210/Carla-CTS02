@@ -137,7 +137,7 @@ class World(object):
             self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
         elif scenario_type == 9:
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
-            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
+            self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -175,7 +175,7 @@ class World(object):
             elif self.scenario[0] == 10:
                 self.walker.apply_control(carla.WalkerControl(carla.Vector3D(-self.ped_speed, 0, 0), 1))
             elif self.scenario[0] == 9:
-                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
+                self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, self.ped_speed, 0), 1))
         if self.scenario[0] == 10:
             flag = (0 < (self.walker.get_location().y - self.incoming_car.get_location().y) < 5) and \
                    (self.walker.get_location().x > -4.4)

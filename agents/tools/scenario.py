@@ -38,15 +38,15 @@ class Scenario:
 
     def scenario09(self):
         start = (92, 160, -90)
-        end = (65, -2, -180)
+        end = (60, -2, -180)
         obstacles = []
 
         walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
         walker_spawn_point = carla.Transform()
-        walker_spawn_point.location.x = 86.5
-        walker_spawn_point.location.y = 90
+        walker_spawn_point.location.x = 75
+        walker_spawn_point.location.y = -4.5
         walker_spawn_point.location.z += 1.0
-        walker_spawn_point.rotation.yaw = 270.0
+        walker_spawn_point.rotation.yaw = 90.0
         walker = [random.choice(walker_bp), walker_spawn_point]
         obstacles.append(walker)
 

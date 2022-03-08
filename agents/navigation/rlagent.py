@@ -374,7 +374,7 @@ class RLAgent(Agent):
         return control, self.get_car_intention(obstacles, path, start)
 
     def find_path(self, start, end, costmap, obstacles):
-        checkpoint = (92, 10, -90)
+        checkpoint = (92, 14, -90)
         if self.scenario[0] != 9 or start[1] <= checkpoint[1]:
             t = time.time()
             paths = self.path_planner.find_path(start, end, costmap, obstacles)
@@ -384,8 +384,8 @@ class RLAgent(Agent):
                 path = []
             path.reverse()
         else:
-            path_segemnt_1 = self.path_planner.find_path(start, checkpoint, costmap, obstacles)
-            path_segemnt_2 = self.path_planner.find_path(checkpoint, end, costmap, obstacles)
+            path_segemnt_1 = self.path_planner.find_path(start, checkpoint, costmap, obstacles)[0]
+            path_segemnt_2 = self.path_planner.find_path(checkpoint, end, costmap, obstacles)[0]
             path_segemnt_2.reverse()
             path_segemnt_1.reverse()
             path = path_segemnt_1[:-1] + path_segemnt_2[1:]
