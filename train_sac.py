@@ -31,6 +31,7 @@ def run(args):
 
     # Create the agent.
     path = "_out/GIDASBenchmark/shared-sacd-seed0-20220303-1356/model/3000000/"
+    config['num_steps'] = 2e6
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
         env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
