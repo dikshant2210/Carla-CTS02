@@ -30,10 +30,11 @@ def run(args):
         '_out', args.env_id, f'{name}-seed{args.seed}-{time}')
 
     # Create the agent.
+    path = "_out/GIDASBenchmark/shared-sacd-seed0-20220303-1356/model/3000000/"
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
         env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
-        seed=args.seed, **config)
+        seed=args.seed, **config, path=path)
     agent.run()
 
 

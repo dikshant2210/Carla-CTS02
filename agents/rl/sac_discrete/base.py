@@ -16,10 +16,11 @@ class BaseAgent(ABC):
                  target_entropy_ratio=0.98, start_steps=20000,
                  update_interval=4, target_update_interval=8000,
                  use_per=False, num_eval_steps=125000, max_episode_steps=27000, save_interval=100000,
-                 log_interval=10, eval_interval=1000, cuda=True, seed=0, display=False):
+                 log_interval=10, eval_interval=1000, cuda=True, seed=0, display=False, resume=False):
         super().__init__()
         self.env = env
         self.test_env = test_env
+        self.resume = resume
 
         # Set seed.
         torch.manual_seed(seed)
@@ -138,8 +139,11 @@ class BaseAgent(ABC):
             if self.display:
                 self.env.render()
             if self.start_steps > self.steps:
-                action = self.env.action_space.sample()
-                critic_action = action
+                if self.resume:
+                    action, critic_action = self.explore((state, t))
+                else:
+                    action = self.env.action_space.sample()
+                    critic_action = action
             else:
                 action, critic_action = self.explore((state, t))
 

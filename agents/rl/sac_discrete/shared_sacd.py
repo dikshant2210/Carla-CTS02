@@ -16,7 +16,7 @@ class SharedSacdAgent(BaseAgent):
                  update_interval=4, target_update_interval=8000,
                  use_per=False, dueling_net=False, num_eval_steps=125000, save_interval=100000,
                  max_episode_steps=27000, log_interval=10, eval_interval=1000,
-                 cuda=True, seed=0):
+                 cuda=True, seed=0, path=None):
         super().__init__(
             env, test_env, log_dir, num_steps, batch_size, memory_size, gamma,
             multi_step, target_entropy_ratio, start_steps, update_interval,
@@ -38,6 +38,13 @@ class SharedSacdAgent(BaseAgent):
 
         # Copy parameters of the learning network to the target network.
         self.target_critic.load_state_dict(self.online_critic.state_dict())
+
+        if path:
+            self.resume = True
+            self.conv.load_state_dict(torch.load(path + "conv.pth"))
+            self.policy.load_state_dict(torch.load(path + "policy.pth"))
+            self.online_critic.load_state_dict(torch.load(path + 'online_critic.pth'))
+            self.target_critic.load_state_dict(torch.load(path + 'target_critic.pth'))
 
         # Disable gradient calculations of the target network.
         disable_gradients(self.target_critic)
