@@ -2,6 +2,7 @@
 Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
+import operator
 import random
 import time
 import carla
@@ -197,5 +198,11 @@ class HyLEAR(RLAgent):
     @staticmethod
     def rulebook(paths):
         # No sidewalk
-        path, _ = min(paths, key=lambda t: t[1])
-        return path
+        data = []
+        for p in paths:
+            path, risk = p
+            len_path = len(path)
+            lane = sum([path[i][2] - path[i-1][2] for i in range(1, len_path)]) / len_path
+            data.append((path, risk, lane, len_path))
+        data.sort(key=operator.itemgetter(1, 2, 3))
+        return data[0][0]
