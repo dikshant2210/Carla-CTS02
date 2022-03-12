@@ -33,7 +33,7 @@ def run(args):
     # Create the agent.
     agent = EvalSacdAgent(
         env=env, test_env=env, log_dir=log_dir, cuda=args.cuda, current_episode=args.episode,
-        seed=args.seed, **config)
+        seed=args.seed, agent=args.agent, **config)
     agent.evaluate()
 
 
