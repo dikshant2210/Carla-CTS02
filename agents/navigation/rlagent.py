@@ -5,6 +5,7 @@ Time: 12.07.21 11:03
 
 import carla
 import datetime
+import math
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -434,10 +435,11 @@ class RLAgent(Agent):
         if self.scenario[0] in [3, 7, 8, 10]:
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
-                xmin = round(car_x - self.vehicle_width / 2)
-                xmax = round(car_x + self.vehicle_width / 2)
-                ymin = round(car_y - self.vehicle_length / 2)
-                ymax = round(car_y + self.vehicle_length / 2)
+                buffer = 0
+                xmin = math.ceil(car_x - self.vehicle_width / 2) - buffer
+                xmax = math.ceil(car_x + self.vehicle_width / 2) + buffer
+                ymin = math.ceil(car_y - self.vehicle_length / 2) - buffer
+                ymax = math.ceil(car_y + self.vehicle_length / 2) + buffer
                 for x in range(xmin, xmax + 1):
                     for y in range(ymin, ymax + 1):
                         obstacles.append((int(x), int(y)))
