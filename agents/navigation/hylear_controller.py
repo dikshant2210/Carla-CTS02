@@ -147,8 +147,12 @@ class HyLEAR(RLAgent):
         y = round(start[1])
         # Relax sidewalk
         sidewalk_cost = -1.0
-        relaxed_sidewalk[13:16, y - 10: y + 10] = sidewalk_cost
-        relaxed_sidewalk[4:7, y - 10: y + 10] = sidewalk_cost
+        if self.scenario[0] in [1, 3, 4, 7, 8, 10]:
+            relaxed_sidewalk[13:16, y - 10: y + 10] = sidewalk_cost
+            relaxed_sidewalk[4:7, y - 10: y + 10] = sidewalk_cost
+        elif self.scenario[0] in [2, 5, 6, 9]:
+            relaxed_sidewalk[94:97, y - 10: y + 10] = sidewalk_cost
+            relaxed_sidewalk[103:106, y - 10: y + 10] = sidewalk_cost
 
         if len(self.ped_history) < 15:
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
@@ -178,6 +182,7 @@ class HyLEAR(RLAgent):
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, ped_updated_risk_cmp)
             if path_normal[1] < 300:
+                # print("normal!")
                 return path_normal[0], self.get_car_intention(pedestrian_path_d, path_normal[0], start)
             # print(start, end, obstacles)
             paths = [path_normal,  # Normal
@@ -204,5 +209,6 @@ class HyLEAR(RLAgent):
             len_path = len(path)
             lane = sum([path[i][2] - path[i-1][2] for i in range(1, len_path)]) / len_path
             data.append((path, risk, lane, len_path))
+        # print("Rulebook!", data[0][1], data[1][1], data[2][1])
         data.sort(key=operator.itemgetter(1, 2, 3))
         return data[0][0]
