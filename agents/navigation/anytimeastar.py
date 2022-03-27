@@ -167,13 +167,16 @@ class HybridAStar:
         node = incumbent
         rev_final_path = [node]  # reverse of final path
         rev_final_path_d = [node]  # reverse of discrete final path
+        t = time.time()
         while True:
+            if (time.time() - t) * 1000 > 50.0:
+                break
             # visited_diction
             open_node_contents = visited_diction[node]  # (Node)
             rev_final_path.append(open_node_contents.prev)
             rev_final_path_d.append(open_node_contents.prev_d)
             node = open_node_contents.prev_d
-            if node == start:
+            if self.dist(node, start) < 3:
                 rev_final_path.append(start)
                 break
         paths.append(rev_final_path)
