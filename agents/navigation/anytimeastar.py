@@ -53,7 +53,7 @@ class HybridAStar:
         #                  (math.radians(position[2]) - math.radians(target[2])) ** 2)
         output = abs(position[0] - target[0]) + abs(position[1] - target[1]) + \
                  abs(math.radians(position[2]) - math.radians(target[2]))
-        return float(output)
+        return float(output) * 10
 
     def next_node(self, location, aph, d):
         theta = math.radians(location[2])
