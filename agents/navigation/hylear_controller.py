@@ -127,6 +127,7 @@ class HyLEAR(RLAgent):
             control.steer = 0
         else:
             control.steer = (path[2][2] - start[2]) / 70.
+        # print("Angle: ", control.steer)
 
         # Best speed action for the given path
         if not self.eval_mode:
@@ -147,12 +148,13 @@ class HyLEAR(RLAgent):
         y = round(start[1])
         # Relax sidewalk
         sidewalk_cost = -1.0
+        sidewalk_length = 20
         if self.scenario[0] in [1, 3, 4, 7, 8, 10]:
-            relaxed_sidewalk[13:16, y - 10: y + 10] = sidewalk_cost
-            relaxed_sidewalk[4:7, y - 10: y + 10] = sidewalk_cost
+            relaxed_sidewalk[13:16, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
+            relaxed_sidewalk[4:7, y - 10: sidewalk_length + sidewalk_length] = sidewalk_cost
         elif self.scenario[0] in [2, 5, 6, 9]:
-            relaxed_sidewalk[94:97, y - 10: y + 10] = sidewalk_cost
-            relaxed_sidewalk[103:106, y - 10: y + 10] = sidewalk_cost
+            relaxed_sidewalk[94:97, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
+            relaxed_sidewalk[103:106, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
 
         if len(self.ped_history) < 15:
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
@@ -189,26 +191,29 @@ class HyLEAR(RLAgent):
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
                                                                 yaw, ped_updated_risk_cmp),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
-                                                                yaw, ped_updated_risk_cmp)]  # Sidewalk relaxed
-                     # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
-                     #                                            yaw, self.risk_cmp)]  # Sidewalk relaxed + ped pred
-            # path, _ = min(paths, key=lambda t: t[1])
-            # print("Risk: ", paths[0][1], paths[1][1], paths[2][1])
-            # print("Steering: ", paths[0][0][2][2] - start[2], paths[1][0][2][2] - start[2], paths[2][0][2][2] - start[2])
-            # print("Length: ", len(paths[0][0]), len(paths[1][0]), start, end, obstacles)
-            path = self.rulebook(paths)
+                                                                yaw, ped_updated_risk_cmp),  # Sidewalk relaxed
+                     self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
+                                                                yaw, ped_updated_risk_cmp)]  # Sidewalk relaxed + ped pred
+            paths[2][0][2] = (paths[2][0][2][0], paths[2][0][2][1], paths[2][0][1][2] - 70.0)
+            path = self.rulebook(paths, start)
             # print(path[2][2] - start[2])
             return path, self.get_car_intention(pedestrian_path_d, path, start)
 
     @staticmethod
-    def rulebook(paths):
+    def rulebook(paths, start):
         # No sidewalk
         data = []
+        steer = []
         for p in paths:
             path, risk = p
             len_path = len(path)
             lane = sum([path[i][2] - path[i-1][2] for i in range(1, len_path)]) / len_path
             data.append((path, risk, lane, len_path))
-        # print("Rulebook!", data[0][1], data[1][1], data[2][1])
+            # steer.append((path[2][2] - start[2]) / 70.)
+
+        # print("Rulebook!", data[0][1], data[1][1], data[2][1], data[3][1])
+        # path = data[0][0]
+        # # print("Steering angle: ", (path[2][2] - start[2]) / 70.)
+        # print("Steering angle: ", steer)
         data.sort(key=operator.itemgetter(1, 2, 3))
         return data[0][0]
