@@ -53,7 +53,7 @@ class HybridAStar:
         #                  (math.radians(position[2]) - math.radians(target[2])) ** 2)
         output = abs(position[0] - target[0]) + abs(position[1] - target[1]) + \
                  abs(math.radians(position[2]) - math.radians(target[2]))
-        return float(output) * 10
+        return float(output) * 1.0
 
     def next_node(self, location, aph, d):
         theta = math.radians(location[2])
@@ -196,8 +196,10 @@ def main():
     # gx, gy, gtheta = 70, 1, -180
 
     # create obstacles
-    obstacle = [(2, 203), (-3, 204), (-3, 205), (-3, 206), (-3, 207), (-3, 208), (-2, 204), (-2, 205), (-2, 206),
+    obstacle = [(3, 203), (-3, 204), (-3, 205), (-3, 206), (-3, 207), (-3, 208), (-2, 204), (-2, 205), (-2, 206),
                 (-2, 207), (-2, 208), (-1, 204), (-1, 205), (-1, 206), (-1, 207), (-1, 208)]
+
+    new_obs = obstacle + [(2, 203), (1, 203)]
     # obstacle.append((-1, 209)) # incoming car
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
@@ -220,7 +222,7 @@ def main():
     # K-path estimation with risk
     y = round(sy)
     relaxed_g = g.copy()
-    sidewalk_cost = -1.0
+    sidewalk_cost = 0.0
     relaxed_g[13:16, y-10:y+10] = sidewalk_cost
     relaxed_g[4:7, y-10:y+10] = sidewalk_cost
 
@@ -239,13 +241,11 @@ def main():
     cmp[103:106, 13:] = sidewalk_cost
     cmp[13:16, 16:94] = sidewalk_cost
 
-    new_obs = obstacle + [(-1, 203), (0, 203)]
-    # new_obs = []
     for obs in new_obs:
         cmp[obs[0] + 10, obs[1] + 10] = 1000
 
     t0 = time.time()
-    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, obstacle, speed=1.0, weight=0.9)
+    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, new_obs, speed=1.0, weight=0.9)
     path = path[0]
     path.reverse()
     print(path)

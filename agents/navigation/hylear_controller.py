@@ -35,7 +35,7 @@ class HyLEAR(RLAgent):
             self.conn.establish_connection()
             m = self.conn.receive_message()
             print(m)  # RESET
-        self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_70797.pth")
+        self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_289271.pth")
         self.ped_pred.model.eval()
         self.risk_path_planner = PathPlanner()
 
@@ -183,8 +183,8 @@ class HyLEAR(RLAgent):
 
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, ped_updated_risk_cmp)
-            if path_normal[1] < 300:
-                # print("normal!")
+            if path_normal[1] < 100:
+                # print("normal!", path_normal[1], (path_normal[0][2][2] - path_normal[0][1][2]) / 70.0)
                 return path_normal[0], self.get_car_intention(pedestrian_path_d, path_normal[0], start)
             # print(start, end, obstacles)
             paths = [path_normal,  # Normal
@@ -194,7 +194,6 @@ class HyLEAR(RLAgent):
                                                                 yaw, ped_updated_risk_cmp),  # Sidewalk relaxed
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                                                                 yaw, ped_updated_risk_cmp)]  # Sidewalk relaxed + ped pred
-            paths[2][0][2] = (paths[2][0][2][0], paths[2][0][2][1], paths[2][0][1][2] - 70.0)
             path = self.rulebook(paths, start)
             # print(path[2][2] - start[2])
             return path, self.get_car_intention(pedestrian_path_d, path, start)
@@ -204,16 +203,18 @@ class HyLEAR(RLAgent):
         # No sidewalk
         data = []
         steer = []
+        r = []
         for p in paths:
             path, risk = p
             len_path = len(path)
             lane = sum([path[i][2] - path[i-1][2] for i in range(1, len_path)]) / len_path
             data.append((path, risk, lane, len_path))
+            # r.append(risk)
             # steer.append((path[2][2] - start[2]) / 70.)
 
-        # print("Rulebook!", data[0][1], data[1][1], data[2][1], data[3][1])
-        # path = data[0][0]
-        # # print("Steering angle: ", (path[2][2] - start[2]) / 70.)
+        # print("Rulebook!", r)
         # print("Steering angle: ", steer)
         data.sort(key=operator.itemgetter(1, 2, 3))
+        path = data[0][0]
+        # print("Steering angle: ", (path[2][2] - start[2]) / 70.)
         return data[0][0]
