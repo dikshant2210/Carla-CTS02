@@ -23,7 +23,7 @@ class HybridAStar:
         self.max_y = max_y
         self.obstacle = obstacle
         self.vehicle_length = vehicle_length
-        print("Vehicle length: {:.2f}".format(vehicle_length))
+        # print("Vehicle length: {:.2f}".format(vehicle_length))
 
         self.obstacles = set(self.obstacle)
 
@@ -197,7 +197,7 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2.0, 208.0, -90.0
+    sx, sy, stheta = 3.0, 208.0, -90.0
     # sx1, sy1, stheta1 = 92, 6, -90
     gx, gy, gtheta = 2.0, 150.0, -90.0
 
@@ -254,7 +254,7 @@ def main():
         cmp[obs[0] + 10, obs[1] + 10] = 1000
 
     t0 = time.time()
-    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, new_obs, speed=3.0, weight=0.9)
+    paths = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, [], speed=3.0, weight=0.9)
     if paths:
         path = paths[0]
     else:

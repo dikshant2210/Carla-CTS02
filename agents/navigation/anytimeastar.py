@@ -28,15 +28,15 @@ class Node:
 
 
 # total cost f(n) = actual cost g(n) + heuristic cost h(n)
-class HybridAStar:
-    def __init__(self, min_x, max_x, min_y, max_y, obstacle=(), vehicle_length=2):
+class AnytimeHybridAStar:
+    def __init__(self, min_x, max_x, min_y, max_y, obstacle=(), vehicle_length=2.0):
         self.min_x = min_x
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
         self.obstacle = obstacle
         self.vehicle_length = vehicle_length
-        print("Vehicle length: {:.2f}".format(vehicle_length))
+        # print("Vehicle length: {:.2f}".format(vehicle_length))
 
         self.obstacles = set(self.obstacle)
 
@@ -188,7 +188,7 @@ def main():
 
     # start and goal position
     # (x, y, theta) in meters, meters, degrees
-    sx, sy, stheta = 2.067845106124878, 209.1132049560547, -88.49481201171875
+    sx, sy, stheta = 4.067845106124878, 209.1132049560547, -88.49481201171875
     # sx1, sy1, stheta1 = 92, 6, -90
     gx, gy, gtheta = 2.0, 150.0, -90.0
 
@@ -204,7 +204,7 @@ def main():
     # obstacle = [(85, -2), (85, -1)]
     # obstacle = []
     occupancy_grid = OccupancyGrid()
-    hy_a_star = HybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4.18)
+    hy_a_star = AnytimeHybridAStar(-10, 100, -10, 300, obstacle=[], vehicle_length=4.18)
 
     g = np.ones((110, 310)) * 1000.0
     sidewalk_cost = 50.0
@@ -245,7 +245,7 @@ def main():
         cmp[obs[0] + 10, obs[1] + 10] = 1000
 
     t0 = time.time()
-    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, new_obs, speed=1.0, weight=0.9)
+    path = hy_a_star.find_path((sx, sy, stheta), (gx, gy, gtheta), relaxed_g, [], speed=1.0, weight=0.9)
     path = path[0]
     path.reverse()
     print(path)
