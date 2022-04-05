@@ -11,6 +11,7 @@
 #include "util/memorypool.h"
 #include "util/seeds.h"
 #include "util/util.h"
+#include "util/coord.h"
 
 using namespace Globals;
 
@@ -129,6 +130,8 @@ public:
 	 */
 	virtual bool ImportanceSamplingStep(State& state, double random_num, int action,
 		double& reward, OBS_TYPE& obs) const;
+    virtual bool ImportanceSamplingStep(State& state, double random_num, int action,
+                                        double& reward, OBS_TYPE& obs, double& x, double & y) const;
 
 	/* ========================================================================
 	 * Action

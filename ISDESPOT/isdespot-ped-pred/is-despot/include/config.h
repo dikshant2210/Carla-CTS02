@@ -20,6 +20,7 @@ struct Config {
 	bool silence;
 	bool unnormalized;
 	bool no_importance_sampling;
+    bool pedestrian_prediction;
 	bool collect_data;
 
 	Config() :
@@ -37,6 +38,7 @@ struct Config {
 		unnormalized(false),
 		no_importance_sampling(false),
 		collect_data(false),
+        pedestrian_prediction(true),
 		silence(false) {
 	}
 };

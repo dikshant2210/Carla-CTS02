@@ -23,6 +23,7 @@ ScenarioUpperBound* DESPOT::upper_bound() const {
 }
 
 int DESPOT::call_counter = 0;
+Path DESPOT::pedestrian_path;
 
 /*
  * CarStruct car;
@@ -122,13 +123,11 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 
 	assert (root->parent_ == nullptr);
 
-	logd
-		<< "[DESPOT::ConstructTree] START - Initializing lower and upper bounds at the root node.";
+	cout << "[DESPOT::ConstructTree] START - Initializing lower and upper bounds at the root node." << endl;
 
     InitBounds(root, lower_bound, upper_bound, streams, history);
 
-	logd
-		<< "[DESPOT::ConstructTree] END - Initializing lower and upper bounds at the root node.";
+	cout << "[DESPOT::ConstructTree] END - Initializing lower and upper bounds at the root node." << endl;
 
     /*
 	if (statistics != NULL) {
@@ -297,9 +296,9 @@ ValuedAction DESPOT::Search() {
 
 	double start = get_time_second();
 	vector<State*> particles = belief_->Sample(Globals::config.num_scenarios);
-	logi << "[DESPOT::Search] Time for sampling " << particles.size()
+	cout << "[DESPOT::Search] Time for sampling " << particles.size()
 		<< " particles: " << (get_time_second() - start) << "s" << endl;
-		
+
 	if (Globals::config.silence != true) {
 		model_->PrintParticles(particles);
 	}
@@ -324,7 +323,6 @@ ValuedAction DESPOT::Search() {
 		lower_bound_->Init(streams);
 		upper_bound_->Init(streams);
 	}
-
 	root_ = ConstructTree(particles, streams, lower_bound_, upper_bound_,
 		model_, history_, Globals::config.time_per_move, &statistics_);
 //    clog << "Tree construction\n";
@@ -339,18 +337,8 @@ ValuedAction DESPOT::Search() {
 	    << ", " << improvedProbabilities[1]
 	    << ", " << improvedProbabilities[2]  << "]\n";
 
-	start = get_time_second();
 	root_->Free(*model_);
-	//logi << "[DESPOT::Search] Time for freeing particles in search tree: "
-	//	<< (get_time_second() - start) << "s" << endl;
-
-	start = get_time_second();
 	delete root_;
-
-	//logi << "[DESPOT::Search] Time for deleting tree: "
-	//	<< (get_time_second() - start) << "s" << endl;
-	//logi << "[DESPOT::Search] Search statistics:" << endl << statistics_
-	//	<< endl;
 
 	return astar;
 }
@@ -704,6 +692,9 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 	History& history) {
 	VNode* parent = qnode->parent();
 	streams.position(parent->depth());
+    int position = parent->depth() + 1;
+//    cout << "Depth: " << position << endl;
+
 	map<OBS_TYPE, VNode*>& children = qnode->children();
 
 	const vector<State*>& particles = parent->particles();
@@ -728,8 +719,12 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 		bool terminal;
 		if(Globals::config.no_importance_sampling == true)
 			terminal = model->Step(*copy, streams.Entry(copy->scenario_id), qnode->edge(), reward, obs);
-		else terminal = model->ImportanceSamplingStep(*copy, streams.Entry(copy->scenario_id),
-			qnode->edge(), reward, obs);
+		else if(Globals::config.pedestrian_prediction == true && DESPOT::pedestrian_path.size() > 0)
+            terminal = model->ImportanceSamplingStep(*copy, streams.Entry(copy->scenario_id),
+			qnode->edge(), reward, obs, DESPOT::pedestrian_path[position].x, DESPOT::pedestrian_path[position].y);
+        else
+            terminal = model->ImportanceSamplingStep(*copy, streams.Entry(copy->scenario_id),
+             qnode->edge(), reward, obs);
 
 		step_reward += reward * particle->weight;
 

@@ -409,6 +409,60 @@ double WorldModel::ISPedStep(CarStruct &car, PedStruct &ped, Random& random) {
     }
 }
 
+double WorldModel::ISPedStep(CarStruct &car, PedStruct &ped, Random& random, double& x, double& y) {
+    //gaussian + distance
+    double max_is_angle = 7.0*M_PI/64.0;
+    COORD carpos = path[car.pos];
+    if(COORD::EuclideanDistance(ped.pos, carpos)>3.5){
+        const double& goal = goals[ped.goal];
+        if (goal == -1) {  //stop intention
+            return 1;
+        }
+
+        ped.pos.x = x;
+        ped.pos.y = y;
+        return 1;
+    } else{
+        double weight = 1.0;
+        const double& goal = goals[ped.goal];
+        if (goal == -1) {  //stop intention
+            return weight;
+        }
+
+        double goal_angle = goal;
+
+        //compute the angle to robot
+        MyVector rob_vec(path[car.pos].x - ped.pos.x, path[car.pos].y - ped.pos.y);
+        double rob_angle = rob_vec.GetAngle();
+
+        double final_mean; //final mean angle
+
+        if(abs(goal_angle-rob_angle) <= M_PI){
+            if(goal_angle > rob_angle) final_mean = goal_angle - min(max_is_angle, goal_angle-rob_angle);
+            else  final_mean = goal_angle + min(max_is_angle, rob_angle-goal_angle);
+        }
+        else{
+            if(goal_angle > rob_angle) final_mean = goal_angle + min(max_is_angle, rob_angle+2*M_PI-goal_angle);
+            else  final_mean = goal_angle - min(max_is_angle, goal_angle+2*M_PI-rob_angle);
+        }
+
+        if(final_mean>M_PI) final_mean -= M_PI;
+        else if(final_mean<-M_PI) final_mean += M_PI;
+
+        //random.NextGaussian() returns a random number sampled from N(0,1)
+        double noise = random.NextGaussian() * ModelParams::NOISE_GOAL_ANGLE; //change to the number sampled from N(0, ModelParams::NOISE_GOAL_ANGLE)
+        double final_angle = final_mean + noise; //change to the number sampled from N(rob_angle, ModelParams::NOISE_GOAL_ANGLE)
+
+        //TODO noisy speed
+        ped.pos.x = x;
+        ped.pos.y = y;
+
+        weight = gaussian_prob((final_angle - goal_angle) / ModelParams::NOISE_GOAL_ANGLE, 1) /
+                 gaussian_prob((final_angle - final_mean) / ModelParams::NOISE_GOAL_ANGLE, 1) ;
+        return weight;
+    }
+}
+
 void WorldModel::PedStepDeterministic(PedStruct& ped, int step) {
     const double& goal = goals[ped.goal];
 	if (goal == -1) {  //stop intention

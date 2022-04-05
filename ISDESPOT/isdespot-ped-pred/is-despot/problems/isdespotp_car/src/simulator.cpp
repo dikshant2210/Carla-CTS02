@@ -90,12 +90,18 @@ public:
 			}
 
 			// extract current path
-			Path path;
+			Path path, pedestrian_path;
 			for (auto &p : m->path) {
 				path.push_back(COORD(get<0>(p),get<1>(p),get<2>(p)));
 			}
             worldModel.path = path;
             this->path = path;
+            if (m->pedestrianPath.size() > 0 && Globals::config.pedestrian_prediction) {
+                for (auto &p : m->pedestrianPath) {
+                    pedestrian_path.push_back(COORD(get<0>(p),get<1>(p),0));
+                }
+                solver.pedestrian_path = pedestrian_path;
+            }
 
 			// set current position to be 0 (will probably always stay that way)
 			world_state.car.pos = 0;
@@ -156,8 +162,6 @@ public:
 
             // TODO: Solve the actual POMDP
             solver.belief(pb);
-
-            Globals::config.silence = false;
 
             // Choose action
             int act = solver.Search().action;

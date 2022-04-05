@@ -357,6 +357,65 @@ bool PedPomdp::ImportanceSamplingStep(State& state_, double rNum, int action, do
 	return false;
 }
 
+bool PedPomdp::ImportanceSamplingStep(State& state_, double rNum, int action, double& reward, uint64_t& obs, double& x, double& y) const {
+    PomdpState& state = static_cast<PomdpState&>(state_);
+    reward = 0.0;
+
+    if (world.isGlobalGoal(state.car) || state.car.dist_travelled >= 25) {
+        reward = ModelParams::GOAL_REWARD;
+        return true;
+    }
+
+    // Safety control: collision; Terminate upon collision
+    //if (closest_front_dist < ModelParams::COLLISION_DISTANCE) {
+    if(state.car.vel > 0.01 && world.inCollision(state) ) { /// collision occurs only when car is moving
+        reward = CrashPenalty(state); //, closest_ped, closest_dist);
+        //cout << "Sample crash state: " << reward << "\n";
+        return true;
+    }
+
+    // Forbidden actions
+
+    double carvel = state.car.vel;
+    /*if (action == ACT_CUR && 0.1 < carvel && carvel < 0.6) {
+        reward = CrashPenalty(state);
+        return true;
+    }*/
+    if (action == ACT_ACC && carvel >= ModelParams::VEL_MAX) {
+        reward = CrashPenalty(state);
+        return true;
+    }
+    if (action == ACT_DEC && carvel <= 0.01) {
+        reward = CrashPenalty(state);
+        return true;
+    }
+
+    // Smoothness control
+    reward += ActionPenalty(action);
+
+    // Speed control: Encourage higher speed
+    reward += MovementPenalty(state);
+
+    // State transition
+    Random random(rNum);
+    double acc = (action == ACT_ACC) ? ModelParams::AccSpeed : ((action == ACT_CUR) ?  0 : (-ModelParams::AccSpeed));
+    world.RobStep(state.car, random);
+
+    state.weight *= world.ISRobVelStep(state.car, acc, random);
+    //world.RobVelStep(state.car, acc, random);
+
+    for(int i=0;i<state.num;i++)
+        //world.PedStep(state.peds[i], random);
+        state.weight *= world.ISPedStep(state.car, state.peds[i], random, x, y);
+
+    // Observation
+    obs = Observe(state);
+
+
+
+    return false;
+}
+
 double PedPomdp::ObsProb(uint64_t obs, const State& s, int action) const {
 	return obs == Observe(s);
 }

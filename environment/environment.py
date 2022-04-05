@@ -15,6 +15,7 @@ from environment.hud import HUD
 from agents.navigation.rlagent import RLAgent
 from agents.navigation.reactive_controller import ReactiveController
 from agents.navigation.isdespot import ISDespotP
+from agents.navigation.isdespot_star import ISDespotPStar
 from agents.navigation.hylear_controller import HyLEAR
 
 from config import Config
@@ -92,9 +93,9 @@ class GIDASBenchmark(gym.Env):
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
-        # ped_speed = 1.45  # Debug Settings
-        # ped_distance = 39.75
-        # scenario_id = "04"
+        # ped_speed = 0.55  # Debug Settings
+        # ped_distance = 10.75
+        # scenario_id = "10"
         self.scenario = scenario_id
         self.speed = ped_speed
         self.distance = ped_distance
@@ -155,6 +156,9 @@ class GIDASBenchmark(gym.Env):
         if agent == 'isdespot':
             conn = Connector(Config.despot_port)
             self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
+        if agent == 'isdespot*':
+            conn = Connector(Config.despot_port)
+            self.planner_agent = ISDespotPStar(self.world, self.map, self.scene, conn)
         if agent == 'hylear' or agent == 'hypal':
             conn = Connector(Config.despot_port)
             eval_mode = False

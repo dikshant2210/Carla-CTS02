@@ -37,6 +37,7 @@ public:
 	float carSpeed;
 	vector<pair<float, float> > pedestrianPositions;
 	vector<tuple<float, float, float> > path;
+    vector<tuple<float, float> > pedestrianPath;
 
 	void print() {
 		cout << "Terminal: " << terminal << "\n";
@@ -128,7 +129,7 @@ public:
 			string convertedBytes = string(buffer, receivedBytes);
 			total += convertedBytes;
 		}
-        clog <<"Recieved string: " << total << std::endl;
+//        clog <<"Recieved string: " << total << std::endl;
 
 		int pos = total.find("\n");
 		string row = total.substr(0, pos);
@@ -159,6 +160,8 @@ public:
 		}
 
 		string pathString = tokens[6 + NUM_PEDESTRIANS * 2];
+        string pedestrianPath = tokens[6 + NUM_PEDESTRIANS * 2 + 1];
+//        clog << "Path Strings: " << pathString << "\n" << pedestrianPath << std::endl;
 
 		tokens.clear();
 		split(pathString, ",", tokens);
@@ -171,6 +174,18 @@ public:
 			tuple<float, float, float> path_entry(x, z, theta);
 			m->path.push_back(path_entry);
 		}
+
+        if (pedestrianPath != "null") {
+            tokens.clear();
+            split(pedestrianPath, ",", tokens);
+            pathTokenLength = tokens.size();
+            for (int i = 0; i < pathTokenLength; i+= 2) {
+                float x = stof(tokens[i]);
+                float z = stof(tokens[i + 1]);
+                tuple<float, float> path_entry(x, z);
+                m->pedestrianPath.push_back(path_entry);
+            }
+        }
 
 		return m;
 	}

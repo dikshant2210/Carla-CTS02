@@ -176,6 +176,7 @@ void VNode::Free(const DSPOMDP& model) {
 	for (int i = 0; i < particles_.size(); i++) {
 		model.Free(particles_[i]);
 	}
+//    cout << "Free here\n";
 
 	for (int a = 0; a < children().size(); a++) {
 		QNode* qnode = Child(a);
@@ -185,6 +186,7 @@ void VNode::Free(const DSPOMDP& model) {
 			it->second->Free(model);
 		}
 	}
+//    cout << "Free children!\n";
 }
 
 void VNode::PrintPolicyTree(int depth, ostream& os) {

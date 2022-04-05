@@ -27,7 +27,7 @@ def eval_isdespot(arg):
 
     # Setting up environment
     env = GIDASBenchmark(port=Config.port)
-    env.reset_agent('isdespot')
+    env.reset_agent(arg.agent)
     env.eval(arg.episode)
     ##############################################################
 
@@ -148,6 +148,7 @@ if __name__ == '__main__':
         type=int,
         help='episode number to resume from')
     arg_parser.add_argument('--test', type=str, default='')
+    arg_parser.add_argument('--agent', type=str, default='isdespot')
     arg_parser.add_argument('--despot_port', type=int, default=1255)
     args = arg_parser.parse_args()
     Config.port = args.port

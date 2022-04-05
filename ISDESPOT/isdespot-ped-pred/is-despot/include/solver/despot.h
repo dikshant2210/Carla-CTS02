@@ -8,8 +8,8 @@
 #include "core/globals.h"
 #include "core/history.h"
 #include "random_streams.h"
-//#include "../problems/hybridVisual_car/src/connector.h"
-//#include "../problems/hybridVisual_car/src/Path.h"
+//#include "../problems/isdespotp_car/src/connector.h"
+#include "../problems/isdespotp_car/src/Path.h"
 #include <mutex>
 
 #define NUM_PEDESTRIANS 4
@@ -28,6 +28,7 @@ public:
 	virtual ~DESPOT();
 
     static int call_counter;
+    static Path pedestrian_path;
 
     VNode* root_;
 

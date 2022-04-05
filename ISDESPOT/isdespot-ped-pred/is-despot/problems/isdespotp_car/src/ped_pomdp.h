@@ -40,6 +40,7 @@ public:
 	bool Step(PomdpStateWorld& state, double rNum, int action, double& reward, uint64_t& obs) const;
 
 	bool ImportanceSamplingStep(State& state_, double rNum, int action, double& reward, uint64_t& obs) const;
+    bool ImportanceSamplingStep(State& state_, double rNum, int action, double& reward, uint64_t& obs, double& x, double& y) const;
     State* CreateStartState(string type = "DEFAULT") const {
 		return 0;	
 	}

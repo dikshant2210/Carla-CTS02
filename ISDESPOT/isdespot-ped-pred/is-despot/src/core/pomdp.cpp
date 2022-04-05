@@ -82,6 +82,13 @@ bool DSPOMDP::ImportanceSamplingStep(State& state, double random_num, int action
 	return Step(state, random_num, action, reward, obs);
 }
 
+bool DSPOMDP::ImportanceSamplingStep(State& state, double random_num, int action,
+                                     double& reward, OBS_TYPE& obs, double& x, double & y) const{
+    //some tasks only do importance sampling for initial belief. Calling Step() does not
+    //necessarily mean it did not use importance sampling
+    return Step(state, random_num, action, reward, obs);
+}
+
 
 ParticleUpperBound* DSPOMDP::CreateParticleUpperBound(string name) const {
 	if (name == "TRIVIAL" || name == "DEFAULT") {

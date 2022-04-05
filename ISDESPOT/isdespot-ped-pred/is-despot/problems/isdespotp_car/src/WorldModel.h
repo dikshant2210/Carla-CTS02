@@ -39,6 +39,7 @@ public:
 
 	void PedStep(PedStruct &ped, Random& random);
     double ISPedStep(CarStruct &car, PedStruct &ped, Random& random);//importance sampling PedStep
+    double ISPedStep(CarStruct &car, PedStruct &ped, Random& random, double& x, double& y);//importance sampling PedStep
     void PedStepDeterministic(PedStruct& ped, int step);
 	void RobStep(CarStruct &car, Random& random);
     void RobVelStep(CarStruct &car, double acc, Random& random);
