@@ -20,6 +20,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
+    print("Planning Agent: {}".format(args.agent))
     env.reset_agent(args.agent)
     test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
 
