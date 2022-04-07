@@ -26,6 +26,7 @@ def eval_isdespot(arg):
     file.write(str(vars(Config)) + "\n")
 
     # Setting up environment
+    print("Environment port: {}".format(Config.port))
     env = GIDASBenchmark(port=Config.port)
     env.reset_agent(arg.agent)
     env.eval(arg.episode)
@@ -130,6 +131,7 @@ def main(arg):
 
 def run_server():
     port = "-carla-port={}".format(Config.port)
+    print("Server port: {}".format(Config.port))
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
