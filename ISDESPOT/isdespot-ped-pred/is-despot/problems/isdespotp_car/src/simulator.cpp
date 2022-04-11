@@ -248,7 +248,8 @@ int main(int argc, char** argv) {
 	}
 
     Globals::config.discount = 0.990;
-	Globals::config.time_per_move = (1.0 / ModelParams::control_freq);
+//	Globals::config.time_per_move = (1.0 / ModelParams::control_freq);
+    Globals::config.time_per_move = 0.1;
 	Globals::config.search_depth = 20;
 
 	cout << "Maximum search_depth: " << Globals::config.search_depth
