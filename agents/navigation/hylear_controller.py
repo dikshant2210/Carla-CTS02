@@ -190,7 +190,7 @@ class HyLEAR(RLAgent):
             # print(start, end, obstacles)
             paths = [path_normal,  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
-                                                                yaw, ped_updated_risk_cmp, False),  # ped pred
+                                                                yaw, ped_updated_risk_cmp, True),  # ped pred
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, ped_updated_risk_cmp, True),  # Sidewalk relaxed
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
