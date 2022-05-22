@@ -107,9 +107,9 @@ class GIDASBenchmark(gym.Env):
         return self._get_observation()
 
     def _get_observation(self):
-        control, observation = self.planner_agent.run_step()
+        control, observation, risk = self.planner_agent.run_step()
         self.control = control
-        return observation
+        return observation, risk
 
     def step(self, action):
         self.world.tick(self.clock)
@@ -126,10 +126,10 @@ class GIDASBenchmark(gym.Env):
                 im = Image.fromarray(self.world.camera_manager.array.copy())
                 im.save("_out/recordings/frame_{:03d}.png".format(frame_num))
 
-        observation = self._get_observation()
+        observation, risk = self._get_observation()
         reward, goal, accident, near_miss, terminal = self.planner_agent.get_reward(action)
         info = {"goal": goal, "accident": accident, "near miss": near_miss,
-                "velocity": self.planner_agent.vehicle.get_velocity(),
+                "velocity": self.planner_agent.vehicle.get_velocity(), "risk": risk,
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}
 
         if self.mode == "TESTING":

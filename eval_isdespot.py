@@ -51,6 +51,7 @@ def eval_isdespot(arg):
         ped_data = []
         step_num = 0
         prev_action = 1
+        risk = 0
 
         for step_num in range(Config.num_steps):
             ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
@@ -83,6 +84,7 @@ def eval_isdespot(arg):
             accident_current = info['accident']
             accident = accident_current or (accident and speed > 0)
             total_episode_reward += reward
+            risk += info['risk']
 
             if done or accident:
                 break
@@ -100,9 +102,10 @@ def eval_isdespot(arg):
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
         file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
-            info['goal'], accident, nearmiss, total_episode_reward))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}, Risk: {:.4f}'.format(
+            info['goal'], accident, nearmiss, total_episode_reward, risk / count))
+        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}, Risk: {:.4f}\n'.format(info['goal'], accident,
+                                                                                         nearmiss, risk / count))
         print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
             time_to_goal, total_acc_decc, exec_time * 1000))
         file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(

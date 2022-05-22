@@ -137,7 +137,12 @@ class HyLEAR(RLAgent):
         return control, intention
 
     def get_path_simple(self, start, end, obstacles):
-        path = self.find_path(start, end, self.grid_cost, obstacles)
+        car_velocity = self.vehicle.get_velocity()
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
+        yaw = start[2]
+        path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                          yaw, self.risk_cmp, False)
+        # path = self.find_path(start, end, self.grid_cost, obstacles)
         intention = self.get_car_intention([], path, start)
         return path, intention
 
