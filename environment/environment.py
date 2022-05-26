@@ -104,7 +104,8 @@ class GIDASBenchmark(gym.Env):
         self.world.restart(scenario, ped_speed, ped_distance)
         self.planner_agent.update_scenario(scenario)
         self.client.get_world().tick()
-        return self._get_observation()
+        observation, risk = self._get_observation()
+        return observation
 
     def _get_observation(self):
         control, observation, risk = self.planner_agent.run_step()
@@ -174,7 +175,6 @@ class GIDASBenchmark(gym.Env):
                 for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
                     episodes.append((scenario, speed, distance))
         self.episodes = episodes[current_episode:]
-        print("Testing episodes: ", len(episodes))
         self.test_episodes = iter(episodes[current_episode:])
 
     def next_scene(self):
