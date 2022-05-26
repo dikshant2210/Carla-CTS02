@@ -7,6 +7,7 @@ import pygame
 import subprocess
 import argparse
 import time
+import json
 import pickle as pkl
 import numpy as np
 from multiprocessing import Process
@@ -20,10 +21,8 @@ def eval_isdespot(arg):
     ##############################################################
     t0 = time.time()
     # Logging file
-    filename = "_out/isdespot/{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+    filename = "_out/isdespot/{}.json".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
     print(filename)
-    file = open(filename, "w")
-    file.write(str(vars(Config)) + "\n")
 
     # Setting up environment
     print("Environment port: {}".format(Config.port))
@@ -37,32 +36,39 @@ def eval_isdespot(arg):
     current_episode = 0
     max_episodes = len(env.episodes)
     print("Total testing episodes: {}".format(max_episodes))
-    file.write("Total training episodes: {}\n".format(max_episodes))
     pedestrian_path = {}
+    data_log = {}
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
         observation = env.reset()
         nearmiss = False
         accident = False
-        exec_time = 0
         count = 0
-        total_acc_decc = 0
         ped_data = []
         step_num = 0
-        prev_action = 1
-        risk = 0
+
+        episode_log = {}
+        exec_time = []
+        actions_list = []
+        risk = []
+        impact_speed = []
+        trajectory = []
 
         for step_num in range(Config.num_steps):
             ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
+            trajectory.append((env.world.player.get_location().x, env.world.player.get_location().y))
             if Config.display:
                 env.render()
 
             start_time = time.time()
             observation, reward, done, info = env.step(action=None)
             if env.planner_agent.pedestrian_observable:
-                exec_time += (time.time() - start_time)
+                time_taken = (time.time() - start_time)
                 count += 1
+            else:
+                time_taken = 0
+            exec_time.append(time_taken)
 
             if env.control.throttle != 0:
                 action = 0
@@ -70,21 +76,20 @@ def eval_isdespot(arg):
                 action = 2
             else:
                 action = 1
-            if action != 1 and prev_action != action:
-                total_acc_decc += 1
-            prev_action = action
+            actions_list.append(action)
 
             velocity = info['velocity']
             velocity_x = velocity.x
             velocity_y = velocity.y
             speed = np.sqrt(velocity_x ** 2 + velocity_y ** 2)
+            impact_speed.append(speed)
 
             nearmiss_current = info['near miss']
             nearmiss = nearmiss_current or (nearmiss and speed > 0)
             accident_current = info['accident']
             accident = accident_current or (accident and speed > 0)
             total_episode_reward += reward
-            risk += info['risk']
+            risk.append(info['risk'])
 
             if done or accident:
                 break
@@ -93,30 +98,31 @@ def eval_isdespot(arg):
 
         # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
         time_to_goal = (step_num + 1) * Config.simulation_step
-        if count == 0:
-            exec_time = 0
-        else:
-            exec_time = exec_time / count
+        episode_log['ttg'] = time_to_goal
+        episode_log['risk'] = risk
+        episode_log['actions'] = actions_list
+        episode_log['exec'] = exec_time
+        episode_log['impact_speed'] = impact_speed
+        episode_log['trajectory'] = trajectory
+        episode_log['ped_dist'] = info['ped_distance']
+        episode_log['scenario'] = info['scenario']
+        episode_log['ped_speed'] = info['ped_speed']
+        episode_log['crash'] = accident
+        episode_log['nearmiss'] = nearmiss
+        data_log[current_episode] = episode_log
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
-        file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
-            current_episode, info['scenario'], info['ped_speed'], info['ped_distance']))
         print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}, Risk: {:.4f}'.format(
-            info['goal'], accident, nearmiss, total_episode_reward, risk / count))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}, Risk: {:.4f}\n'.format(info['goal'], accident,
-                                                                                         nearmiss, risk / count))
-        print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
-            time_to_goal, total_acc_decc, exec_time * 1000))
-        file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
-            time_to_goal, total_acc_decc, exec_time * 1000))
-
+            info['goal'], accident, nearmiss, total_episode_reward, sum(risk) / step_num))
+        print('Time to goal: {:.4f}s, Execution time: {:.4f}ms'.format(
+            time_to_goal, sum(exec_time) * 1000 / count))
         ##############################################################
 
     env.close()
     print("Testing time: {:.4f}hrs".format((time.time() - t0) / 3600))
-    file.write("Testing time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
-    file.close()
+    with open(filename, "w") as write_file:
+        json.dump(data_log, write_file)
     with open('_out/pedestrian_data.pkl', 'wb') as file:
         pkl.dump(pedestrian_path, file)
 

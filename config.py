@@ -22,7 +22,7 @@ class Config:
 
     location_threshold = 1.0
 
-    ped_speed_range = [0.6, 3.3]
+    ped_speed_range = [0.6, 2.0]
     ped_distance_range = [10, 40]
     car_speed_range = [6, 9]
     scenarios = ['01', '02', '03', '04', '05', '06', '07', '08', '09']  # + ['06', '09']

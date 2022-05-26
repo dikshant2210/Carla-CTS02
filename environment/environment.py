@@ -80,7 +80,7 @@ class GIDASBenchmark(gym.Env):
                     self.mode = "TESTING"
                     self.test_episodes = iter(self.episodes)
             else:
-                for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 1, 0.1):
+                for speed in np.arange(Config.ped_speed_range[0], Config.ped_speed_range[1] + 0.1, 0.1):
                     for distance in np.arange(Config.ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
                         self.episodes.append((scenario, speed, distance))
 
@@ -170,10 +170,11 @@ class GIDASBenchmark(gym.Env):
         self.mode = "TESTING"
         episodes = list()
         for scenario in Config.test_scenarios:
-            for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 1, 0.1):
+            for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 0.1, 0.1):
                 for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
                     episodes.append((scenario, speed, distance))
         self.episodes = episodes[current_episode:]
+        print("Testing episodes: ", len(episodes))
         self.test_episodes = iter(episodes[current_episode:])
 
     def next_scene(self):

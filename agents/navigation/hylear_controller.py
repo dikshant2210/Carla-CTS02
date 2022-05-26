@@ -143,7 +143,7 @@ class HyLEAR(RLAgent):
         path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                           yaw, self.risk_cmp, False)
         # path = self.find_path(start, end, self.grid_cost, obstacles)
-        intention = self.get_car_intention([], path, start)
+        intention = self.get_car_intention([], path[0], start)
         return path, intention
 
     def get_path_with_reasoning(self, start, end, obstacles):
