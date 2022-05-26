@@ -372,7 +372,8 @@ class RLAgent(Agent):
         self.prev_action = control
         velocity = self.vehicle.get_velocity()
         self.prev_speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
-        return control, self.get_car_intention(obstacles, path, start)
+        risk = 0.0
+        return control, self.get_car_intention(obstacles, path, start), risk
 
     def find_path(self, start, end, costmap, obstacles):
         checkpoint = (92, 14, -90)
