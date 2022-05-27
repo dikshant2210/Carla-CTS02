@@ -38,7 +38,7 @@ def eval_isdespot(arg):
     print("Total testing episodes: {}".format(max_episodes))
     pedestrian_path = {}
     data_log = {}
-    while current_episode < 3:
+    while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
         observation = env.reset()
