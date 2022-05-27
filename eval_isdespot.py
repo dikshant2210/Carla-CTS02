@@ -21,7 +21,7 @@ def eval_isdespot(arg):
     ##############################################################
     t0 = time.time()
     # Logging file
-    filename = "_out/isdespot/{}.json".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+    filename = "_out/isdespot/{}.pkl".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
     print(filename)
 
     # Setting up environment
@@ -38,7 +38,7 @@ def eval_isdespot(arg):
     print("Total testing episodes: {}".format(max_episodes))
     pedestrian_path = {}
     data_log = {}
-    while current_episode < max_episodes:
+    while current_episode < 3:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
         observation = env.reset()
@@ -121,8 +121,8 @@ def eval_isdespot(arg):
 
     env.close()
     print("Testing time: {:.4f}hrs".format((time.time() - t0) / 3600))
-    with open(filename, "w") as write_file:
-        json.dump(data_log, write_file)
+    with open(filename, "wb") as write_file:
+        pkl.dump(data_log, write_file)
     with open('_out/pedestrian_data.pkl', 'wb') as file:
         pkl.dump(pedestrian_path, file)
 
