@@ -116,7 +116,7 @@ def eval_isdespot(arg):
         print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}, Risk: {:.4f}'.format(
             info['goal'], accident, nearmiss, total_episode_reward, sum(risk) / step_num))
         print('Time to goal: {:.4f}s, Execution time: {:.4f}ms'.format(
-            time_to_goal, sum(exec_time) * 1000 / count))
+            time_to_goal, sum(exec_time) * 1000 / (count + 1)))
         ##############################################################
 
     env.close()
