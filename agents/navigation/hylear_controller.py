@@ -23,6 +23,11 @@ def run_server():
         Config.despot_port)], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
+def run_server_hyleap():
+    subprocess.run(['cd hyleap/smart-car-sim-master/is-despot/problems/hybridVisual_car && ./car {}'.format(
+        Config.despot_port)], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+
 class HyLEAR(RLAgent):
     def __init__(self, world, carla_map, scenario, conn=None, eval_mode=False, agent='hylear'):
         super(HyLEAR, self).__init__(world, carla_map, scenario)
@@ -31,8 +36,13 @@ class HyLEAR(RLAgent):
         self.eval_mode = eval_mode
         self.agent = agent
         if not self.eval_mode:
-            p = Process(target=run_server)
-            p.start()
+            print(self.agent)
+            if self.agent == "hyleap":
+                p = Process(target=run_server_hyleap)
+                p.start()
+            else:
+                p = Process(target=run_server)
+                p.start()
             self.conn.establish_connection()
             m = self.conn.receive_message()
             print(m)  # RESET
