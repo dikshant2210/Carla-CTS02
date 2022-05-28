@@ -104,9 +104,8 @@ public:
         PomdpState s;
         // for tracking world state
         PomdpStateWorld world_state;
-
+        cout << "I am here\n";
         message *m = conn.receiveMessage();
-
 
         cout << "Initial message received\n";
 

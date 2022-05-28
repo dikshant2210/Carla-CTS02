@@ -23,7 +23,7 @@
 #include "assert.h"
 #include "../../../include/core/policy.h"
 
-#define NUM_PEDESTRIANS 4
+#define NUM_PEDESTRIANS 1
 
 using namespace std;
 
@@ -159,10 +159,11 @@ public:
 			m->pedestrianPositions.push_back(ped_pos);
 		}
 
-		m->obstacle = tuple<float, float, float>(
-		    stof(tokens[6 + NUM_PEDESTRIANS * 2]), stof(tokens[7 + NUM_PEDESTRIANS * 2]), stof(tokens[8 + NUM_PEDESTRIANS * 2]));
+//		m->obstacle = tuple<float, float, float>(
+//		    stof(tokens[6 + NUM_PEDESTRIANS * 2]), stof(tokens[7 + NUM_PEDESTRIANS * 2]), stof(tokens[8 + NUM_PEDESTRIANS * 2]));
 
-		string pathString = tokens[3 + 6 + NUM_PEDESTRIANS * 2];
+//		string pathString = tokens[3 + 6 + NUM_PEDESTRIANS * 2];
+        string pathString = tokens[6 + NUM_PEDESTRIANS * 2];
 
 		tokens.clear();
 		split(pathString, ",", tokens);

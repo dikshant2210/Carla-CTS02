@@ -36,7 +36,6 @@ class HyLEAR(RLAgent):
         self.eval_mode = eval_mode
         self.agent = agent
         if not self.eval_mode:
-            print(self.agent)
             if self.agent == "hyleap":
                 p = Process(target=run_server_hyleap)
                 p.start()

@@ -8,6 +8,136 @@ import numpy as np
 import time
 import os
 import threading
+import struct
+
+import skimage.draw
+
+from hyleap.utils import *
+from hyleap.model import ExperienceBuffer
+
+
+new_im = True
+
+
+class train_connector(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.total = ""
+        self.state = None
+        self.lastAction = -1
+        self.conn = None
+        self.addr = None
+
+        self.initialized = False
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        try:
+            self.sock.bind((HOST, PORT))
+        except socket.error as msg:
+            print('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+            sys.exit()
+
+        print('Training connector: Bound to port ' + str(PORT) + '...')
+
+        self.sock.listen()
+        print('Training connector: Socket now listening...')
+
+        self.conn, self.addr = self.sock.accept()
+        print('Training connector: Connection Accepted...')
+
+        self.initialized = True
+
+    def parse(self, tmp):
+        if not tmp:
+            return None
+
+        tmp = tmp.split(";")
+
+        assert len(tmp) == 4
+
+        arr = None
+        try:
+            # vector<float> real_values;
+            real_values = np.array([float(x) for x in tmp[0].split(",")])
+
+            N = len(real_values) - 1
+            for i in range(1, N):
+                real_values[N - i] += y * real_values[N - i + 1]
+
+            real_values[0] += y * real_values[1]
+
+            # vector<float*> despot_policy;
+            despot_policy = np.array([float(x) for x in tmp[1].split(",")])
+            despot_policy.shape = (-1, num_actions)
+            # vector<float*> observations;
+            observations = np.array([float(x) for x in tmp[2].split(",")])
+            observations.shape = (-1, observation_size)
+            # vector<float*> histories;
+            histories = np.array([float(x) for x in tmp[3].split(",")])
+            histories.shape = (-1, history_size)
+            histories = np.split(histories, 2, 1)
+
+            arr = {'despot_policy': despot_policy, 'real_values': real_values,
+                   'observations': observations, 'histories': histories}
+        except (IndexError, ValueError) as e:
+            return None
+
+        return arr
+
+    def receiveMessage(self):
+        convertedBytes = ""
+        while not (convertedBytes and convertedBytes[-1] == '\n'):
+            try:
+                receivedBytes = self.conn.recv(1024)
+
+                if receivedBytes == 0:
+                    time.sleep(0.005)
+                    continue
+
+                convertedBytes = receivedBytes.decode('utf-8')
+                self.total += convertedBytes
+            except OSError as e:
+                print(e)
+                time.sleep(5)
+
+        tmp_split = self.total.split("\n")
+
+        parsed = self.parse(tmp_split[-1])
+        if parsed is None:
+            self.total = tmp_split[-1]
+            self.state = self.parse(tmp_split[-2])
+            assert (self.state is not None)
+        else:
+            self.total = ""
+            self.state = parsed
+
+        return self.state
+
+    def run(self):
+        total_episodes = 0
+        buf = ExperienceBuffer()
+
+        while True:
+            if not self.initialized:
+                time.sleep(5)
+                continue
+
+            self.receiveMessage()
+            print('Finished episode ' + str(total_episodes) + ' after '
+                  + str(self.state['observations'].shape[0]) + ' steps, reward ' + str(self.state['real_values'][0]))
+
+            message_tmp = getObsParallel(costMap, self.state['observations'])
+
+            self.state['observations'] = message_tmp
+
+            buf.add(self.state)
+
+            if enableTraining:
+                print(self.state)
+
+            total_episodes += 1
 
 
 class ConnectorServer(threading.Thread):
@@ -36,6 +166,118 @@ class ConnectorServer(threading.Thread):
             conn, addr = self.sock.accept()
             print('Connector: Connection Accepted...')
             ConnectorFull(conn).start()
+
+
+class image_connector(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.total = ""
+        self.path = "/tmp/python_unix_sockets_image"
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        if os.path.exists(self.path):
+            os.remove(self.path)
+
+        try:
+            self.sock.bind(self.path)
+        except socket.error as msg:
+            print('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+            sys.exit()
+
+        print('ImageSocket: Bound to port...')
+
+        self.sock.listen()
+
+        print('ImageSocket: Socket now listening...')
+
+        self.conn, self.addr = self.sock.accept()
+        print('Training connector: Connection Accepted...')
+
+        self.initialized = True
+
+    def parse(self, tmp):
+        if not tmp:
+            return None
+
+        tmp = tmp.split(";")
+
+        assert len(tmp) == 3
+
+        try:
+            goal_position = [float(x) for x in tmp[0].split(",")]
+            obstacle = [float(x) for x in tmp[1].split(",")]
+            waypoints = np.array([float(x) for x in tmp[2].split(",")])
+            waypoints.shape = (-1, 2)
+
+            arr = {'goal_position': goal_position, 'waypoints': waypoints, 'obstacle': obstacle}
+        except (IndexError, ValueError) as e:
+            return None
+
+        return arr
+
+    def receiveMessage(self):
+        convertedBytes = ""
+        while not (convertedBytes and convertedBytes[-1] == '\n'):
+            try:
+                receivedBytes = self.conn.recv(1024)
+
+                if receivedBytes == 0:
+                    time.sleep(0.005)
+                    continue
+
+                convertedBytes = receivedBytes.decode('utf-8')
+                self.total += convertedBytes
+            except OSError as e:
+                print(e)
+                time.sleep(5)
+
+        tmp_split = self.total.split("\n")
+
+        parsed = self.parse(tmp_split[-1])
+        if parsed is None:
+            self.total = tmp_split[-1]
+            self.state = self.parse(tmp_split[-2])
+            assert (self.state is not None)
+        else:
+            self.total = ""
+            self.state = parsed
+
+        return self.state
+
+    def run(self):
+        while True:
+            if not self.initialized:
+                time.sleep(5)
+                continue
+
+            self.receiveMessage()
+
+            global new_im
+            global costMap
+            costMapTmp = np.copy(costMap)
+
+            self.state['waypoints'] = self.state['waypoints'].round().astype(int)
+
+            for i in range(1, self.state['waypoints'].shape[0]):
+                rowOld = self.state['waypoints'][i - 1, :]
+                row = self.state['waypoints'][i, :]
+                rr, cc = skimage.draw.line(rowOld[1], rowOld[0], row[1], row[0])
+                for xx, xy in zip(cc, rr):
+                    costMapTmp[xx + 10, xy + 10] = 0.0
+
+            rr, cc = skimage.draw.ellipse(self.state['goal_position'][1],
+                                          self.state['goal_position'][0], 5, 5, shape=costMapTmp.shape)
+            for xx, xy in zip(cc, rr):
+                costMapTmp[xx + 10, xy + 10] = 0.0
+
+            rr, cc = skimage.draw.ellipse(self.state['obstacle'][1] * multiplyer,
+                                          self.state['obstacle'][0] * multiplyer, 5, 5, shape=costMapTmp.shape)
+            for xx, xy in zip(cc, rr):
+                costMapTmp[xx + 10, xy + 10] = 200.0
+
+            costMap = costMapTmp
+            new_im = True
 
 
 class ConnectorFull(threading.Thread):
@@ -136,9 +378,12 @@ class ConnectorFull(threading.Thread):
             # print(message)
             #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
 
-            action, value, updated_state = sess.run(
-                [network.predictedAction, network.predictedValue, network.rnn_state],
-                feed_dict={network.scalarInput: processed_input, network.trainLength: 1,
-                           network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
+            # action, value, updated_state = sess.run(
+            #     [network.predictedAction, network.predictedValue, network.rnn_state],
+            #     feed_dict={network.scalarInput: processed_input, network.trainLength: 1,
+            #                network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
+            action = [0]
+            value = [0]
+            updated_state = []
 
             self.sendBinaryMessage(self.buildBinaryMessage(updated_state, action, value))
