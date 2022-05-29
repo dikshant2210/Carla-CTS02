@@ -125,6 +125,7 @@ def eval_isdespot(arg):
         pkl.dump(data_log, write_file)
     with open('_out/pedestrian_data.pkl', 'wb') as file:
         pkl.dump(pedestrian_path, file)
+    print("log file written!!")
 
 
 def main(arg):
