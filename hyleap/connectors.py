@@ -5,6 +5,7 @@ Time: 13.02.22 22:23
 import sys
 import socket
 import numpy as np
+import pickle as pkl
 import time
 import os
 import threading
@@ -125,7 +126,9 @@ class train_connector(threading.Thread):
                 continue
 
             self.receiveMessage()
-            print('Finished episode ' + str(total_episodes) + ' after '
+            with open('_out/state.pkl', 'wb') as file:
+                pkl.dump(self.state, file)
+            print('Finished episode ' + str(total_episodes + 1) + ' after '
                   + str(self.state['observations'].shape[0]) + ' steps, reward ' + str(self.state['real_values'][0]))
 
             message_tmp = getObsParallel(costMap, self.state['observations'])
@@ -143,7 +146,7 @@ class train_connector(threading.Thread):
 class ConnectorServer(threading.Thread):
     def __init__(self, number):
         threading.Thread.__init__(self)
-        self.path = "/tmp/python_unix_sockets_example" + str(number)
+        self.path = "/tmp/python_unix_sockets_example"
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
         if os.path.exists(self.path):
@@ -161,11 +164,115 @@ class ConnectorServer(threading.Thread):
 
         print('Connector: Socket now listening...')
 
+        threading.Thread.__init__(self)
+
+        self.total = b""
+        self.state = None
+        self.conn, self.addr = self.sock.accept()
+
+    def simpleParse(self, data, num_states):
+        try:
+            lstm_state1 = np.array(data[0:history_size // 2])
+            lstm_state1 = np.tile(lstm_state1, num_states)
+            lstm_state1.shape = (num_states, history_size // 2)
+
+            lstm_state2 = np.array(data[history_size // 2: history_size])
+            lstm_state2 = np.tile(lstm_state2, num_states)
+            lstm_state2.shape = (num_states, history_size // 2)
+
+            # (np.zeros([1, h_size + var_end_size]), np.zeros([1, h_size + var_end_size]))
+
+            obs = np.array(data[history_size:])
+            obs.shape = (-1, observation_size)
+
+            arr = {'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': obs}
+
+            return arr
+        except (IndexError, ValueError) as e:
+            return None
+
+    def receiveMessage(self):
+        while True:
+            receivedBytes = self.conn.recv(4)
+            if len(receivedBytes) == 4:
+                break
+
+        assert len(receivedBytes) == 4
+
+        num_states = int(round(struct.unpack('f', receivedBytes)[0]))
+
+        totalLen = (history_size + observation_size * num_states) * 4
+        # print("States: ", num_states, "Length: ", totalLen)
+
+        while len(self.total) < totalLen:
+            # print("Current Total: ", len(self.total))
+            try:
+                receivedBytes = self.conn.recv(totalLen - len(self.total))
+                # print("Received: ", len(receivedBytes))
+
+                if receivedBytes == 0:
+                    continue
+
+                self.total += receivedBytes
+            except OSError as e:
+                print(e)
+                time.sleep(5)
+
+        assert len(self.total) == totalLen
+        num_elements = totalLen // 4
+        format_string = str(num_elements) + 'f'
+        data = struct.unpack(format_string, self.total)
+
+        self.state = self.simpleParse(data, num_states)
+        self.total = b""
+
+        return self.state
+
+    def buildBinaryMessage(self, state, action, value):
+        res = b""
+
+        for i in range(len(action)):
+            res += state[0][i, :].astype('f').tostring()
+            res += state[1][i, :].astype('f').tostring()
+            res += struct.pack('2f', float(action[i]), value[i])
+
+        return res
+
+    def sendBinaryMessage(self, m):
+        while True:
+            try:
+                self.conn.sendall(m)
+                break
+            except socket.error as e:
+                print(e)
+                time.sleep(5)
+
+    def one_hot(self, i):
+        if i == -1:
+            i = 1
+
+        return [1 if i == index else 0 for index in range(num_actions)]
+
     def run(self):
         while True:
-            conn, addr = self.sock.accept()
-            print('Connector: Connection Accepted...')
-            ConnectorFull(conn).start()
+            message = self.receiveMessage()
+            # print("Message received")
+            # processed_input = getObsParallel(costMap, message['obs'])
+
+            # print(message)
+            #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
+
+            # action, value, updated_state = sess.run(
+            #     [network.predictedAction, network.predictedValue, network.rnn_state],
+            #     feed_dict={network.scalarInput: processed_input, network.trainLength: 1,
+            #                network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
+            action = [0]
+            value = [0]
+            updated_state = [np.zeros((1, 128)), np.zeros((1, 128))]
+            msg = self.buildBinaryMessage(updated_state, action, value)
+            # print("sending...", message['obs'].shape)
+            for _ in range(message['obs'].shape[0]):
+                self.sendBinaryMessage(msg)
 
 
 class image_connector(threading.Thread):
@@ -303,7 +410,7 @@ class ConnectorFull(threading.Thread):
             # (np.zeros([1, h_size + var_end_size]), np.zeros([1, h_size + var_end_size]))
 
             obs = np.array(data[history_size:])
-            obs.shape = (-1, 12)
+            obs.shape = (-1, observation_size)
 
             arr = {'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': obs}
 
@@ -373,7 +480,8 @@ class ConnectorFull(threading.Thread):
     def run(self):
         while True:
             message = self.receiveMessage()
-            processed_input = getObsParallel(costMap, message['obs'])
+            print("Message received")
+            # processed_input = getObsParallel(costMap, message['obs'])
 
             # print(message)
             #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
@@ -384,6 +492,9 @@ class ConnectorFull(threading.Thread):
             #                network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
             action = [0]
             value = [0]
-            updated_state = []
-
-            self.sendBinaryMessage(self.buildBinaryMessage(updated_state, action, value))
+            updated_state = [np.zeros((1, 128)), np.zeros((1, 128))]
+            msg = self.buildBinaryMessage(updated_state, action, value)
+            print("sending...", message['obs'].shape)
+            # self.sendBinaryMessage(msg)
+            for _ in range(message['obs'].shape[0]):
+                self.sendBinaryMessage(msg)

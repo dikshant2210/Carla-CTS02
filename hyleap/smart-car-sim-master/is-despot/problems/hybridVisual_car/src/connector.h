@@ -159,8 +159,7 @@ public:
 			m->pedestrianPositions.push_back(ped_pos);
 		}
 
-//		m->obstacle = tuple<float, float, float>(
-//		    stof(tokens[6 + NUM_PEDESTRIANS * 2]), stof(tokens[7 + NUM_PEDESTRIANS * 2]), stof(tokens[8 + NUM_PEDESTRIANS * 2]));
+		m->obstacle = tuple<float, float, float>(stof(tokens[6]), stof(tokens[7]), 0.0);
 
 //		string pathString = tokens[3 + 6 + NUM_PEDESTRIANS * 2];
         string pathString = tokens[6 + NUM_PEDESTRIANS * 2];
@@ -227,7 +226,7 @@ class python_connector {
 	string path;
 public:
     int num_elements = history_size + 4 + 2*NUM_PEDESTRIANS;
-    int num_peds = 4;
+    int num_peds = 1;
 
 	void receiveBinaryMessage(float* history, ValuedAction& action) {
 	    size_t len = (history_size + 2)*sizeof(float);
@@ -264,7 +263,7 @@ public:
         }
 	}
 
-    int observation_size = 12;
+    int observation_size = 6;
 
 	float* createBinaryMessageAll(Path& path, float* hist, vector<State*>& states, size_t &len){
         assert(path.size() != 0);
@@ -324,6 +323,7 @@ public:
         }
 
         len = sizeof(float) * num_elements;
+//        len = sizeof(float) * (1 + history_size + observation_size);
 
         return hist;
 	}
@@ -333,8 +333,8 @@ public:
     }
 
 	int establish_connection(int number) {
-	    path = "/tmp/python_unix_sockets_example";
-        path += to_string(number);
+//	    path = "/tmp/python_unix_sockets_example";
+//        path += to_string(number);
 
 	    if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
             printf("\n Socket creation error \n");
@@ -344,12 +344,23 @@ public:
         struct sockaddr_un saddr;
         memset(&saddr, 0, sizeof(struct sockaddr_un));
         saddr.sun_family = AF_UNIX;
-        strcpy(saddr.sun_path,path.c_str());
+        strcpy(saddr.sun_path,"/tmp/python_unix_sockets_example");
 
+        int tries = 0;
         int res;
-        if ((res = connect(sockfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) < 0) {
-            printf("\nUnix Connection Failed %d: %s\n", errno, strerror(errno));
-            return -1;
+//        if ((res = connect(sockfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) < 0) {
+//            printf("\nUnix Connection Failed %d: %s\n", errno, strerror(errno));
+//            return -1;
+//        }
+
+        while ((res = connect(sockfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_un))) < 0) {
+            std::this_thread::sleep_for (std::chrono::seconds(1));
+            tries++;
+
+            if(tries == 5){
+                printf("\nConnection Failed: %s\n", strerror(errno));
+                exit(-1);
+            }
         }
 
 		return sockfd;

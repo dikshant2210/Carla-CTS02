@@ -8,7 +8,7 @@
 using namespace std;
 
 int n_sim = 5;
-int n_peds = -1; // should be smaller than ModelParams::N_PED_IN
+int n_peds = 1; // should be smaller than ModelParams::N_PED_IN
 
 class Simulator {
 public:
@@ -104,7 +104,6 @@ public:
         PomdpState s;
         // for tracking world state
         PomdpStateWorld world_state;
-        cout << "I am here\n";
         message *m = conn.receiveMessage();
 
         cout << "Initial message received\n";
@@ -246,9 +245,9 @@ public:
             solver.belief(pb);
 
             Globals::config.silence = false;
-
             // Choose action
             int act = solver.Search().action;
+            cout << "I am out of action!!\n";
 
             float* improvedPolicy = new float[3];
             improvedPolicy[0] = solver.improvedProbabilities[0];
@@ -379,16 +378,6 @@ int main(int argc, char** argv) {
     conn.establish_connection(port);
     conn.sendMessage("RESET\n");
 
-    cout << "Connect to python server ...";
-
-    // TODO: CHANGE
-    python_connector python_conn[3];
-    for(int i = 0; i < 3; ++i){
-        python_conn[i].establish_connection(0);
-    }
-
-    cout << "done\n";
-
     cout << "Connect to train server ...";
     connector train_connector;
     train_connector.establish_connection(python_port);
@@ -399,9 +388,18 @@ int main(int argc, char** argv) {
     image_conn.establish_connection();
     cout << "done\n";
 
+    cout << "Connect to python server ...";
+//    python_connector python_conn[3];
+//    for(int i = 0; i < 3; ++i){
+//        python_conn[i].establish_connection(0);
+//    }
+    python_connector python_conn;
+    python_conn.establish_connection(0);
+    cout << "done\n";
+
     Simulator sim;
     for(long i=0;; i++){
         cout<<"++++++++++++++++++++++ ROUND "<<i<<" ++++++++++++++++++++"<<endl;
-        sim.run(conn, &python_conn[0], train_connector, image_conn);
+        sim.run(conn, &python_conn, train_connector, image_conn);
     }
 }

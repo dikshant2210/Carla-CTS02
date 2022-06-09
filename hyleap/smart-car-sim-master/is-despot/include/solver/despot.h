@@ -12,7 +12,7 @@
 #include "../problems/hybridVisual_car/src/Path.h"
 #include <mutex>
 
-#define NUM_PEDESTRIANS 4
+#define NUM_PEDESTRIANS 1
 
 class DESPOT: public Solver {
 friend class VNode;

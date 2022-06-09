@@ -117,6 +117,7 @@ def eval_isdespot(arg):
             info['goal'], accident, nearmiss, total_episode_reward, sum(risk) / step_num))
         print('Time to goal: {:.4f}s, Execution time: {:.4f}ms'.format(
             time_to_goal, sum(exec_time) * 1000 / (count + 1)))
+        env.planner_agent.conn.send_message(True, 0, 0, [0, 0], 0, [[0, 0]], [[0, 0, 0]])
         ##############################################################
 
     env.close()

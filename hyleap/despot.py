@@ -4,7 +4,7 @@ Time: 10.11.21 01:14
 """
 
 import carla
-from hyleap.connectors import train_connector, image_connector
+from hyleap.connectors import train_connector, image_connector, ConnectorServer
 from agents.navigation.hylear_controller import HyLEAR
 
 
@@ -13,8 +13,11 @@ class HyLEAP(HyLEAR):
         super(HyLEAP, self).__init__(world, carla_map, scenario, conn, eval_mode=False, agent="hyleap")
         self.train_connection = train_connector()
         self.image_connection = image_connector()
+        self.connection = ConnectorServer(0)
         self.train_connection.start()
         self.image_connection.start()
+        self.connection.start()
+        # self.connection.join()
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player

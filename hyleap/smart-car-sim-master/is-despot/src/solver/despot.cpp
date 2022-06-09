@@ -56,8 +56,11 @@ vector<ValuedAction> network_evaluate(Path& path, python_connector* conn, float*
     size_t len;
     float* buf = conn->createBinaryMessageAll(path, oldHistory, states, len);
     conn->sendMessage(buf,len);
+//    cout << "message sent\n";
     delete[] buf;
     conn->receiveBinaryMessageAll(newHistories, result);
+//    cout << "message received\n";
+//    cout << "Result: " << result << endl;
 
     /*
     DESPOT::call_counter++;
@@ -219,7 +222,6 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 	ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 	const DSPOMDP* model, History& history, double timeout,
 	SearchStatistics* statistics) {
-
 	for (int i = 0; i < particles.size(); i++) {
 		particles[i]->scenario_id = i;
 	}
@@ -227,9 +229,7 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 	VNode* root = new VNode(particles);
 
 	assert (root->parent_ == nullptr);
-
-	logd
-		<< "[DESPOT::ConstructTree] START - Initializing lower and upper bounds at the root node.";
+//	cout << "[DESPOT::ConstructTree] START - Initializing lower and upper bounds at the root node.\n";
 
 	PomdpState* first = dynamic_cast<PomdpState*>(particles[0]);
 
@@ -239,8 +239,7 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
     root->initial_lower_bound_ = eval.value;
     InitBounds(root, lower_bound, upper_bound, streams, history);
 
-	logd
-		<< "[DESPOT::ConstructTree] END - Initializing lower and upper bounds at the root node.";
+//    cout << "[DESPOT::ConstructTree] END - Initializing lower and upper bounds at the root node.\n";
 
     /*
 	if (statistics != NULL) {
@@ -256,22 +255,21 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 
         auto startClock = std::chrono::high_resolution_clock::now();
 
-        std::thread action0(TreeThread, 0, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[0]));
-        std::thread action1(TreeThread, 1, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[1]));
-        std::thread action2(TreeThread, 2, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[2]));
-
-        action0.join();
-        action1.join();
-        action2.join();
+//        std::thread action0(TreeThread, 0, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[0]));
+//        std::thread action1(TreeThread, 1, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[1]));
+//        std::thread action2(TreeThread, 2, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[2]));
+//
+//        action0.join();
+//        action1.join();
+//        action2.join();
+        TreeThread(0, timeout, root, streams, lower_bound, upper_bound, model, history, std::ref(num_trials[0]));
 
         auto finishClock = std::chrono::high_resolution_clock::now();
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(finishClock - startClock).count();
 
-	/*
         cout << "Finished tree construction after [" << num_trials[0] << ", " <<
         num_trials[1] << ", "<< num_trials[2] << "] trials in " << ms << "ms, U:"
           << root->upper_bound() << " L:" << root->lower_bound() <<"\n";
-	*/
 
 	}else{
 	    auto startClock = std::chrono::high_resolution_clock::now();
@@ -894,7 +892,7 @@ VNode* DESPOT::ParallelTrial(VNode* root, RandomStreams& streams,
     	}
 
     	if (cur->IsLeaf()) {
-    	    //cout << "Expand leaf" << cur << "\n";
+    	    cout << "Expand leaf" << cur << "\n";
 
     	    DESPOT::lock->unlock();
     		ParallelExpand(cur, lower_bound, upper_bound, model,
@@ -912,10 +910,10 @@ VNode* DESPOT::ParallelTrial(VNode* root, RandomStreams& streams,
 
     	//str += " A: " + to_string(qstar->edge_);
 
-    	//cout << "Follow Q-Node " << qstar << ". ";
+//    	cout << "Follow Q-Node " << qstar << ". ";
 
     	VNode* next = SelectBestWEUNode(qstar);
-    	//cout << "Follow V-Node " << next << ". ";
+//    	cout << "Follow V-Node " << next << ". ";
 
     	if (next == NULL) {
     	    qstar->done_ = true;
@@ -929,7 +927,7 @@ VNode* DESPOT::ParallelTrial(VNode* root, RandomStreams& streams,
         depth++;
     } while (cur->depth() < Globals::config.search_depth  && WEU(cur) > 0);
 
-    //cout << "Stop with V-Node " << cur << " at depth: " << cur->depth() << "\n";
+//    cout << "Stop with V-Node " << cur << " at depth: " << cur->depth() << "\n";
 
     cur->done_ = true;
 
@@ -967,7 +965,7 @@ void DESPOT::ParallelExpand(VNode* vnode,
         partitions.clear();
 
         ExpandPartOne(qnode, model, streams, partitions, parallel_step_reward[action], parallel_num_elements[action], ex_newNodes, ex_states, ex_newHistories, thread_number);
-        //cout << "Expanding q node " << qnode << ", Action " << action << " , num children: " << num_elements[action] << "\n";
+//        cout << "Expanding q node " << qnode << ", Action " << action << " , num children: " << num_elements[action] << "\n";
     }
 
     if(!ex_states.empty()){
