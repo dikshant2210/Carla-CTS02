@@ -1,6 +1,6 @@
 """
 Author: Dikshant Gupta
-Time: 28.05.22 16:34
+Time: 11.06.22 14:02
 """
 
 import pygame
@@ -17,7 +17,7 @@ from config import Config
 from environment import GIDASBenchmark
 
 
-def eval_isdespot(arg):
+def train_hyleap(arg):
     ##############################################################
     t0 = time.time()
     # Logging file
@@ -28,7 +28,6 @@ def eval_isdespot(arg):
     print("Environment port: {}".format(Config.port))
     env = GIDASBenchmark(port=Config.port)
     env.reset_agent(arg.agent)
-    env.eval(arg.episode)
     ##############################################################
 
     ##############################################################
@@ -132,7 +131,7 @@ def main(arg):
     print(__doc__)
 
     try:
-        eval_isdespot(arg)
+        train_hyleap(arg)
 
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')

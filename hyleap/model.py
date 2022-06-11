@@ -22,6 +22,9 @@ class ExperienceBuffer:
     def num_entries(self):
         return len(self.buffer)
 
+    def __len__(self):
+        return len(self.buffer)
+
     def add(self, experience):
         if len(self.buffer) + 1 >= self.buffer_size:
             self.buffer[0:(1 + len(self.buffer)) - self.buffer_size] = []
@@ -36,17 +39,18 @@ class HyLEAPNetwork(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
+            # input_shape = (110, 310, 3)
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=8, stride=4),
             nn.ReLU(),
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, stride=2),
             nn.ReLU(),
             Flatten(),
-            nn.Linear(in_features=9*9*32, out_features=256),
+            nn.Linear(in_features=12*37*32, out_features=256),
             nn.ReLU()
         )
-        self.rnn = nn.LSTMCell(input_size=256, hidden_size=256)
-        self.action = nn.Linear(in_features=256, out_features=3)
-        self.value = nn.Linear(in_features=256, out_features=1)
+        self.rnn = nn.LSTMCell(input_size=256, hidden_size=128)
+        self.action = nn.Linear(in_features=128, out_features=3)
+        self.value = nn.Linear(in_features=128, out_features=1)
 
     def forward(self, x, h=None, c=None):
         x = self.net(x)

@@ -19,6 +19,10 @@ class HyLEAP(HyLEAR):
         self.connection.start()
         # self.connection.join()
 
+    def get_reward_despot(self, action):
+        base_reward, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
+        return base_reward, goal, hit, nearmiss, terminal
+
     def run_step(self, debug=False):
         self.vehicle = self.world.player
         transform = self.vehicle.get_transform()

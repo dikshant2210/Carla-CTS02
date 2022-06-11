@@ -20,25 +20,26 @@ path = "HybridCheckpoints"  # The path to save our model to.
 h_size = 256  # The size of the final convolutional layer before splitting it into Advantage and Value streams.
 var_end_size = 256
 time_per_step = 1  # Length of each step used in gif creation
-num_pedestrians = 4
+num_pedestrians = 1
 num_angles = 5
 num_actions = 3  # acceleration_type
 image_input_size = 100 * 100 * 3
 history_size = 2 * 128
 observation_size = 6
 load_model = True
-enableTraining = False
-learning_rate = 0.00015
+enableTraining = True
+learning_rate = 1e-4
 decay = 0.99
 momentum = 0.0
 epsilon = 0.1
+l2_decay = 0.0005
 
 factor = 0.20
 snippedSize = 100
 multiplyer = factor * 5
 halfSize = snippedSize // 2
-car_length = 4.25
-car_width = 1.7
+car_length = 4.5
+car_width = 2.0
 adapted_length = car_length * multiplyer
 adapted_width = car_width * multiplyer
 # costMapOriginal = plt.imread('../LearningAssets/combinedmapSimple.png')
@@ -46,19 +47,22 @@ adapted_width = car_width * multiplyer
 #                                             mode='reflect')
 # costMap = costMapRescaled
 
-grid_cost = np.ones((110, 310)) * 1000.0
+grid_cost = np.zeros((110, 310))
 # Road Network
-grid_cost[7:13, 13:] = 1.0
-grid_cost[97:103, 13:] = 1.0
-grid_cost[7:, 7:13] = 1.0
+road_cost = 200.0
+grid_cost[7:13, 13:] = road_cost
+grid_cost[97:103, 13:] = road_cost
+grid_cost[7:, 7:13] = road_cost
 # Sidewalk Network
-grid_cost[4:7, 4:] = 50.0
-grid_cost[:, 4:7] = 50.0
-grid_cost[13:16, 13:] = 50.0
-grid_cost[94:97, 13:] = 50.0
-grid_cost[103:106, 13:] = 50.0
-grid_cost[13:16, 16:94] = 50.0
-costMap = grid_cost
+sidewalk_cost = 100.0
+grid_cost[4:7, 4:] = sidewalk_cost
+grid_cost[:, 4:7] = sidewalk_cost
+grid_cost[13:16, 13:] = sidewalk_cost
+grid_cost[94:97, 13:] = sidewalk_cost
+grid_cost[103:106, 13:] = sidewalk_cost
+grid_cost[13:16, 16:94] = sidewalk_cost
+costMap = grid_cost / 255.0
+costMap = np.repeat(costMap[:, :, np.newaxis], 3, axis=2)
 
 points = np.empty([4, 2])
 points[0, :] = (- adapted_length / 2.0, - adapted_width / 2.0)
@@ -88,16 +92,39 @@ class SinCosLookupTable:
 
 
 def getCornerPositions(centerX, centerZ, theta):
-    lookupTable = SinCosLookupTable()
-    tmp = points - (centerX, centerZ)
-    cos = lookupTable.cos(theta)
-    sin = lookupTable.sin(theta)
+    if theta < 0:
+        theta = theta + 2 * np.pi
+    # lookupTable = SinCosLookupTable()
+    # tmp = points - (centerX, centerZ)
+    # cos = lookupTable.cos(theta)
+    # sin = lookupTable.sin(theta)
+    #
+    # tmp1 = np.empty(points.shape)
+    # tmp1[:, 0] = tmp[:, 0] * cos - tmp[:, 1] * sin
+    # tmp1[:, 1] = tmp[:, 0] * sin + tmp[:, 1] * cos
+    #
+    # tmp1 += (centerX, centerZ)
 
     tmp1 = np.empty(points.shape)
-    tmp1[:, 0] = tmp[:, 0] * cos - tmp[:, 1] * sin
-    tmp1[:, 1] = tmp[:, 0] * sin + tmp[:, 1] * cos
+    # TOP RIGHT VERTEX:
+    top_right_x = centerX + ((car_width / 2) * np.sin(theta)) + ((car_length / 2) * np.cos(theta))
+    top_right_y = centerZ - ((car_width / 2) * np.cos(theta)) + ((car_length / 2) * np.sin(theta))
+    tmp1[0, :] = top_right_x, top_right_y
 
-    tmp1 += (centerX, centerZ)
+    # TOP LEFT VERTEX:
+    top_left_x = centerX - ((car_width / 2) * np.sin(theta)) + ((car_length / 2) * np.cos(theta))
+    top_left_y = centerZ + ((car_width / 2) * np.cos(theta)) + ((car_length / 2) * np.sin(theta))
+    tmp1[1, :] = top_left_x, top_left_y
+
+    # BOTTOM LEFT VERTEX:
+    bot_left_x = centerX - ((car_width / 2) * np.sin(theta)) - ((car_length / 2) * np.cos(theta))
+    bot_left_y = centerZ + ((car_width / 2) * np.cos(theta)) - ((car_length / 2) * np.sin(theta))
+    tmp1[2, :] = bot_left_x, bot_left_y
+
+    # BOTTOM RIGHT VERTEX:
+    bot_right_x = centerX + ((car_width / 2) * np.sin(theta)) - ((car_length / 2) * np.cos(theta))
+    bot_right_y = centerZ - ((car_width / 2) * np.cos(theta)) - ((car_length / 2) * np.sin(theta))
+    tmp1[3, :] = bot_right_x, bot_right_y
 
     return tmp1
 
@@ -125,26 +152,22 @@ def getObsParallel(image, allObsData):
     allObsData *= multiplyer
     allObsData[:, 2:4] /= multiplyer
 
-    coordinate = (allObsData[:,0:2] - halfSize).round().astype(int)
-    coordinate[coordinate < 0] = 0
-
-    coordinateMax = coordinate + snippedSize
-
-    result = np.empty([samples, 100, 100, 3])
+    result = np.empty([samples, 110, 310, 3])
+    # image = np.repeat(image[:, :, np.newaxis], 3, axis=2)
 
     for iterator in range(samples):
-        result[iterator, :, :] = image[coordinate[iterator, 1] : coordinateMax[iterator, 1], coordinate[iterator, 0]: coordinateMax[iterator, 0]]
-
-    cornerPositions = getCornerPositionsSimple(allObsData[:, 2])
+        result[iterator, :, :, :] = image
 
     for iterator in range(samples):
-        rr, cc = skimage.draw.polygon(cornerPositions[iterator, :, 1], cornerPositions[iterator, :, 0], shape=[100, 100, 3])
-        result[iterator, rr, cc, :] = (1.0, 0, 0)
+        xx, yy, dd = allObsData[iterator, 0], allObsData[iterator, 1], np.deg2rad(allObsData[iterator, 2])
+        cornerPositions = getCornerPositions(xx + 10, yy + 10, dd)
+        rr, cc = skimage.draw.polygon(cornerPositions[:, 0], cornerPositions[:, 1], shape=[110, 310, 3])
+        result[iterator, rr, cc, :] = (1.0, 0.0, 0.0)
 
         for i in range(num_pedestrians):
-            if allObsData[iterator, 4 + (2 * i)] != 0 or allObsData[iterator, 4 + (2 * i) + 1] != 0:
-                rr, cc = skimage.draw.circle(allObsData[iterator, 4 + (2 * i) + 1] - allObsData[iterator, 1] + halfSize,
-                                             allObsData[iterator, 4 + (2 * i)] - allObsData[iterator, 0] + halfSize, 2, shape=[100, 100, 3])
+            xx, yy = allObsData[iterator, 4 + (2 * i)], allObsData[iterator, 4 + (2 * i) + 1]
+            if xx != 0 or yy != 0:
+                rr, cc = skimage.draw.ellipse(xx + 10, yy + 10, 1, 1, shape=[110, 310, 3])
                 result[iterator, rr, cc, :] = (0, 0, 1.0)
 
     """
@@ -152,7 +175,7 @@ def getObsParallel(image, allObsData):
     plt.show()
     """
 
-    result.shape = (samples, 100 * 100 * 3)
+    result.shape = (samples, 110 * 310 * 3)
 
     return result
 

@@ -12,9 +12,11 @@ import threading
 import struct
 
 import skimage.draw
+import torch
 
 from hyleap.utils import *
 from hyleap.model import ExperienceBuffer
+from hyleap.model import HyLEAPNetwork
 
 
 new_im = True
@@ -33,6 +35,9 @@ class train_connector(threading.Thread):
         self.initialized = False
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.model = HyLEAPNetwork().double().cuda()
+        self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=learning_rate, alpha=decay,
+                                             momentum=momentum, eps=epsilon, weight_decay=l2_decay)
 
         try:
             self.sock.bind((HOST, PORT))
@@ -119,6 +124,7 @@ class train_connector(threading.Thread):
     def run(self):
         total_episodes = 0
         buf = ExperienceBuffer()
+        latest_model_path = "_out/hyleap/latest_model.pth"
 
         while True:
             if not self.initialized:
@@ -126,21 +132,36 @@ class train_connector(threading.Thread):
                 continue
 
             self.receiveMessage()
-            with open('_out/state.pkl', 'wb') as file:
-                pkl.dump(self.state, file)
-            print('Finished episode ' + str(total_episodes + 1) + ' after '
-                  + str(self.state['observations'].shape[0]) + ' steps, reward ' + str(self.state['real_values'][0]))
+            # print('Finished episode ' + str(total_episodes + 1) + ' after '
+            #       + str(self.state['observations'].shape[0]) + ' steps, reward ' + str(self.state['real_values'][0]))
 
             message_tmp = getObsParallel(costMap, self.state['observations'])
-
             self.state['observations'] = message_tmp
+            # with open('_out/costmap.pkl', 'wb') as file:
+            #     pkl.dump(message_tmp, file)
 
             buf.add(self.state)
+            loss_fn = torch.nn.CrossEntropyLoss()
+            loss_mse = torch.nn.MSELoss()
 
             if enableTraining:
-                print(self.state)
+                loss = torch.zeros(1).double().cuda()
+                self.model.zero_grad()
+                for policy, real_value, obs, hx, cx in zip(self.state['despot_policy'], self.state['real_values'],
+                                                           self.state['observations'], self.state['histories'][0],
+                                                           self.state['histories'][1]):
+                    obs = obs.reshape((110, 310, 3)).transpose(2, 0, 1)
+                    obs = torch.from_numpy(obs).cuda().unsqueeze(0)
+                    hx = torch.from_numpy(hx).cuda().unsqueeze(0)
+                    cx = torch.from_numpy(cx).cuda().unsqueeze(0)
+                    act, val, (_, _) = self.model(obs, hx, cx)
+                    loss += loss_fn(act.softmax(dim=1), torch.from_numpy(policy).cuda().unsqueeze(0))
+                    loss += loss_mse(val, torch.tensor(real_value).cuda().unsqueeze(0).unsqueeze(0))
 
+                loss.backward()
+                self.optimizer.step()
             total_episodes += 1
+            torch.save(self.model.state_dict(), latest_model_path)
 
 
 class ConnectorServer(threading.Thread):
@@ -169,6 +190,7 @@ class ConnectorServer(threading.Thread):
         self.total = b""
         self.state = None
         self.conn, self.addr = self.sock.accept()
+        self.model = HyLEAPNetwork().double().cuda()
 
     def simpleParse(self, data, num_states):
         try:
@@ -256,22 +278,30 @@ class ConnectorServer(threading.Thread):
     def run(self):
         while True:
             message = self.receiveMessage()
-            # print("Message received")
-            # processed_input = getObsParallel(costMap, message['obs'])
-
             # print(message)
             #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
 
-            # action, value, updated_state = sess.run(
-            #     [network.predictedAction, network.predictedValue, network.rnn_state],
-            #     feed_dict={network.scalarInput: processed_input, network.trainLength: 1,
-            #                network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
-            action = [0]
-            value = [0]
-            updated_state = [np.zeros((1, 128)), np.zeros((1, 128))]
-            msg = self.buildBinaryMessage(updated_state, action, value)
-            # print("sending...", message['obs'].shape)
-            for _ in range(message['obs'].shape[0]):
+            observations = getObsParallel(costMap, message['obs'])
+            latest_model_path = "_out/hyleap/latest_model.pth"
+            if os.path.exists(latest_model_path):
+                self.model.load_state_dict(torch.load(latest_model_path))
+            self.model.eval()
+
+            hx = torch.from_numpy(message['lstm_state'][0]).cuda()
+            cx = torch.from_numpy(message['lstm_state'][1]).cuda()
+            observations = observations.reshape((observations.shape[0], 110, 310, 3)).transpose(0, 3, 1, 2)
+            observations = torch.from_numpy(observations).cuda()
+
+            observations = torch.nan_to_num(observations)
+            hx = torch.nan_to_num(hx)
+            cx = torch.nan_to_num(cx)
+            actions, values, (hs, cs) = self.model(observations, hx, cx)
+
+            for act, val, h, c in zip(actions, values, hs, cs):
+                action = [torch.argmax(act, dim=-1).cpu().numpy()]
+                value = [val.cpu().detach().numpy()[0]]
+                updated_state = [h.unsqueeze(0).cpu().detach().numpy(), c.unsqueeze(0).cpu().detach().numpy()]
+                msg = self.buildBinaryMessage(updated_state, action, value)
                 self.sendBinaryMessage(msg)
 
 
@@ -369,132 +399,19 @@ class image_connector(threading.Thread):
             for i in range(1, self.state['waypoints'].shape[0]):
                 rowOld = self.state['waypoints'][i - 1, :]
                 row = self.state['waypoints'][i, :]
-                rr, cc = skimage.draw.line(rowOld[1], rowOld[0], row[1], row[0])
+                rr, cc = skimage.draw.line(round(rowOld[1]), round(rowOld[0]), round(row[1]), round(row[0]))
                 for xx, xy in zip(cc, rr):
-                    costMapTmp[xx + 10, xy + 10] = 0.0
+                    costMapTmp[xx + 10, xy + 10, :] = (0.0, 1.0, 0.0)
 
             rr, cc = skimage.draw.ellipse(self.state['goal_position'][1],
                                           self.state['goal_position'][0], 5, 5, shape=costMapTmp.shape)
             for xx, xy in zip(cc, rr):
-                costMapTmp[xx + 10, xy + 10] = 0.0
+                costMapTmp[xx + 10, xy + 10] = (0, 1.0, 0)
 
             rr, cc = skimage.draw.ellipse(self.state['obstacle'][1] * multiplyer,
                                           self.state['obstacle'][0] * multiplyer, 5, 5, shape=costMapTmp.shape)
             for xx, xy in zip(cc, rr):
-                costMapTmp[xx + 10, xy + 10] = 200.0
+                costMapTmp[xx + 10, xy + 10] = (0, 0, 0)
 
             costMap = costMapTmp
             new_im = True
-
-
-class ConnectorFull(threading.Thread):
-
-    def __init__(self, conn):
-        threading.Thread.__init__(self)
-
-        self.total = b""
-        self.state = None
-
-        self.conn = conn
-
-    def simpleParse(self, data, num_states):
-        try:
-            lstm_state1 = np.array(data[0:history_size // 2])
-            lstm_state1 = np.tile(lstm_state1, num_states)
-            lstm_state1.shape = (num_states, history_size // 2)
-
-            lstm_state2 = np.array(data[history_size // 2: history_size])
-            lstm_state2 = np.tile(lstm_state2, num_states)
-            lstm_state2.shape = (num_states, history_size // 2)
-
-            # (np.zeros([1, h_size + var_end_size]), np.zeros([1, h_size + var_end_size]))
-
-            obs = np.array(data[history_size:])
-            obs.shape = (-1, observation_size)
-
-            arr = {'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': obs}
-
-            return arr
-        except (IndexError, ValueError) as e:
-            return None
-
-    def receiveMessage(self):
-        while True:
-            receivedBytes = self.conn.recv(4)
-            if len(receivedBytes) == 4:
-                break
-
-        assert len(receivedBytes) == 4
-
-        num_states = int(round(struct.unpack('f', receivedBytes)[0]))
-
-        totalLen = (history_size + observation_size * num_states) * 4
-
-        while len(self.total) < totalLen:
-            try:
-                receivedBytes = self.conn.recv(totalLen - len(self.total))
-
-                if receivedBytes == 0:
-                    continue
-
-                self.total += receivedBytes
-            except OSError as e:
-                print(e)
-                time.sleep(5)
-
-        assert len(self.total) == totalLen
-        num_elements = totalLen // 4
-        format_string = str(num_elements) + 'f'
-        data = struct.unpack(format_string, self.total)
-
-        self.state = self.simpleParse(data, num_states)
-        self.total = b""
-
-        return self.state
-
-    def buildBinaryMessage(self, state, action, value):
-        res = b""
-
-        for i in range(len(action)):
-            res += state[0][i, :].astype('f').tostring()
-            res += state[1][i, :].astype('f').tostring()
-            res += struct.pack('2f', float(action[i]), value[i])
-
-        return res
-
-    def sendBinaryMessage(self, m):
-        while True:
-            try:
-                self.conn.sendall(m)
-                break
-            except socket.error as e:
-                print(e)
-                time.sleep(5)
-
-    def one_hot(self, i):
-        if i == -1:
-            i = 1
-
-        return [1 if i == index else 0 for index in range(num_actions)]
-
-    def run(self):
-        while True:
-            message = self.receiveMessage()
-            print("Message received")
-            # processed_input = getObsParallel(costMap, message['obs'])
-
-            # print(message)
-            #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
-
-            # action, value, updated_state = sess.run(
-            #     [network.predictedAction, network.predictedValue, network.rnn_state],
-            #     feed_dict={network.scalarInput: processed_input, network.trainLength: 1,
-            #                network.state_in: message['lstm_state'], network.batch_size: message['obs'].shape[0]})
-            action = [0]
-            value = [0]
-            updated_state = [np.zeros((1, 128)), np.zeros((1, 128))]
-            msg = self.buildBinaryMessage(updated_state, action, value)
-            print("sending...", message['obs'].shape)
-            # self.sendBinaryMessage(msg)
-            for _ in range(message['obs'].shape[0]):
-                self.sendBinaryMessage(msg)
