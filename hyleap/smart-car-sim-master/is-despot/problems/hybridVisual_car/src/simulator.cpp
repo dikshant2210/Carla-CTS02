@@ -148,13 +148,15 @@ public:
 
 			// receive current observation from server
 			m = conn.receiveMessage();
+            cout << "message received!!\n";
+            cout << m->reward <<" " << m->terminal << endl;
 
             if(step > 0){
 			    rewards.push_back(m->reward);
             }
 
 			if (m->terminal) {
-			    cout << worldModel.inCollision(world_state) << "\n";
+//			    cout << worldModel.inCollision(world_state) << "\n";
 				cout << "Reached the goal!\n";
                 conn.sendMessage("RESET\n");
 				break;
@@ -247,7 +249,6 @@ public:
             Globals::config.silence = false;
             // Choose action
             int act = solver.Search().action;
-            cout << "I am out of action!!\n";
 
             float* improvedPolicy = new float[3];
             improvedPolicy[0] = solver.improvedProbabilities[0];
@@ -315,10 +316,12 @@ public:
             // cout << "Num default calls: " << ModelParams::numDefault << "\n";
         }
 
-        string train_message = createTrainMessage(rewards, despot_policy,
-            observations, histories);
+        if (rewards.size() > 10) {
+            string train_message = createTrainMessage(rewards, despot_policy,
+                                                      observations, histories);
 
-        train_conn.sendMessage(train_message.c_str());
+            train_conn.sendMessage(train_message.c_str());
+        }
 
         for(float* o: observations){
             delete[] o;

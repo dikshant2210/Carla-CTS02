@@ -892,7 +892,7 @@ VNode* DESPOT::ParallelTrial(VNode* root, RandomStreams& streams,
     	}
 
     	if (cur->IsLeaf()) {
-    	    cout << "Expand leaf" << cur << "\n";
+//    	    cout << "Expand leaf" << cur << "\n";
 
     	    DESPOT::lock->unlock();
     		ParallelExpand(cur, lower_bound, upper_bound, model,

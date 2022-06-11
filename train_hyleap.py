@@ -53,6 +53,8 @@ def train_hyleap(arg):
         risk = []
         impact_speed = []
         trajectory = []
+        env.planner_agent.conn.send_message(True, 0, 0, [0, 0], 0, [[0, 0]], [[0, 0, 0]])  # Initial message
+        env.planner_agent.conn.receive_message()
 
         for step_num in range(Config.num_steps):
             ped_data.append((env.world.walker.get_location().x, env.world.walker.get_location().y))
@@ -117,6 +119,7 @@ def train_hyleap(arg):
         print('Time to goal: {:.4f}s, Execution time: {:.4f}ms'.format(
             time_to_goal, sum(exec_time) * 1000 / (count + 1)))
         env.planner_agent.conn.send_message(True, reward, 0, [0, 0], 0, [[0, 0]], [[0, 0, 0]])
+        env.planner_agent.conn.receive_message()
         ##############################################################
 
     env.close()
