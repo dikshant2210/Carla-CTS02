@@ -164,7 +164,7 @@ class train_connector(threading.Thread):
                 self.optimizer.step()
             total_episodes += 1
             torch.save(self.model.state_dict(), latest_model_path)
-            if total_episodes % 20:
+            if total_episodes % 20 == 0:
                 print("Logging weights trained on {} steps for {} episodes".format(count, total_episodes))
                 torch.save(self.model.state_dict(), "_out/hyleap/model_{}.pth".format(count))
 
@@ -406,17 +406,23 @@ class image_connector(threading.Thread):
                 row = self.state['waypoints'][i, :]
                 rr, cc = skimage.draw.line(round(rowOld[1]), round(rowOld[0]), round(row[1]), round(row[0]))
                 for xx, xy in zip(cc, rr):
-                    costMapTmp[xx + 10, xy + 10, :] = (0.0, 1.0, 0.0)
+                    xx = min(109, max(xx + 10, 0))
+                    xy = min(309, max(xy + 10, 0))
+                    costMapTmp[xx, xy, :] = (0.0, 1.0, 0.0)
 
             rr, cc = skimage.draw.ellipse(self.state['goal_position'][1],
                                           self.state['goal_position'][0], 5, 5, shape=costMapTmp.shape)
             for xx, xy in zip(cc, rr):
-                costMapTmp[xx + 10, xy + 10] = (0, 1.0, 0)
+                xx = min(109, max(xx + 10, 0))
+                xy = min(309, max(xy + 10, 0))
+                costMapTmp[xx, xy] = (0, 1.0, 0)
 
             rr, cc = skimage.draw.ellipse(self.state['obstacle'][1] * multiplyer,
                                           self.state['obstacle'][0] * multiplyer, 5, 5, shape=costMapTmp.shape)
             for xx, xy in zip(cc, rr):
-                costMapTmp[xx + 10, xy + 10] = (0, 0, 0)
+                xx = min(109, max(xx + 10, 0))
+                xy = min(309, max(xy + 10, 0))
+                costMapTmp[xx, xy] = (0, 0, 0)
 
             costMap = costMapTmp
             new_im = True
