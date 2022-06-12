@@ -19,7 +19,6 @@ class HyLEAP(HyLEAR):
         self.image_connection.start()
         self.connection.start()
         time.sleep(10)
-        # self.connection.join()
 
     def get_reward_despot(self, action):
         base_reward, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
