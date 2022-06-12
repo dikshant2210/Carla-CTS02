@@ -25,7 +25,7 @@ def run_server():
 
 def run_server_hyleap():
     subprocess.run(['cd hyleap/smart-car-sim-master/is-despot/problems/hybridVisual_car && ./car {}'.format(
-        Config.despot_port)], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        Config.despot_port)], shell=True, stderr=subprocess.STDOUT)
 
 
 class HyLEAR(RLAgent):
