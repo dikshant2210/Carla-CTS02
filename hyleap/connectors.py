@@ -142,7 +142,7 @@ class train_connector(threading.Thread):
             #     pkl.dump(message_tmp, file)
 
             buf.add(self.state)
-            loss_fn = torch.nn.CrossEntropyLoss()
+            loss_fn = torch.nn.KLDivLoss()
             loss_mse = torch.nn.MSELoss()
 
             if enableTraining:
@@ -167,6 +167,8 @@ class train_connector(threading.Thread):
             if total_episodes % 20 == 0:
                 print("Logging weights trained on {} steps for {} episodes".format(count, total_episodes))
                 torch.save(self.model.state_dict(), "_out/hyleap/model_{}.pth".format(count))
+                if count > 1e6:
+                    break
 
 
 class ConnectorServer(threading.Thread):
