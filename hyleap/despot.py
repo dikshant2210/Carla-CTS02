@@ -2,6 +2,7 @@
 Author: Dikshant Gupta
 Time: 10.11.21 01:14
 """
+import time
 
 import carla
 from hyleap.connectors import train_connector, image_connector, ConnectorServer
@@ -17,6 +18,7 @@ class HyLEAP(HyLEAR):
         self.train_connection.start()
         self.image_connection.start()
         self.connection.start()
+        time.sleep(10)
         # self.connection.join()
 
     def get_reward_despot(self, action):
