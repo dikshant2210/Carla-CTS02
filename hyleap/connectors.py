@@ -123,6 +123,7 @@ class train_connector(threading.Thread):
 
     def run(self):
         total_episodes = 0
+        count = 0
         buf = ExperienceBuffer()
         latest_model_path = "_out/hyleap/latest_model.pth"
 
@@ -157,14 +158,15 @@ class train_connector(threading.Thread):
                     act, val, (_, _) = self.model(obs, hx, cx)
                     loss += loss_fn(act.softmax(dim=1), torch.from_numpy(policy).cuda().unsqueeze(0))
                     loss += loss_mse(val, torch.tensor(real_value).cuda().unsqueeze(0).unsqueeze(0))
+                    count += 1
 
                 loss.backward()
                 self.optimizer.step()
             total_episodes += 1
             torch.save(self.model.state_dict(), latest_model_path)
             if total_episodes % 20:
-                print("Logging weights trained on {} episodes!".format(total_episodes))
-                torch.save(self.model.state_dict(), "_out/hyleap/model_{}.pth".format(total_episodes))
+                print("Logging weights trained on {} steps for {} episodes".format(count, total_episodes))
+                torch.save(self.model.state_dict(), "_out/hyleap/model_{}.pth".format(count))
 
 
 class ConnectorServer(threading.Thread):
