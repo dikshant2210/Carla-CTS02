@@ -94,7 +94,7 @@ public:
             std::this_thread::sleep_for (std::chrono::seconds(1));
             tries++;
 
-            if(tries == 5){
+            if(tries == 25){
                 printf("\nConnection Failed: %s\n", strerror(errno));
                 exit(-1);
             }
