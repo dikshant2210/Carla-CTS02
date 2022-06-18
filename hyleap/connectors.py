@@ -126,6 +126,9 @@ class train_connector(threading.Thread):
         count = 0
         buf = ExperienceBuffer()
         latest_model_path = "_out/hyleap/latest_model.pth"
+        if os.path.exists(latest_model_path):
+            self.model.load_state_dict(torch.load(latest_model_path))
+            self.model.eval()
 
         while True:
             if not self.initialized:
