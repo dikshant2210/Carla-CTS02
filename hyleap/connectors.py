@@ -283,16 +283,21 @@ class ConnectorServer(threading.Thread):
         return [1 if i == index else 0 for index in range(num_actions)]
 
     def run(self):
+        latest_model_path = "_out/hyleap/latest_model.pth"
+        if os.path.exists(latest_model_path):
+            self.model.load_state_dict(torch.load(latest_model_path))
+            self.model.eval()
+
         while True:
             message = self.receiveMessage()
             # print(message)
             #  arr = { 'terminal': True, 'lstm_state': (lstm_state1, lstm_state2), 'obs': data[history_size:]}
 
             observations = getObsParallel(costMap, message['obs'])
-            latest_model_path = "_out/hyleap/latest_model.pth"
-            if os.path.exists(latest_model_path):
+
+            if os.path.exists(latest_model_path) and enableTraining:
                 self.model.load_state_dict(torch.load(latest_model_path))
-            self.model.eval()
+                self.model.eval()
 
             hx = torch.from_numpy(message['lstm_state'][0]).cuda()
             cx = torch.from_numpy(message['lstm_state'][1]).cuda()
