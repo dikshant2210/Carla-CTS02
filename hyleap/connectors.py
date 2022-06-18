@@ -164,7 +164,7 @@ class train_connector(threading.Thread):
                 self.optimizer.step()
             total_episodes += 1
             torch.save(self.model.state_dict(), latest_model_path)
-            if total_episodes % 20 == 0:
+            if total_episodes % 20 == 0 and enableTraining:
                 print("Logging weights trained on {} steps for {} episodes".format(count, total_episodes))
                 torch.save(self.model.state_dict(), "_out/hyleap/model_{}.pth".format(count))
                 if count > 1e6:
