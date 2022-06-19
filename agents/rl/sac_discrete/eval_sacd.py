@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from datetime import datetime
 import time
+import pickle as pkl
 
 from .base import BaseAgent
 from config import Config
@@ -50,10 +51,8 @@ class EvalSacdAgent(BaseAgent):
         self.conv.eval()
         self.policy.eval()
 
-        filename = "_out/{}/{}.log".format(agent, datetime.now().strftime("%m%d%Y_%H%M%S"))
-        print(filename)
-        self.file = open(filename, "w")
-        self.file.write(str(vars(Config)) + "\n")
+        self.filename = "_out/{}/{}.pkl".format(agent, datetime.now().strftime("%m%d%Y_%H%M%S"))
+        print(self.filename)
         self.current_episode = current_episode
 
     def evaluate(self):
@@ -64,12 +63,12 @@ class EvalSacdAgent(BaseAgent):
         num_steps = 0
         total_return = 0.0
         print('-' * 60)
+        data_log = {}
 
         while True:
             state = self.test_env.reset()
             episode_steps = 0
             episode_return = 0.0
-            exec_time = 0
             done = False
             nearmiss = False
             action_count = {0: 0, 1: 0, 2: 0}
@@ -80,14 +79,25 @@ class EvalSacdAgent(BaseAgent):
             t = np.zeros(6)  # reward, vx, vt, onehot last action
             t[3 + 1] = 1.0  # index = 3 + last_action(maintain)
 
+            episode_log = {}
+            exec_time = []
+            actions_list = []
+            risk = []
+            impact_speed = []
+            trajectory = []
+
             while (not done) and episode_steps < self.max_episode_steps:
+                trajectory.append((self.test_env.world.player.get_location().x,
+                                   self.test_env.world.player.get_location().y))
                 if Config.display:
                     self.test_env.render()
 
                 start_time = time.time()
                 action = self.exploit((state, t))
                 next_state, reward, done, info = self.test_env.step(action)
-                exec_time += (time.time() - start_time)
+                time_taken = time.time() - start_time
+                exec_time.append(time_taken)
+                actions_list.append(action)
                 if action != 1 and prev_action != action:
                     total_acc_decc += 1
                 prev_action = action
@@ -106,28 +116,41 @@ class EvalSacdAgent(BaseAgent):
                 t[3 + action] = 1.0
                 nearmiss = nearmiss or info["near miss"]
 
+                speed = np.sqrt(info['velocity'].x ** 2 + info['velocity'].y ** 2)
+                impact_speed.append(speed)
+                risk.append(info['risk'])
+
             num_episodes += 1
             total_return += episode_return
-            exec_time = exec_time / episode_steps
+
             time_to_goal = episode_steps * Config.simulation_step
+            episode_log['ttg'] = time_to_goal
+            episode_log['risk'] = risk
+            episode_log['actions'] = actions_list
+            episode_log['exec'] = exec_time
+            episode_log['impact_speed'] = impact_speed
+            episode_log['trajectory'] = trajectory
+            episode_log['ped_dist'] = info['ped_distance']
+            episode_log['scenario'] = info['scenario']
+            episode_log['ped_speed'] = info['ped_speed']
+            episode_log['crash'] = info['accident']
+            episode_log['nearmiss'] = nearmiss
+            data_log[num_episodes] = episode_log
+
             print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
-                num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
-            self.file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
                 num_episodes, info['scenario'], info['ped_speed'], info['ped_distance']))
             print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
                 info['goal'], info['accident'], nearmiss, episode_return))
-            self.file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(
-                info['goal'], info['accident'], nearmiss))
             print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms, Action: {}'.format(
-                time_to_goal, total_acc_decc, exec_time * 1000, action_count))
-            self.file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
-                time_to_goal, total_acc_decc, exec_time * 1000))
+                time_to_goal, total_acc_decc, sum(exec_time) * 1000 / len(exec_time), action_count))
 
             if num_episodes >= total_episodes:
                 break
 
+        with open(self.filename, "wb") as write_file:
+            pkl.dump(data_log, write_file)
+        print("Log file written here: {}".format(self.filename))
         print('-' * 60)
-        self.file.close()
 
     def exploit(self, state):
         # Act without randomness.
