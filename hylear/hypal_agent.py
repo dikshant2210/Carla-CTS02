@@ -182,7 +182,6 @@ class SharedSacdAgent(BaseAgent):
         print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(goal, accident, nearmiss))
         print('Total steps: {}, Episode steps: {}, Reward: {:.4f}'.format(self.steps, episode_steps, episode_return))
         print("Policy; ", action_count, "Critic: ", action_count_critic, "Alpha: {:.4f}".format(self.alpha.item()))
-        self.env.planner_agent.conn.send_message(True, episode_return, 0, [0, 0], 0, [[0, 0]], [[0, 0, 0]])
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
         states, t = states
