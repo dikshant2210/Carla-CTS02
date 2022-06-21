@@ -73,7 +73,7 @@ class SharedSacdAgent(BaseAgent):
         with torch.no_grad():
             state = self.conv(state)
             state = torch.cat([state, t], dim=1)
-            action, _, _ = self.policy.sample(state, probs)
+            action, _, _ = self.policy.sample(state, probs, self.steps)
             curr_q1 = self.online_critic.Q1(state)
             curr_q2 = self.online_critic.Q2(state)
             q = torch.min(curr_q1, curr_q2)
@@ -113,7 +113,7 @@ class SharedSacdAgent(BaseAgent):
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
-            if self.start_steps > self.steps and False:
+            if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
                 critic_action = action
             else:

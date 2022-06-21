@@ -23,16 +23,16 @@ class Config:
     location_threshold = 1.0
 
     ped_speed_range = [0.6, 2.0]
-    ped_distance_range = [10, 40]
+    ped_distance_range = [0, 40]
     car_speed_range = [6, 9]
-    scenarios = ['01', '02', '03', '04', '05', '06', '07', '08', '09']  # + ['06', '09']
+    scenarios = ['01', '02', '03', '04', '05', '06', '07', '08', '09']
 
-    val_scenarios = ['01']
-    val_ped_speed_range = [0., 4.0]
-    val_ped_distance_range = [0, 40]
-    val_car_speed_range = [6, 9]
+    # val_scenarios = ['01']
+    # val_ped_speed_range = [0., 4.0]
+    # val_ped_distance_range = [0, 40]
+    # val_car_speed_range = [6, 9]
 
-    test_scenarios = ['01', '02', '03', '04']  # ['05', '06', '07', '08', '09']
+    test_scenarios = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
     test_ped_speed_range = [0.25, 2.85]
     test_ped_distance_range = [4.75, 49.75]
     test_car_speed_range = [6, 9]
