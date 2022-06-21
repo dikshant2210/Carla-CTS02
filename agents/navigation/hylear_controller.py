@@ -179,8 +179,8 @@ class HyLEAR(RLAgent):
             paths = [path_normal,
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp, True)]  # Sidewalk relaxed
-            path = min(paths, key=lambda t: t[1])
-            return path, self.get_car_intention([], path, start)
+            path, risk = self.rulebook(paths, start)
+            return (path, risk), self.get_car_intention([], path, start)
         else:
             # Use path predictor
             ped_updated_risk_cmp = self.risk_cmp.copy()

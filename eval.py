@@ -54,10 +54,13 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--port', type=int, default=2200)
     parser.add_argument('--episode', type=int, default=0)
+    parser.add_argument('--test', type=str, default='')
     args = parser.parse_args()
 
     Config.port = args.port
     print('Env. port: {}'.format(Config.port))
+    if args.test:
+        Config.test_scenarios = [args.test]
 
     p = Process(target=run_server)
     p.start()
