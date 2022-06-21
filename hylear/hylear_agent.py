@@ -113,6 +113,8 @@ class SharedSacdAgent(BaseAgent):
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
+            if self.steps > 500000:
+                self.env.planner_agent.eval_mode = True
             if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
                 critic_action = action
