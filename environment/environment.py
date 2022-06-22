@@ -76,7 +76,7 @@ class GIDASBenchmark(gym.Env):
         print(Config.scenarios)
         for scenario in Config.scenarios:
             if self.setting == "special":
-                if scenario in ['03', '04']:
+                if scenario in ['01', '02', '03', '04']:
                     self._get_special_scenes(scenario)
                     self.mode = "TESTING"
                     self.test_episodes = iter(self.episodes)

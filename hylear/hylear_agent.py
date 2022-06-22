@@ -113,9 +113,9 @@ class SharedSacdAgent(BaseAgent):
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
-            if self.steps > 500000:
+            if self.steps > Config.pre_train_steps:
                 self.env.planner_agent.eval_mode = True
-            if self.start_steps > self.steps:
+            if self.start_steps > self.steps and False:
                 action = self.env.action_space.sample()
                 critic_action = action
                 symbolic_action = action
@@ -149,7 +149,7 @@ class SharedSacdAgent(BaseAgent):
             t_new[3 + action] = 1.0
 
             # To calculate efficiently, set priority=max_priority here.
-            self.memory.append((state, t), (action, symbolic_action), clipped_reward, (next_state, t_new), mask)
+            self.memory.append((state, t), action, clipped_reward, (next_state, t_new), mask)
 
             self.steps += 1
             episode_steps += 1
@@ -187,7 +187,6 @@ class SharedSacdAgent(BaseAgent):
         print("Policy; ", action_count, "Critic: ", action_count_critic, "Alpha: {:.4f}".format(self.alpha.item()))
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
-        actions, _ = actions
         states, t = states
         states = self.conv(states)
         states = torch.cat([states, t], dim=-1)
@@ -196,7 +195,6 @@ class SharedSacdAgent(BaseAgent):
         return curr_q1, curr_q2
 
     def calc_target_q(self, states, actions, rewards, next_states, dones):
-        actions, _ = actions
         with torch.no_grad():
             next_states, t_new = next_states
             next_states = self.conv(next_states)
@@ -252,7 +250,7 @@ class SharedSacdAgent(BaseAgent):
 
         # Cross entropy loss
         # print(log_action_probs.size(), actions.size())
-        if self.steps < 500000:
+        if self.steps < Config.pre_train_steps:
             loss = torch.nn.NLLLoss()
             ce_loss = loss(log_action_probs, symbolic_action.squeeze())
         else:

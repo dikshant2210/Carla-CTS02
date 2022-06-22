@@ -3,6 +3,8 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.distributions import Categorical
 
+from config import Config
+
 
 def initialize_weights_he(m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
@@ -128,7 +130,7 @@ class CateoricalPolicy(BaseNetwork):
 
         action_probs = F.softmax(self.head(states), dim=1)
         if probs is not None and steps is not None:
-            if steps < 500000:
+            if steps < Config.pre_train_steps:
                 action_probs = probs
         action_dist = Categorical(action_probs)
         actions = action_dist.sample().view(-1, 1)
