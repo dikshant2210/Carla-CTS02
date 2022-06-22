@@ -118,6 +118,7 @@ class SharedSacdAgent(BaseAgent):
             if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
                 critic_action = action
+                symbolic_action = action
             else:
                 if self.env.control.throttle > 0:
                     symbolic_action = 0
@@ -148,7 +149,7 @@ class SharedSacdAgent(BaseAgent):
             t_new[3 + action] = 1.0
 
             # To calculate efficiently, set priority=max_priority here.
-            self.memory.append((state, t), action, clipped_reward, (next_state, t_new), mask)
+            self.memory.append((state, t), (action, symbolic_action), clipped_reward, (next_state, t_new), mask)
 
             self.steps += 1
             episode_steps += 1
@@ -186,6 +187,7 @@ class SharedSacdAgent(BaseAgent):
         print("Policy; ", action_count, "Critic: ", action_count_critic, "Alpha: {:.4f}".format(self.alpha.item()))
 
     def calc_current_q(self, states, actions, rewards, next_states, dones):
+        actions, _ = actions
         states, t = states
         states = self.conv(states)
         states = torch.cat([states, t], dim=-1)
@@ -194,6 +196,7 @@ class SharedSacdAgent(BaseAgent):
         return curr_q1, curr_q2
 
     def calc_target_q(self, states, actions, rewards, next_states, dones):
+        actions, _ = actions
         with torch.no_grad():
             next_states, t_new = next_states
             next_states = self.conv(next_states)
@@ -225,7 +228,7 @@ class SharedSacdAgent(BaseAgent):
         return q1_loss, q2_loss, errors, mean_q1, mean_q2
 
     def calc_policy_loss(self, batch, weights):
-        states, actions, rewards, next_states, dones = batch
+        states, (actions, symbolic_action), rewards, next_states, dones = batch
         states, t = states
 
         with torch.no_grad():
@@ -249,8 +252,11 @@ class SharedSacdAgent(BaseAgent):
 
         # Cross entropy loss
         # print(log_action_probs.size(), actions.size())
-        loss = torch.nn.NLLLoss()
-        ce_loss = loss(log_action_probs, actions.squeeze())
+        if self.steps < 500000:
+            loss = torch.nn.NLLLoss()
+            ce_loss = loss(log_action_probs, symbolic_action.squeeze())
+        else:
+            ce_loss = 0.
 
         # Policy objective is maximization of (Q + alpha * entropy) with
         # priority weights.
