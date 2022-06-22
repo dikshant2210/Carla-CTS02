@@ -226,7 +226,7 @@ class SharedSacdAgent(BaseAgent):
         return q1_loss, q2_loss, errors, mean_q1, mean_q2
 
     def calc_policy_loss(self, batch, weights):
-        states, (actions, symbolic_action), rewards, next_states, dones = batch
+        states, actions, rewards, next_states, dones = batch
         states, t = states
 
         with torch.no_grad():
@@ -252,7 +252,7 @@ class SharedSacdAgent(BaseAgent):
         # print(log_action_probs.size(), actions.size())
         if self.steps < Config.pre_train_steps:
             loss = torch.nn.NLLLoss()
-            ce_loss = loss(log_action_probs, symbolic_action.squeeze())
+            ce_loss = loss(log_action_probs, actions.squeeze())
         else:
             ce_loss = 0.
 
