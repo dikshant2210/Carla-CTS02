@@ -23,7 +23,7 @@ class PathPlanner:
 
     def find_path(self, start, end, costmap, obstacles, speed, flag):
         if flag:
-            paths = self.anytime_planner.find_path(start, end, costmap, obstacles, speed, weight=0.8)
+            paths = self.anytime_planner.find_path(start, end, costmap, obstacles, speed, weight=0.9)
         else:
             paths = self.path_planner.find_path(start, end, costmap, obstacles)
         if len(paths):
