@@ -173,7 +173,7 @@ class HyLEAR(RLAgent):
 
         if len(self.ped_history) < 15:
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                     yaw, self.risk_cmp, False)
+                                                                     yaw, self.risk_cmp, True)
             if path_normal[1] < 100:
                 return path_normal, self.get_car_intention([], path_normal[0], start)
             paths = [path_normal,
@@ -197,7 +197,7 @@ class HyLEAR(RLAgent):
                 ped_updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
 
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                                     yaw, ped_updated_risk_cmp, False)
+                                                                     yaw, ped_updated_risk_cmp, True)
             if path_normal[1] < 100:
                 # print("normal!", path_normal[1], (path_normal[0][2][2] - path_normal[0][1][2]) / 70.0)
                 return path_normal, self.get_car_intention(pedestrian_path_d, path_normal[0], start)
