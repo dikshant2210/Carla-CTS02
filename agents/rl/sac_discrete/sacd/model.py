@@ -130,8 +130,9 @@ class CateoricalPolicy(BaseNetwork):
 
         action_probs = F.softmax(self.head(states), dim=1)
         if probs is not None and steps is not None:
-            if steps < Config.pre_train_steps:
-                action_probs = probs
+            action_probs = probs
+            # if steps < Config.pre_train_steps:
+            #     action_probs = probs
         action_dist = Categorical(action_probs)
         actions = action_dist.sample().view(-1, 1)
 

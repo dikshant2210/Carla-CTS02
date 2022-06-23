@@ -113,8 +113,8 @@ class SharedSacdAgent(BaseAgent):
         while (not done) and episode_steps < self.max_episode_steps:
             if self.display:
                 self.env.render()
-            if self.steps > Config.pre_train_steps:
-                self.env.planner_agent.eval_mode = True
+            # if self.steps > Config.pre_train_steps:
+            #     self.env.planner_agent.eval_mode = True
             if self.start_steps > self.steps and False:
                 action = self.env.action_space.sample()
                 critic_action = action
@@ -250,7 +250,7 @@ class SharedSacdAgent(BaseAgent):
 
         # Cross entropy loss
         # print(log_action_probs.size(), actions.size())
-        if self.steps < Config.pre_train_steps:
+        if self.steps < Config.pre_train_steps or True:
             loss = torch.nn.NLLLoss()
             ce_loss = loss(log_action_probs, actions.squeeze())
         else:
