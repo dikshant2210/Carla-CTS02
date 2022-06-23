@@ -60,9 +60,11 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--port', type=int, default=2000)
+    parser.add_argument('--despot_port', type=int, default=1255)
     args = parser.parse_args()
 
     Config.port = args.port
+    Config.despot_port = args.despot_port
     print('Env. port: {}'.format(Config.port))
 
     p = Process(target=run_server)
