@@ -360,10 +360,10 @@ int main(int argc, char** argv) {
         port = atoi(argv[1]);
 	}
 
-    Globals::config.max_policy_sim_len = 40;
+    Globals::config.max_policy_sim_len = 20;
     Globals::config.no_importance_sampling = false;
     Globals::config.discount = 0.990;
-    Globals::config.search_depth = 40;
+    Globals::config.search_depth = 20;
 	Globals::config.num_scenarios = 120;
 	Globals::config.time_per_move = (1.0 / ModelParams::control_freq);
 
