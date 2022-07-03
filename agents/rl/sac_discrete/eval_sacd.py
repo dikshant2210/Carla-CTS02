@@ -135,6 +135,7 @@ class EvalSacdAgent(BaseAgent):
             episode_log['ped_speed'] = info['ped_speed']
             episode_log['crash'] = info['accident']
             episode_log['nearmiss'] = nearmiss
+            episode_log['goal'] = info['goal']
             data_log[num_episodes] = episode_log
 
             print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(

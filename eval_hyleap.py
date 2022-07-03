@@ -109,6 +109,7 @@ def eval_isdespot(arg):
         episode_log['ped_speed'] = info['ped_speed']
         episode_log['crash'] = accident
         episode_log['nearmiss'] = nearmiss
+        episode_log['goal'] = info['goal']
         data_log[current_episode] = episode_log
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
