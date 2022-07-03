@@ -211,7 +211,7 @@ void DESPOT::TreeThread(int thread_number, double timeout, VNode* root, RandomSt
 		auto finishClock = std::chrono::high_resolution_clock::now();
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(finishClock - startClock).count();
 
-        if (ms > timeout * 1000 || num_root_returns == 5){
+        if (ms > 150 || num_root_returns == 5){
             //cout << "Stop: Running out of time\n";
             break;
         }
