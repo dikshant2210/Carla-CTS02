@@ -114,6 +114,14 @@ class GIDASBenchmark(gym.Env):
 
     def step(self, action):
         self.world.tick(self.clock)
+
+        # Maintain a minimum speed of 20kmph
+        velocity = self.world.player.get_velocity()
+        speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 2
+        speed *= 3.6
+        if speed < 20:
+            action = 0
+
         if action == 0:
             self.control.throttle = 0.6
         elif action == 2:
