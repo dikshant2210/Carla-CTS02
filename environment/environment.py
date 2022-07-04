@@ -117,7 +117,7 @@ class GIDASBenchmark(gym.Env):
 
         # Maintain a minimum speed of 20kmph
         velocity = self.world.player.get_velocity()
-        speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 2
+        speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 0.5
         speed *= 3.6
         if speed < 20:
             action = 0
