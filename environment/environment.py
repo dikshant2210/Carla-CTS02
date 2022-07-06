@@ -119,10 +119,12 @@ class GIDASBenchmark(gym.Env):
         velocity = self.world.player.get_velocity()
         speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 0.5
         speed *= 3.6
-        if speed < 20:
-            action = 0
-        elif speed > 50:
+        if speed > 20:
             action = 2
+        # if speed < 20:
+        #     action = 0
+        # elif speed > 50:
+        #     action = 2
 
         if action == 0:
             self.control.throttle = 0.6

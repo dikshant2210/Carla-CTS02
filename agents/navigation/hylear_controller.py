@@ -170,6 +170,18 @@ class HyLEAR(RLAgent):
         elif self.scenario[0] in [2, 5, 6, 9]:
             relaxed_sidewalk[94:97, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
             relaxed_sidewalk[103:106, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
+        elif self.scenario[0] == 11:
+            self.grid_cost[9:16, 13:] = 10000
+            self.risk_cmp[10:13, 13:] = 10000
+            relaxed_sidewalk = self.grid_cost.copy()
+            relaxed_sidewalk[4:7, y - 10: sidewalk_length + sidewalk_length] = sidewalk_cost
+            x, y = round(self.world.incoming_car.get_location().x), round(self.world.incoming_car.get_location().y)
+            # Hard coding incoming car path prediction
+            obstacles.append((x, y - 1))
+            obstacles.append((x, y - 2))
+            obstacles.append((x, y - 3))
+            obstacles.append((x, y - 4))
+            obstacles.append((x, y - 5))
 
         if len(self.ped_history) < 15:
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,

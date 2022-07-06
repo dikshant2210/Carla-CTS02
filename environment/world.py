@@ -26,6 +26,7 @@ class World(object):
         self.player = None
         self.walker = None
         self.incoming_car = None
+        self.parked_cars = None
         self.player_max_speed = None
         self.player_max_speed_fast = None
         self.collision_sensor = None
@@ -84,6 +85,21 @@ class World(object):
             print("No recommended values for 'speed' attribute")
         return blueprint
 
+    def get_random_blueprint(self):
+        vehicles = ["vehicle.audi.a2", "vehicle.audi.tt", "vehicle.chevrolet.impala", "vehicle.audi.etron"]
+        vehicle_type = random.choice(vehicles)
+        blueprint = random.choice(self.world.get_blueprint_library().filter(vehicle_type))
+        blueprint.set_attribute('role_name', self.actor_role_name)
+        if blueprint.has_attribute('color'):
+            color = random.choice(blueprint.get_attribute('color').recommended_values)
+            blueprint.set_attribute('color', color)
+        if blueprint.has_attribute('driver_id'):
+            driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
+            blueprint.set_attribute('driver_id', driver_id)
+        if blueprint.has_attribute('is_invincible'):
+            blueprint.set_attribute('is_invincible', 'true')
+        return blueprint
+
     def restart(self, scenario, ped_speed=1, ped_distance=30):
         self.scenario = scenario
         self.ped_speed = ped_speed
@@ -138,6 +154,19 @@ class World(object):
         elif scenario_type == 9:
             self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
             self.walker.apply_control(carla.WalkerControl(carla.Vector3D(0, 0, 0), 1))
+        elif scenario_type == 11:
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.player.set_target_velocity(carla.Vector3D(0, 20 * 0.2778, 0))
+            self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
+            self.parked_cars = []
+            car_spawn_point = obstacles[2][1]
+            car_spawn_point.location.y -= 7
+            for _ in range(12):
+                car_spawn_point.location.y += 7
+                parked_car = None
+                while parked_car is None:
+                    parked_car = self.world.try_spawn_actor(self.get_random_blueprint(), car_spawn_point)
+                self.parked_cars.append(parked_car)
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -183,6 +212,12 @@ class World(object):
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 0, 0))
             else:
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 9, 0))  # Set target velocity for experiment
+        if self.scenario[0] == 11:
+            # self.incoming_car.set_target_velocity(carla.Vector3D(0, -20 * 0.2778, 0))
+            if self.incoming_car.get_location().y - self.player.get_location().y < 10:
+                self.incoming_car.set_target_velocity(carla.Vector3D(0, 0, 0))
+            else:
+                self.incoming_car.set_target_velocity(carla.Vector3D(0, -20 * 0.2778, 0))
 
     def next_weather(self, reverse=False):
         self._weather_index += -1 if reverse else 1
@@ -253,3 +288,7 @@ class World(object):
         # if self.incoming_car is not None and self.scenario[0] in [10, 3, 7, 8]:
         if self.incoming_car is not None and self.incoming_car.is_alive:
             self.incoming_car.destroy()
+        if self.scenario[0] == 11:
+            if self.parked_cars is not None:
+                for car in self.parked_cars:
+                    car.destroy()

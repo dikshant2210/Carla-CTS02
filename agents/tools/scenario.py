@@ -11,6 +11,40 @@ class Scenario:
     def __init__(self, world):
         self.world = world
 
+    def scenario11(self):
+        start = (-2, 5, 90)
+        end = (-2, 100, 90)
+        obstacles = []
+
+        walker_bp = self.world.get_blueprint_library().filter("walker.pedestrian.0001")
+        walker_spawn_point = carla.Transform()
+        walker_spawn_point.location.x = 100
+        walker_spawn_point.location.y = 300
+        walker_spawn_point.location.z += 1.0
+        walker_spawn_point.rotation.yaw = 0
+        walker = [random.choice(walker_bp), walker_spawn_point]
+        obstacles.append(walker)
+
+        car_spawn_point = carla.Transform()
+        car_spawn_point.location.x = -2
+        car_spawn_point.location.y = 100
+        car_spawn_point.location.z = 0.01
+        car_spawn_point.rotation.yaw = 270
+        car_bp = self.world.get_blueprint_library().filter("vehicle.audi.tt")
+        car = [random.choice(car_bp), car_spawn_point]
+        obstacles.append(car)
+
+        parked_car_spawn_point = carla.Transform()
+        parked_car_spawn_point.location.x = 2
+        parked_car_spawn_point.location.y = 10
+        parked_car_spawn_point.location.z = 0.01
+        parked_car_spawn_point.rotation.yaw = 270
+        parked_car_bp = self.world.get_blueprint_library().filter("vehicle.audi.tt")
+        parked_car = [random.choice(parked_car_bp), parked_car_spawn_point]
+        obstacles.append(parked_car)
+
+        return 11, obstacles, end, start
+
     def scenario10(self):
         start = (2, 270, -90)
         end = (2, 150, -90)
