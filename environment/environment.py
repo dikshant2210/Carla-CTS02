@@ -104,13 +104,13 @@ class GIDASBenchmark(gym.Env):
         self.world.restart(scenario, ped_speed, ped_distance)
         self.planner_agent.update_scenario(scenario)
         self.client.get_world().tick()
-        observation, risk = self._get_observation()
+        observation, risk, ped_observable = self._get_observation()
         return observation
 
     def _get_observation(self):
-        control, observation, risk = self.planner_agent.run_step()
+        control, observation, risk, ped_observable = self.planner_agent.run_step()
         self.control = control
-        return observation, risk
+        return observation, risk, ped_observable
 
     def step(self, action):
         self.world.tick(self.clock)
@@ -119,12 +119,12 @@ class GIDASBenchmark(gym.Env):
         velocity = self.world.player.get_velocity()
         speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 0.5
         speed *= 3.6
-        if speed > 20:
-            action = 2
-        # if speed < 20:
-        #     action = 0
-        # elif speed > 50:
+        # if speed > 20:
         #     action = 2
+        if speed < 20:
+            action = 0
+        elif speed > 50:
+            action = 2
 
         if action == 0:
             self.control.throttle = 0.6
@@ -139,10 +139,10 @@ class GIDASBenchmark(gym.Env):
                 im = Image.fromarray(self.world.camera_manager.array.copy())
                 im.save("_out/recordings/frame_{:03d}.png".format(frame_num))
 
-        observation, risk = self._get_observation()
+        observation, risk, ped_observable = self._get_observation()
         reward, goal, accident, near_miss, terminal = self.planner_agent.get_reward(action)
         info = {"goal": goal, "accident": accident, "near miss": near_miss,
-                "velocity": self.planner_agent.vehicle.get_velocity(), "risk": risk,
+                "velocity": self.planner_agent.vehicle.get_velocity(), "risk": risk, 'ped_observable': ped_observable,
                 "scenario": self.scenario, "ped_speed": self.speed, "ped_distance": self.distance}
 
         if self.mode == "TESTING":

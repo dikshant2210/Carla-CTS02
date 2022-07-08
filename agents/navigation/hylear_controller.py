@@ -143,7 +143,7 @@ class HyLEAR(RLAgent):
         if not self.eval_mode:
             control = self.get_speed_action(path, control)
         self.prev_action = control
-        return control, intention, risk
+        return control, intention, risk, self.pedestrian_observable
 
     def get_path_simple(self, start, end, obstacles):
         car_velocity = self.vehicle.get_velocity()
