@@ -48,4 +48,4 @@ class HyLEAP(HyLEAR):
         if not self.eval_mode:
             control = self.get_speed_action(path, control)
         self.prev_action = control
-        return control, intention, risk
+        return control, intention, risk, self.pedestrian_observable
