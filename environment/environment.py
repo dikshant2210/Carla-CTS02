@@ -121,10 +121,11 @@ class GIDASBenchmark(gym.Env):
         speed *= 3.6
         # if speed > 20:
         #     action = 2
-        if speed < 20:
-            action = 0
-        elif speed > 50:
-            action = 2
+        if self.scenario == 10:
+            if speed < 20:
+                action = 0
+            elif speed > 50:
+                action = 2
 
         if action == 0:
             self.control.throttle = 0.6
