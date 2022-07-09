@@ -122,7 +122,6 @@ class GIDASBenchmark(gym.Env):
         # if speed > 20:
         #     action = 2
         if self.scenario == '10':
-            print("hola!")
             if speed < 20:
                 action = 0
             elif speed > 50:
