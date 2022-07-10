@@ -52,6 +52,7 @@ def eval_isdespot(arg):
         exec_time = []
         actions_list = []
         risk = []
+        ped_obs = []
         impact_speed = []
         trajectory = []
 
@@ -90,6 +91,7 @@ def eval_isdespot(arg):
             accident = accident_current or (accident and speed > 0)
             total_episode_reward += reward
             risk.append(info['risk'])
+            ped_obs.append(info['ped_observable'])
 
             if done or accident:
                 break
@@ -110,7 +112,7 @@ def eval_isdespot(arg):
         episode_log['crash'] = accident
         episode_log['nearmiss'] = nearmiss
         episode_log['goal'] = info['goal']
-        episode_log['ped_observable'] = info['ped_observable']
+        episode_log['ped_observable'] = ped_obs
         data_log[current_episode] = episode_log
 
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(

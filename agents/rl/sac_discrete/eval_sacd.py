@@ -83,6 +83,7 @@ class EvalSacdAgent(BaseAgent):
             exec_time = []
             actions_list = []
             risk = []
+            ped_obs = []
             impact_speed = []
             trajectory = []
 
@@ -119,6 +120,7 @@ class EvalSacdAgent(BaseAgent):
                 speed = np.sqrt(info['velocity'].x ** 2 + info['velocity'].y ** 2)
                 impact_speed.append(speed)
                 risk.append(info['risk'])
+                ped_obs.append(info['ped_observable'])
 
             num_episodes += 1
             total_return += episode_return
@@ -136,7 +138,7 @@ class EvalSacdAgent(BaseAgent):
             episode_log['crash'] = info['accident']
             episode_log['nearmiss'] = nearmiss
             episode_log['goal'] = info['goal']
-            episode_log['ped_observable'] = info['ped_observable']
+            episode_log['ped_observable'] = ped_obs
             data_log[num_episodes] = episode_log
 
             print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
