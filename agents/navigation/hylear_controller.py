@@ -233,7 +233,7 @@ class HyLEAR(RLAgent):
                      # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                      #                                            yaw, ped_updated_risk_cmp, True)]  # Sidewalk relaxed + ped pred
             path, risk = self.rulebook(paths, start)
-            print(path[2][2] - start[2], path[2][2], start[2])
+            # print(path[2][2] - start[2], path[2][2], start[2])
             return (path, risk), self.get_car_intention(pedestrian_path_d, path, start)
 
     @staticmethod
