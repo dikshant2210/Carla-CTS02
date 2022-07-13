@@ -86,7 +86,7 @@ class HybridAStar:
 
         visited_diction = {}  # element of this is like node_d:(cost,node_c,(parent_d,parent_c))
 
-        obstacles = agent_locations
+        obstacles = set(agent_locations)
         cost_to_neighbour_from_start = 0
 
         heuristic_cost = self.hgcost(start, end, occupancy_grid)

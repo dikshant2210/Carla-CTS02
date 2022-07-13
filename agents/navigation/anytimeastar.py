@@ -91,7 +91,7 @@ class AnytimeHybridAStar:
         open_diction = {}  # element of this is like node_d:(Node)
         visited_diction = {}  # element of this is like node_d:(Node)
 
-        obstacles = agent_locations
+        obstacles = set(agent_locations)
         g = 0
 
         f = self.hgcost(start, end, occupancy_grid)

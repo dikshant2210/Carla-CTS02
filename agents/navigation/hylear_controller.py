@@ -149,8 +149,18 @@ class HyLEAR(RLAgent):
         car_velocity = self.vehicle.get_velocity()
         car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
         yaw = start[2]
+
+        updated_risk_cmp = np.copy(self.risk_cmp)
+        for pos in obstacles:
+            updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
+        if len(self.ped_history) >= 15:
+            ped_path = np.array(self.ped_history)
+            ped_path = ped_path.reshape((15, 2))
+            pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
+            for node in pedestrian_path:
+                updated_risk_cmp[round(node[0]), round(node[1])] = 10000
         path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                          yaw, self.risk_cmp, False, self.scenario[0])
+                                                          yaw, updated_risk_cmp, False, self.scenario[0])
         # path = self.find_path(start, end, self.grid_cost, obstacles)
         intention = self.get_car_intention([], path[0], start)
         return path, intention
@@ -161,6 +171,7 @@ class HyLEAR(RLAgent):
         yaw = start[2]
         relaxed_sidewalk = self.grid_cost.copy()
         y = round(start[1])
+
         # Relax sidewalk
         sidewalk_cost = -1.0
         sidewalk_length = 20
@@ -183,10 +194,10 @@ class HyLEAR(RLAgent):
             obstacles.append((x, y - 4))
             obstacles.append((x, y - 5))
 
-        if len(self.ped_history) < 15:
+        if len(self.ped_history) < 15 or not self.pedestrian_observable:
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, self.risk_cmp, True, self.scenario[0])
-            if path_normal[1] < 100:
+            if path_normal[1] < 100 or not self.pedestrian_observable:
                 return path_normal, self.get_car_intention([], path_normal[0], start)
             paths = [path_normal,
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
@@ -222,7 +233,7 @@ class HyLEAR(RLAgent):
                      # self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, new_obs, car_speed,
                      #                                            yaw, ped_updated_risk_cmp, True)]  # Sidewalk relaxed + ped pred
             path, risk = self.rulebook(paths, start)
-            # print(path[2][2] - start[2])
+            print(path[2][2] - start[2], path[2][2], start[2])
             return (path, risk), self.get_car_intention(pedestrian_path_d, path, start)
 
     @staticmethod
