@@ -167,6 +167,14 @@ class World(object):
                 while parked_car is None:
                     parked_car = self.world.try_spawn_actor(self.get_random_blueprint(), car_spawn_point)
                 self.parked_cars.append(parked_car)
+        elif scenario_type == 12:
+            self.walker = self.world.try_spawn_actor(obstacles[0][0], obstacles[0][1])
+            self.incoming_car = self.world.try_spawn_actor(obstacles[1][0], obstacles[1][1])
+            self.parked_cars = []
+            parked_car = None
+            while parked_car is None:
+                parked_car = self.world.try_spawn_actor(obstacles[2][0], obstacles[2][1])
+            self.parked_cars.append(parked_car)
 
         # Set up the sensors.
         self.collision_sensor = CollisionSensor(self.player, self.hud)
@@ -218,6 +226,9 @@ class World(object):
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 0, 0))
             else:
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, -self.ped_speed * 0.2778, 0))
+        if self.scenario[0] == 12:
+            # pass
+            self.incoming_car.set_target_velocity(carla.Vector3D(0, self.ped_speed * 0.2778, 0))
 
     def next_weather(self, reverse=False):
         self._weather_index += -1 if reverse else 1
@@ -288,7 +299,7 @@ class World(object):
         # if self.incoming_car is not None and self.scenario[0] in [10, 3, 7, 8]:
         if self.incoming_car is not None and self.incoming_car.is_alive:
             self.incoming_car.destroy()
-        if self.scenario[0] == 11:
+        if self.scenario[0] in [11, 12]:
             if self.parked_cars is not None:
                 for car in self.parked_cars:
                     car.destroy()

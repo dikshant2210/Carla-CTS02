@@ -197,6 +197,15 @@ class HyLEAR(RLAgent):
             for i in [-1, 0, 1]:
                 for j in [-2, -1, 0, 1, 2]:
                     obstacles.append((x + i, y + j))
+        elif self.scenario[0] == 12:
+            relaxed_sidewalk[13:16, y - sidewalk_length: y + sidewalk_length] = sidewalk_cost
+            relaxed_sidewalk[4:7, y - 10: sidewalk_length + sidewalk_length] = sidewalk_cost
+            x, y = round(self.world.incoming_car.get_location().x), round(self.world.incoming_car.get_location().y)
+            obstacles.append((x, y + 1))
+            obstacles.append((x, y + 2))
+            obstacles.append((x, y + 3))
+            obstacles.append((x, y + 4))
+            obstacles.append((x, y + 5))
 
         if len(self.ped_history) < 15 or not self.pedestrian_observable:
             if self.scenario[0] == 11 and self.world.incoming_car.get_location().y + 2 < start[1] and start[0] <= -2.5:
@@ -209,6 +218,7 @@ class HyLEAR(RLAgent):
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp, True, self.scenario[0])]  # Sidewalk relaxed
             path, risk = self.rulebook(paths, start)
+            print(path)
             return (path, risk), self.get_car_intention([], path, start)
         else:
             # Use path predictor

@@ -469,4 +469,17 @@ class RLAgent(Agent):
                         for x in range(xmin, xmax + 1):
                             for y in range(ymin, ymax + 1):
                                 obstacles.append((int(x), int(y)))
+        if self.scenario[0] == 12:
+            self.pedestrian_observable = False
+            parked_car = self.world.parked_cars[0]
+            px, py = round(parked_car.get_location().x), round(parked_car.get_location().y)
+            for i in [-1, 0, 1]:
+                for j in [-2, -1, 0, 1, 2]:
+                    obstacles.append((px + i, py + j))
+
+            car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
+            if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
+                for i in [-1, 0, 1]:
+                    for j in [-2, -1, 0, 1, 2]:
+                        obstacles.append((car_x + i, car_y + j))
         return obstacles
