@@ -13,6 +13,7 @@ class Scenario:
 
     def scenario11(self):
         start = (-2, 5, 90)
+        # start = (10, -2, -180)
         end = (-2, 100, 90)
         obstacles = []
 
@@ -27,7 +28,7 @@ class Scenario:
 
         car_spawn_point = carla.Transform()
         car_spawn_point.location.x = -2
-        car_spawn_point.location.y = 100
+        car_spawn_point.location.y = 60
         car_spawn_point.location.z = 0.01
         car_spawn_point.rotation.yaw = 270
         car_bp = self.world.get_blueprint_library().filter("vehicle.audi.tt")

@@ -88,7 +88,6 @@ class GIDASBenchmark(gym.Env):
     def _get_special_scenes(self, scenario):
         episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0),
                     (scenario, 1.6, 36.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
-
         self.episodes += episodes
 
     def reset(self):
@@ -121,10 +120,13 @@ class GIDASBenchmark(gym.Env):
         speed *= 3.6
         # if speed > 20:
         #     action = 2
-        if self.scenario == '10' or True:
+        if self.scenario == '10':
             if speed < 20:
                 action = 0
             elif speed > 50:
+                action = 2
+        if self.scenario == '11':
+            if speed > 20:
                 action = 2
 
         if action == 0:
