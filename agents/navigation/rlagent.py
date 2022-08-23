@@ -445,6 +445,7 @@ class RLAgent(Agent):
                     for y in range(ymin, ymax + 1):
                         obstacles.append((int(x), int(y)))
         if self.scenario[0] == 11:
+            self.pedestrian_observable = False
             car_x, car_y = self.world.incoming_car.get_location().x, self.world.incoming_car.get_location().y
             if np.sqrt((start[0] - car_x) ** 2 + (start[1] - car_y) ** 2) <= 50.0:
                 buffer = 0

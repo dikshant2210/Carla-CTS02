@@ -114,18 +114,17 @@ class GIDASBenchmark(gym.Env):
     def step(self, action):
         self.world.tick(self.clock)
 
-        # Maintain a minimum speed of 20kmph
         velocity = self.world.player.get_velocity()
         speed = (velocity.x * velocity.x + velocity.y * velocity.y) ** 0.5
         speed *= 3.6
-        # if speed > 20:
-        #     action = 2
         if self.scenario == '10':
+            # Maintain a minimum speed of 20kmph
             if speed < 20:
                 action = 0
             elif speed > 50:
                 action = 2
-        if self.scenario == '11':
+        if self.scenario == '11' or self.scenario == '12':
+            # Maintain a maximum speed of 20kmph
             if speed > 20:
                 action = 2
 
@@ -189,10 +188,15 @@ class GIDASBenchmark(gym.Env):
         self.mode = "TESTING"
         episodes = list()
         for scenario in Config.test_scenarios:
-            for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 0.1, 0.1):
-                for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
-                    episodes.append((scenario, speed, distance))
+            if scenario in ['11', '12']:
+                for speed in np.arange(10, 20 + 0.1, 0.1):
+                    episodes.append((scenario, speed, 0))
+            else:
+                for speed in np.arange(Config.test_ped_speed_range[0], Config.test_ped_speed_range[1] + 0.1, 0.1):
+                    for distance in np.arange(Config.test_ped_distance_range[0], Config.test_ped_distance_range[1] + 1, 1):
+                        episodes.append((scenario, speed, distance))
         self.episodes = episodes[current_episode:]
+        print("Episodes: ", len(self.episodes))
         self.test_episodes = iter(episodes[current_episode:])
 
     def next_scene(self):

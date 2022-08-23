@@ -199,6 +199,8 @@ class HyLEAR(RLAgent):
                     obstacles.append((x + i, y + j))
 
         if len(self.ped_history) < 15 or not self.pedestrian_observable:
+            if self.scenario[0] == 11 and self.world.incoming_car.get_location().y + 2 < start[1] and start[0] <= -2.5:
+                end = (end[0], start[1] + 6, end[2])
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, self.risk_cmp, True, self.scenario[0])
             if path_normal[1] < 100 or not self.pedestrian_observable:

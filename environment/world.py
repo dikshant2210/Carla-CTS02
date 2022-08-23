@@ -217,7 +217,7 @@ class World(object):
             if self.incoming_car.get_location().y - self.player.get_location().y < 10:
                 self.incoming_car.set_target_velocity(carla.Vector3D(0, 0, 0))
             else:
-                self.incoming_car.set_target_velocity(carla.Vector3D(0, -20 * 0.2778, 0))
+                self.incoming_car.set_target_velocity(carla.Vector3D(0, -self.ped_speed * 0.2778, 0))
 
     def next_weather(self, reverse=False):
         self._weather_index += -1 if reverse else 1
