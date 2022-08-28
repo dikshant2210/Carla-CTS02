@@ -97,4 +97,4 @@ class Config:
     a2c_value_loss_coef = 0.5
     max_grad_norm = 50
     num_steps = 500
-    train_episodes = 50000
+    train_episodes = 5000
