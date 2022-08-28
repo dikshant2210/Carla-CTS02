@@ -33,7 +33,9 @@ class A2CCadrl(HyLEAR):
         dmin = min([np.sqrt((start[0] - x[0]) ** 2 + (start[1] - x[1]) ** 2) for x in other_agents])
         if dmin < 0.2:
             reward = -0.1 + (dmin / 2)
-        return reward
+
+        _, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
+        return reward, goal, hit, nearmiss, terminal
 
     def run_step(self, debug=False):
         self.vehicle = self.world.player

@@ -179,7 +179,7 @@ class GIDASBenchmark(gym.Env):
             conn = Connector(Config.despot_port)
             self.planner_agent = ISDespotPStar(self.world, self.map, self.scene, conn)
         if agent == 'cadrl':
-            self.planner_agent = ISDespotP(self.world, self.map, self.scene)
+            self.planner_agent = A2CCadrl(self.world, self.map, self.scene)
         if agent == 'hylear' or agent == 'hypal':
             conn = Connector(Config.despot_port)
             eval_mode = False
