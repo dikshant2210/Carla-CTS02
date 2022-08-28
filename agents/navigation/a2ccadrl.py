@@ -12,7 +12,7 @@ from agents.navigation.hylear_controller import HyLEAR
 
 class A2CCadrl(HyLEAR):
     def __init__(self, world, carla_map, scenario, conn=None):
-        super(A2CCadrl, self).__init__(world, carla_map, scenario, conn, eval_mode=False)
+        super(A2CCadrl, self).__init__(world, carla_map, scenario, conn, eval_mode=False, agent='cadrl')
 
     def get_reward(self, action):
         transform = self.vehicle.get_transform()

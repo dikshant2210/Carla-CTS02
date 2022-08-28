@@ -35,7 +35,7 @@ class HyLEAR(RLAgent):
         self.conn = conn
         self.eval_mode = eval_mode
         self.agent = agent
-        if not self.eval_mode:
+        if not self.eval_mode and agent != 'cadrl':
             if self.agent == "hyleap":
                 p = Process(target=run_server_hyleap)
                 p.start()
