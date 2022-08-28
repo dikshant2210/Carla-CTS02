@@ -37,6 +37,7 @@ def train_a2c(args):
 
     # Setting up environment
     env = GIDASBenchmark()
+    env.reset_agent('cadrl')
 
     # Instantiating RL agent
     torch.manual_seed(100)

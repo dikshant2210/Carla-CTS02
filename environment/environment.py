@@ -17,6 +17,7 @@ from agents.navigation.reactive_controller import ReactiveController
 from agents.navigation.isdespot import ISDespotP
 from agents.navigation.isdespot_star import ISDespotPStar
 from agents.navigation.hylear_controller import HyLEAR
+from agents.navigation.a2ccadrl import A2CCadrl
 from hyleap.despot import HyLEAP
 
 from config import Config
@@ -177,6 +178,8 @@ class GIDASBenchmark(gym.Env):
         if agent == 'isdespot*':
             conn = Connector(Config.despot_port)
             self.planner_agent = ISDespotPStar(self.world, self.map, self.scene, conn)
+        if agent == 'cadrl':
+            self.planner_agent = ISDespotP(self.world, self.map, self.scene)
         if agent == 'hylear' or agent == 'hypal':
             conn = Connector(Config.despot_port)
             eval_mode = False
