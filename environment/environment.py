@@ -87,9 +87,16 @@ class GIDASBenchmark(gym.Env):
                         self.episodes.append((scenario, speed, distance))
 
     def _get_special_scenes(self, scenario):
-        episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0),
-                    (scenario, 1.6, 36.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
-        self.episodes += episodes
+        for scenario in Config.val_scenarios:
+            for speed in np.arange(Config.val_ped_speed_range[0][0], Config.val_ped_speed_range[0][1] + 0.1, 0.1):
+                for distance in np.arange(Config.val_ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
+                    self.episodes.append((scenario, speed, distance))
+            for speed in np.arange(Config.val_ped_speed_range[1][0], Config.val_ped_speed_range[1][1] + 0.1, 0.1):
+                for distance in np.arange(Config.val_ped_distance_range[0], Config.ped_distance_range[1] + 1, 1):
+                    self.episodes.append((scenario, speed, distance))
+        # episodes = [(scenario, 1.3, 40.0), (scenario, 1.5, 40.0), (scenario, 1.7, 36.0), (scenario, 2.0, 32.0),
+        #         #             (scenario, 1.6, 36.0), (scenario, 2.0, 25.0), (scenario, 2.8, 18.0)]
+        # self.episodes += episodes
 
     def reset(self):
         scenario_id, ped_speed, ped_distance = self.next_scene()
