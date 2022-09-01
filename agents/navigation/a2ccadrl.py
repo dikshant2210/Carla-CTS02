@@ -29,6 +29,7 @@ class A2CCadrl(HyLEAR):
         #     other_agents.append((car_x, car_y))
         #
         # reward = -goal_dist / 1000
+        # reward -= pow(goal_dist / 4935.0, 0.8) * 1.2
         # _, goal, hit, nearmiss, terminal = super(HyLEAR, self).get_reward(action)
         # dmin = min([np.sqrt((start[0] - x[0]) ** 2 + (start[1] - x[1]) ** 2) for x in other_agents])
         #

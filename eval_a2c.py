@@ -35,12 +35,13 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/a2c_entropy_005_13000.pth"
+    path = "_out/a2c/a2c_entropy_005_2000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
     # Setting up environment in eval mode
     env = GIDASBenchmark()
+    env.reset_agent('cadrl')
     env.eval()
 
     # Instantiating RL agent
@@ -87,10 +88,8 @@ def eval_a2c():
                                                     speed_action])).cuda().type(torch.cuda.FloatTensor)
             logit, value, (hx, cx) = rl_agent(input_tensor, (hx, cx), cat_tensor)
 
-            prob = F.softmax(logit, dim=-1)
-            m = Categorical(prob)
-            action = m.sample()
-            speed_action = action.item()
+            # print(logit.size(), torch.argmax(logit, dim=1)[0].item(), logit)
+            speed_action = torch.argmax(logit, dim=1)[0].item()
 
             if speed_action != 0:
                 total_acc_decc += 1
