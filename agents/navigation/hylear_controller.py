@@ -159,8 +159,22 @@ class HyLEAR(RLAgent):
             pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
             for node in pedestrian_path:
                 updated_risk_cmp[round(node[0]), round(node[1])] = 10000
+        if self.scenario[0] == 11:
+            self.grid_cost[9:16, 13:] = 10000
+            self.risk_cmp[10:13, 13:] = 10000
+            x, y = round(self.world.incoming_car.get_location().x), round(self.world.incoming_car.get_location().y)
+            # Hard coding incoming car path prediction
+            obstacles.append((x, y - 1))
+            obstacles.append((x, y - 2))
+            obstacles.append((x, y - 3))
+            obstacles.append((x, y - 4))
+            obstacles.append((x, y - 5))
+            # All grid locations occupied by car added to obstacles
+            for i in [-1, 0, 1]:
+                for j in [-2, -1, 0, 1, 2]:
+                    obstacles.append((x + i, y + j))
         path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
-                                                          yaw, updated_risk_cmp, False, self.scenario[0])
+                                                          yaw, updated_risk_cmp, True, self.scenario[0])
         # path = self.find_path(start, end, self.grid_cost, obstacles)
         intention = self.get_car_intention([], path[0], start)
         return path, intention
