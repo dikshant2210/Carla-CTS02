@@ -12,6 +12,7 @@ import numpy as np
 from multiprocessing import Process
 from datetime import datetime
 import torch
+import pickle as pkl
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
@@ -24,10 +25,8 @@ def eval_a2c():
     ##############################################################
     t0 = time.time()
     # Logging file
-    filename = "_out/a2c/test_{}.log".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+    filename = "_out/{}/{}.pkl".format("a2c", datetime.now().strftime("%m%d%Y_%H%M%S"))
     print(filename)
-    file = open(filename, "w")
-    file.write(str(vars(Config)) + "\n")
 
     # Path to save model
     path = "_out/a2c/"
@@ -35,7 +34,7 @@ def eval_a2c():
         os.mkdir(path)
 
     # Path to load model
-    path = "_out/a2c/a2c_entropy_005_2000.pth"
+    path = "_out/a2c/a2c_entropy_005_3000.pth"
     if not os.path.exists(path):
         print("Path: {} does not exist".format(path))
 
@@ -56,7 +55,9 @@ def eval_a2c():
     current_episode = 0
     max_episodes = len(env.episodes)
     print("Total eval episodes: {}".format(max_episodes))
-    file.write("Total eval episodes: {}\n".format(max_episodes))
+    data_log = {}
+
+    max_episodes = 2
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
@@ -76,9 +77,20 @@ def eval_a2c():
         step_num = 0
 
         total_acc_decc = 0
-        exec_time = 0
+        prev_action = 1
+
+        episode_log = {}
+        action_count = {0: 0, 1: 0, 2: 0}
+        exec_time = []
+        actions_list = []
+        risk = []
+        ped_obs = []
+        impact_speed = []
+        trajectory = []
 
         for step_num in range(Config.num_steps):
+            trajectory.append((env.world.player.get_location().x,
+                               env.world.player.get_location().y))
             if Config.display:
                 env.render()
             # Forward pass of the RL Agent
@@ -95,7 +107,13 @@ def eval_a2c():
                 total_acc_decc += 1
 
             observation, reward, done, info = env.step(speed_action)
-            exec_time += (time.time() - start_time)
+            time_taken = time.time() - start_time
+            exec_time.append(time_taken)
+            actions_list.append(speed_action)
+            if speed_action != 1 and prev_action != speed_action:
+                total_acc_decc += 1
+            prev_action = speed_action
+            action_count[speed_action] += 1
 
             velocity = info['velocity']
             velocity_x = velocity.x
@@ -107,33 +125,45 @@ def eval_a2c():
             accident_current = info['accident']
             accident = accident_current or (accident and speed > 0)
             total_episode_reward += reward
+            speed = np.sqrt(info['velocity'].x ** 2 + info['velocity'].y ** 2)
+            impact_speed.append(speed)
+            risk.append(info['risk'])
+            ped_obs.append(info['ped_observable'])
 
             if done or accident:
                 break
 
-        # Evaluate episode statistics(Crash rate, nearmiss rate, time to goal, smoothness, execution time, violations)
         time_to_goal = (step_num + 1) * Config.simulation_step
-        exec_time = exec_time / (step_num + 1)
+        episode_log['ttg'] = time_to_goal
+        episode_log['risk'] = risk
+        episode_log['actions'] = actions_list
+        episode_log['exec'] = exec_time
+        episode_log['impact_speed'] = impact_speed
+        episode_log['trajectory'] = trajectory
+        episode_log['ped_dist'] = info['ped_distance']
+        episode_log['scenario'] = info['scenario']
+        episode_log['ped_speed'] = info['ped_speed']
+        episode_log['crash'] = info['accident']
+        episode_log['nearmiss'] = nearmiss
+        episode_log['goal'] = info['goal']
+        episode_log['ped_observable'] = ped_obs
+        data_log[current_episode + 1] = episode_log
+
         print("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m".format(
             current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-        file.write("Episode: {}, Scenario: {}, Pedestrian Speed: {:.2f}m/s, Ped_distance: {:.2f}m\n".format(
-            current_episode + 1, info['scenario'], info['ped_speed'], info['ped_distance']))
-        print('Goal reached: {}, Accident: {}, Nearmiss: {}'.format(info['goal'], accident, nearmiss))
-        file.write('Goal reached: {}, Accident: {}, Nearmiss: {}\n'.format(info['goal'], accident, nearmiss))
-        print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms'.format(
-            time_to_goal, total_acc_decc, exec_time))
-        file.write('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms\n'.format(
-            time_to_goal, total_acc_decc, exec_time * 1000))
-
+        print('Goal reached: {}, Accident: {}, Nearmiss: {}, Reward: {:.4f}'.format(
+            info['goal'], info['accident'], nearmiss, total_episode_reward))
+        print('Time to goal: {:.4f}s, #Acc/Dec: {}, Execution time: {:.4f}ms, Action: {}'.format(
+            time_to_goal, total_acc_decc, sum(exec_time) * 1000 / len(exec_time), action_count))
         ##############################################################
 
         current_episode += 1
 
     env.close()
-    print("Evaluation time: {:.4f}hrs".format((time.time() - t0) / 3600))
-    file.write("Evaluation time: {:.4f}hrs\n".format((time.time() - t0) / 3600))
-    torch.save(rl_agent.state_dict(), "{}a2c_{}.pth".format(path, current_episode))
-    file.close()
+    with open(filename, "wb") as write_file:
+        pkl.dump(data_log, write_file)
+    print("Log file written here: {}".format(filename))
+    print('-' * 60)
 
 
 def main():
@@ -160,8 +190,11 @@ if __name__ == '__main__':
         default=2900,
         type=int,
         help='TCP port to listen to (default: 2900)')
+    arg_parser.add_argument('--test', type=str, default='')
     arg = arg_parser.parse_args()
     Config.port = arg.port
+    if arg.test:
+        Config.test_scenarios = [arg.test]
 
     p = Process(target=run_server)
     p.start()
