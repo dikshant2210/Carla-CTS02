@@ -57,7 +57,6 @@ def eval_a2c():
     print("Total eval episodes: {}".format(max_episodes))
     data_log = {}
 
-    max_episodes = 2
     while current_episode < max_episodes:
         # Get the scenario id, parameters and instantiate the world
         total_episode_reward = 0
