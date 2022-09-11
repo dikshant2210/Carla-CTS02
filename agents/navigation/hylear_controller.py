@@ -152,6 +152,7 @@ class HyLEAR(RLAgent):
 
         updated_risk_cmp = np.copy(self.risk_cmp)
         for pos in obstacles:
+            pos = (round(pos[0]), round(pos[1]))
             updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
         if len(self.ped_history) >= 15:
             ped_path = np.array(self.ped_history)
@@ -233,7 +234,7 @@ class HyLEAR(RLAgent):
                                                                 yaw, self.risk_cmp, True, self.scenario[0])]  # Sidewalk relaxed
             path, risk = self.rulebook(paths, start)
             print(path)
-            return (path, risk), self.get_car_intention([], path, start)
+            return (path, risk/6), self.get_car_intention([], path, start)
         else:
             # Use path predictor
             ped_updated_risk_cmp = self.risk_cmp.copy()
@@ -253,7 +254,7 @@ class HyLEAR(RLAgent):
                                                                      yaw, ped_updated_risk_cmp, True, self.scenario[0])
             if path_normal[1] < 100:
                 # print("normal!", path_normal[1], (path_normal[0][2][2] - path_normal[0][1][2]) / 70.0)
-                return path_normal, self.get_car_intention(pedestrian_path_d, path_normal[0], start)
+                return (path_normal[0], path_normal[1] / 6), self.get_car_intention(pedestrian_path_d, path_normal[0], start)
             # print(start, end, obstacles)
             paths = [path_normal,  # Normal
                      self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, new_obs, car_speed,
@@ -264,7 +265,7 @@ class HyLEAR(RLAgent):
                      #                                            yaw, ped_updated_risk_cmp, True)]  # Sidewalk relaxed + ped pred
             path, risk = self.rulebook(paths, start)
             # print(path[2][2] - start[2], path[2][2], start[2])
-            return (path, risk), self.get_car_intention(pedestrian_path_d, path, start)
+            return (path, risk/6), self.get_car_intention(pedestrian_path_d, path, start)
 
     @staticmethod
     def rulebook(paths, start):
