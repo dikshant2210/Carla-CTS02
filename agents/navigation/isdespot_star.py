@@ -20,7 +20,7 @@ class ISDespotPStar(HyLEAR):
 
         # Steering action on the basis of shortest and safest path(Hybrid A*)
         obstacles = self.get_obstacles(start)
-        path, intention = self.get_path_simple(start, end, obstacles)
+        (path, risk), intention = self.get_path_simple(start, end, obstacles)
 
         control = carla.VehicleControl()
         control.brake = 0.0
@@ -30,14 +30,13 @@ class ISDespotPStar(HyLEAR):
         if len(path) == 0:
             control.steer = 0
         else:
-            print(path)
             control.steer = (path[2][2] - start[2]) / 70.
 
         # Best speed action for the given path
         if not self.eval_mode:
             control = self.get_speed_action(path, control)
         self.prev_action = control
-        return control, intention
+        return control, intention, risk, self.pedestrian_observable
 
     def get_speed_action(self, path, control):
         transform = self.vehicle.get_transform()
