@@ -30,8 +30,7 @@ class ISDespotPStar(HyLEAR):
         if len(path) == 0:
             control.steer = 0
         else:
-            print(path[2][2])
-            print(start[2])
+            print(path)
             control.steer = (path[2][2] - start[2]) / 70.
 
         # Best speed action for the given path
