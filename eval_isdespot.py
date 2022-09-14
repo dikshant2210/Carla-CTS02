@@ -21,7 +21,11 @@ def eval_isdespot(arg):
     ##############################################################
     t0 = time.time()
     # Logging file
-    filename = "_out/isdespot/{}.pkl".format(datetime.now().strftime("%m%d%Y_%H%M%S"))
+    if arg.agent == "isdespot*":
+        folder = "isdespotstar"
+    else:
+        folder = "isdespot"
+    filename = "_out/{}/{}.pkl".format(folder, datetime.now().strftime("%m%d%Y_%H%M%S"))
     print(filename)
 
     # Setting up environment
