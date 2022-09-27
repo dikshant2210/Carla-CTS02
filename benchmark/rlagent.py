@@ -11,10 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import deque
 
-from agents.navigation.agent import Agent
+from benchmark.agent import Agent
 from config import Config
 from assets.occupancy_grid import OccupancyGrid
-from agents.navigation.hybridastar import HybridAStar
+from benchmark.path_planner.hybridastar import HybridAStar
+from benchmark.risk.risk_aware_path import PathPlanner
+from ped_path_predictor.m2p3 import PathPredictor
 
 
 class RLAgent(Agent):
@@ -59,6 +61,24 @@ class RLAgent(Agent):
         self.min_y = -10
         self.max_y = 300
         self.path_planner = HybridAStar(self.min_x, self.max_x, self.min_y, self.max_y, obstacle, self.vehicle_length)
+
+        self.risk_cmp = np.zeros((110, 310))
+        # Road Network
+        self.risk_cmp[7:13, 13:] = 1.0
+        self.risk_cmp[97:103, 13:] = 1.0
+        self.risk_cmp[7:, 7:13] = 1.0
+        # Sidewalk Network
+        sidewalk_cost = 50.0
+        self.risk_cmp[4:7, 4:] = sidewalk_cost
+        self.risk_cmp[:, 4:7] = sidewalk_cost
+        self.risk_cmp[13:16, 13:] = sidewalk_cost
+        self.risk_cmp[94:97, 13:] = sidewalk_cost
+        self.risk_cmp[103:106, 13:] = sidewalk_cost
+        self.risk_cmp[13:16, 16:94] = sidewalk_cost
+
+        self.risk_path_planner = PathPlanner()
+        self.ped_pred = PathPredictor("ped_path_predictor/_out/m2p3_289271.pth")
+        self.ped_pred.model.eval()
 
     def update_scenario(self, scenario):
         self.scenario = scenario
@@ -373,6 +393,44 @@ class RLAgent(Agent):
         self.prev_speed = pow(velocity.x * velocity.x + velocity.y * velocity.y, 0.5)
         risk = 0.0
         return control, self.get_car_intention(obstacles, path, start), risk
+
+    def get_path_simple(self, start, end, obstacles):
+        car_velocity = self.vehicle.get_velocity()
+        car_speed = np.sqrt(car_velocity.x ** 2 + car_velocity.y ** 2) * 3.6
+        yaw = start[2]
+
+        updated_risk_cmp = np.copy(self.risk_cmp)
+        for pos in obstacles:
+            pos = (round(pos[0]), round(pos[1]))
+            updated_risk_cmp[pos[0] + 10, pos[1] + 10] = 10000
+        if len(self.ped_history) >= 15:
+            ped_path = np.array(self.ped_history)
+            ped_path = ped_path.reshape((15, 2))
+            pedestrian_path = self.ped_pred.get_single_prediction(ped_path)
+            for node in pedestrian_path:
+                updated_risk_cmp[round(node[0]), round(node[1])] = 10000
+        if self.scenario[0] == 11:
+            self.grid_cost[9:16, 13:] = 10000
+            self.risk_cmp[10:13, 13:] = 10000
+            x, y = round(self.world.incoming_car.get_location().x), round(self.world.incoming_car.get_location().y)
+            # Hard coding incoming car path prediction
+            obstacles.append((x, y - 1))
+            obstacles.append((x, y - 2))
+            obstacles.append((x, y - 3))
+            obstacles.append((x, y - 4))
+            obstacles.append((x, y - 5))
+            # All grid locations occupied by car added to obstacles
+            for i in [-1, 0, 1]:
+                for j in [-2, -1, 0, 1, 2]:
+                    obstacles.append((x + i, y + j))
+
+        if self.scenario[0] in [10, 1] and self.world.walker.get_location().y > start[1] and start[0] >= 2.5:
+            end = (end[0], start[1] - 6, end[2])
+        path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
+                                                          yaw, updated_risk_cmp, True, self.scenario[0])
+        # path = self.find_path(start, end, self.grid_cost, obstacles)
+        intention = self.get_car_intention([], path[0], start)
+        return path, intention
 
     def find_path(self, start, end, costmap, obstacles):
         checkpoint = (92, 14, -90)

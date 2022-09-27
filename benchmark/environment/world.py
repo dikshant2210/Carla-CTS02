@@ -4,10 +4,9 @@ Time: 23.03.21 14:27
 """
 import sys
 import random
-import carla
 
-from utils import find_weather_presets
-from environment.sensors import *
+from benchmark.environment.utils import find_weather_presets
+from benchmark.environment.sensors import *
 
 
 class World(object):

@@ -10,19 +10,12 @@ import pygame
 import random
 from PIL import Image
 
-from environment.world import World
-from environment.hud import HUD
-from agents.navigation.rlagent import RLAgent
-from agents.navigation.reactive_controller import ReactiveController
-from agents.navigation.isdespot import ISDespotP
-from agents.navigation.isdespot_star import ISDespotPStar
-from agents.navigation.hylear_controller import HyLEAR
-from agents.navigation.a2ccadrl import A2CCadrl
-from hyleap.despot import HyLEAP
+from benchmark.environment.world import World
+from benchmark.environment.hud import HUD
+from benchmark.learner_example import Learner
 
 from config import Config
-from agents.tools.scenario import Scenario
-from agents.tools.connector import Connector
+from benchmark.scenarios.scenario import Scenario
 
 
 class GIDASBenchmark(gym.Env):
@@ -66,7 +59,8 @@ class GIDASBenchmark(gym.Env):
         self.scene_generator = Scenario(wld)
         self.scene = self.scene_generator.scenario01()
         self.world = World(wld, hud, self.scene, Config)
-        self.planner_agent = RLAgent(self.world, self.map, self.scene)
+        # self.planner_agent = RLAgent(self.world, self.map, self.scene)
+        self.planner_agent = Learner(self.world, self.map, self.scene)
 
         wld_map = wld.get_map()
         print(wld_map.name)
@@ -173,25 +167,26 @@ class GIDASBenchmark(gym.Env):
         pygame.quit()
 
     def reset_agent(self, agent):
-        if agent == 'reactive':
-            self.planner_agent = ReactiveController(self.world, self.map, self.scene)
-        if agent == 'isdespot':
-            conn = Connector(Config.despot_port)
-            self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
-        if agent == 'hyleap':
-            conn = Connector(Config.despot_port)
-            self.planner_agent = HyLEAP(self.world, self.map, self.scene, conn)
-        if agent == 'isdespot*':
-            conn = Connector(Config.despot_port)
-            self.planner_agent = ISDespotPStar(self.world, self.map, self.scene, conn)
-        if agent == 'cadrl':
-            self.planner_agent = A2CCadrl(self.world, self.map, self.scene)
-        if agent == 'hylear' or agent == 'hypal':
-            conn = Connector(Config.despot_port)
-            eval_mode = False
-            if self.mode == "TESTING":
-                eval_mode = True
-            self.planner_agent = HyLEAR(self.world, self.map, self.scene, conn, eval_mode, agent)
+        # if agent == 'reactive':
+        #     self.planner_agent = ReactiveController(self.world, self.map, self.scene)
+        # if agent == 'isdespot':
+        #     conn = Connector(Config.despot_port)
+        #     self.planner_agent = ISDespotP(self.world, self.map, self.scene, conn)
+        # if agent == 'hyleap':
+        #     conn = Connector(Config.despot_port)
+        #     self.planner_agent = HyLEAP(self.world, self.map, self.scene, conn)
+        # if agent == 'isdespot*':
+        #     conn = Connector(Config.despot_port)
+        #     self.planner_agent = ISDespotPStar(self.world, self.map, self.scene, conn)
+        # if agent == 'cadrl':
+        #     self.planner_agent = A2CCadrl(self.world, self.map, self.scene)
+        # if agent == 'hylear' or agent == 'hypal':
+        #     conn = Connector(Config.despot_port)
+        #     eval_mode = False
+        #     if self.mode == "TESTING":
+        #         eval_mode = True
+        #     self.planner_agent = HyLEAR(self.world, self.map, self.scene, conn, eval_mode, agent)
+        self.planner_agent = agent
 
     def eval(self, current_episode=0):
         self.mode = "TESTING"

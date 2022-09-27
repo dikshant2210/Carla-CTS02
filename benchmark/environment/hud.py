@@ -7,7 +7,7 @@ import pygame
 import carla
 import math
 import datetime
-from utils import get_actor_display_name
+from benchmark.environment.utils import get_actor_display_name
 
 
 class HUD(object):

@@ -6,4 +6,4 @@ class Learner(RLAgent):
         super(Learner, self).__init__(world, carla_map, scenario)
 
     def run_step(self, debug=False):
-        pass
+        return super(Learner, self).run_step()

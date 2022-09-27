@@ -8,7 +8,7 @@ import collections
 import math
 import weakref
 import numpy as np
-from utils import get_actor_display_name
+from benchmark.environment.utils import get_actor_display_name
 import pygame
 from config import Config
 
