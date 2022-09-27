@@ -7,14 +7,15 @@ import pygame
 import subprocess
 import argparse
 import time
-import json
 import pickle as pkl
 import numpy as np
 from multiprocessing import Process
 from datetime import datetime
 
 from config import Config
-from environment import GIDASBenchmark
+from hyleap.despot import HyLEAP
+from utils.connector import Connector
+from benchmark.environment import GIDASBenchmark
 
 
 def train_hyleap(arg):
@@ -27,7 +28,9 @@ def train_hyleap(arg):
     # Setting up environment
     print("Environment port: {}".format(Config.port))
     env = GIDASBenchmark(port=Config.port)
-    env.reset_agent(arg.agent)
+    conn = Connector(Config.despot_port)
+    agent = HyLEAP(env.world, env.map, env.scene, conn)
+    env.reset_agent(agent)
     ##############################################################
 
     ##############################################################

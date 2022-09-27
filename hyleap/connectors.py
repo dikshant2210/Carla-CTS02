@@ -4,8 +4,6 @@ Time: 13.02.22 22:23
 """
 import sys
 import socket
-import numpy as np
-import pickle as pkl
 import time
 import os
 import threading
