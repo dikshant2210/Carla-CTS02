@@ -174,6 +174,9 @@ class HyLEAR(RLAgent):
             for i in [-1, 0, 1]:
                 for j in [-2, -1, 0, 1, 2]:
                     obstacles.append((x + i, y + j))
+
+        if self.scenario[0] in [10, 1] and self.world.walker.get_location().y > start[1] and start[0] >= 2.5:
+            end = (end[0], start[1] - 6, end[2])
         path = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                           yaw, updated_risk_cmp, True, self.scenario[0])
         # path = self.find_path(start, end, self.grid_cost, obstacles)
@@ -225,6 +228,9 @@ class HyLEAR(RLAgent):
         if len(self.ped_history) < 15 or not self.pedestrian_observable:
             if self.scenario[0] == 11 and self.world.incoming_car.get_location().y + 2 < start[1] and start[0] <= -2.5:
                 end = (end[0], start[1] + 6, end[2])
+
+            if self.scenario[0] in [10, 1] and self.world.walker.get_location().y > start[1] and start[0] >= 2.5:
+                end = (end[0], start[1] - 6, end[2])
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, self.risk_cmp, True, self.scenario[0])
             if path_normal[1] < 100 or not self.pedestrian_observable:
@@ -233,7 +239,7 @@ class HyLEAR(RLAgent):
                      self.risk_path_planner.find_path_with_risk(start, end, relaxed_sidewalk, obstacles, car_speed,
                                                                 yaw, self.risk_cmp, True, self.scenario[0])]  # Sidewalk relaxed
             path, risk = self.rulebook(paths, start)
-            print(path)
+            # print(path)
             return (path, risk/6), self.get_car_intention([], path, start)
         else:
             # Use path predictor
@@ -252,6 +258,7 @@ class HyLEAR(RLAgent):
 
             path_normal = self.risk_path_planner.find_path_with_risk(start, end, self.grid_cost, obstacles, car_speed,
                                                                      yaw, ped_updated_risk_cmp, True, self.scenario[0])
+            # print(len(new_obs), path_normal[1])
             if path_normal[1] < 100:
                 # print("normal!", path_normal[1], (path_normal[0][2][2] - path_normal[0][1][2]) / 70.0)
                 return (path_normal[0], path_normal[1] / 6), self.get_car_intention(pedestrian_path_d, path_normal[0], start)

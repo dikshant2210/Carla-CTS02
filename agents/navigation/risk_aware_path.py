@@ -52,7 +52,8 @@ class PathPlanner:
         return path, risk
 
     def find_path_with_risk_scenario09(self, start, end, costmap, obstacles, car_speed, yaw, risk_map, flag):
-        checkpoint = (92, 14, -90)
+        # checkpoint = (92, 14, -90) original
+        checkpoint = (92, 10, -90)
         try:
             if start[1] <= checkpoint[1]:
                 if flag:
