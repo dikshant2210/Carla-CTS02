@@ -1,3 +1,8 @@
+"""
+Author: Dikshant Gupta
+Time: 28.09.22 07:38
+"""
+
 import os
 import yaml
 import argparse
@@ -7,8 +12,7 @@ from datetime import datetime
 from multiprocessing import Process
 
 
-from SAC.sac_discrete import SacdAgent
-from SAC.sac_discrete.shared_sacd import SharedSacdAgent
+from SAC.sac_discrete import EvalSacdAgent
 from benchmark.environment import GIDASBenchmark
 from config import Config
 
@@ -19,7 +23,7 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
-    test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
+    env.eval(current_episode=args.episode)
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -27,27 +31,18 @@ def run(args):
         name = 'shared-' + name
     time = datetime.now().strftime("%Y%m%d-%H%M")
     log_dir = os.path.join(
-        '_out', args.env_id, f'{name}-seed{args.seed}-{time}')
+        '_out', args.env_id, 'eval', f'{name}-seed{args.seed}-{time}')
 
     # Create the agent.
-    # path = "_out/GIDASBenchmark/shared-sacd-seed0-20220303-1356/model/3000000/"
-    config['num_steps'] = 2e6
-    Agent = SacdAgent if not args.shared else SharedSacdAgent
-    agent = Agent(
-        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
-        seed=args.seed, **config, path=None)
-    agent.run()
+    agent = EvalSacdAgent(
+        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda, current_episode=args.episode,
+        seed=args.seed, agent=args.agent, **config)
+    agent.evaluate()
 
 
 def run_server():
     # train environment
     port = "-carla-port={}".format(Config.port)
-    subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
-
-
-def run_test_server():
-    # test environment
-    port = "-carla-port={}".format(Config.port + 100)
     subprocess.run(['cd /home/carla && SDL_VIDEODRIVER=offscreen ./CarlaUE4.sh -opengl ' + port], shell=True)
 
 
@@ -57,20 +52,21 @@ if __name__ == '__main__':
         '--config', type=str, default=os.path.join('agents/rl/sac_discrete/config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
+    parser.add_argument('--agent', type=str, default='sac')
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--port', type=int, default=2000)
+    parser.add_argument('--port', type=int, default=2200)
+    parser.add_argument('--episode', type=int, default=0)
+    parser.add_argument('--test', type=str, default='')
     args = parser.parse_args()
 
     Config.port = args.port
     print('Env. port: {}'.format(Config.port))
+    if args.test:
+        Config.test_scenarios = [args.test]
 
     p = Process(target=run_server)
     p.start()
-    time.sleep(5)
-
-    p2 = Process(target=run_test_server)
-    p2.start()
     time.sleep(5)
 
     run(args)
