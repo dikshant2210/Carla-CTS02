@@ -13,10 +13,10 @@ ISDESPOT/isdespot-ped-pred/is-despot/.deps/
 ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car/.settings/
 ISDESPOT/isdespot-ped-pred/is-despot/build/
 
-agents/path_planner/build/
-agents/path_planner/hybridastar.c
-agents/path_planner/hybridastar.cpython-36m-x86_64-linux-gnu.so
-agents/path_planner/hybridastar.py
+temp_check/agents/path_planner/build/
+temp_check/agents/path_planner/hybridastar.c
+temp_check/agents/path_planner/hybridastar.cpython-36m-x86_64-linux-gnu.so
+temp_check/agents/path_planner/hybridastar.py
 motivation_videos/
 path_predictor/*.pkl
 temp_check/path_predictor/get_prediction.py
