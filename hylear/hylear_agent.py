@@ -10,9 +10,9 @@ import torch
 from torch.optim import Adam
 
 from config import Config
-from agents.rl.sac_discrete import BaseAgent
-from agents.rl.sac_discrete import DQNBase, TwinnedQNetwork, CateoricalPolicy
-from agents.rl.sac_discrete import disable_gradients
+from SAC.sac_discrete import BaseAgent
+from SAC.sac_discrete import DQNBase, TwinnedQNetwork, CateoricalPolicy
+from SAC.sac_discrete import disable_gradients
 
 
 class SharedSacdAgent(BaseAgent):
@@ -115,7 +115,7 @@ class SharedSacdAgent(BaseAgent):
                 self.env.render()
             # if self.steps > Config.pre_train_steps:
             #     self.env.planner_agent.eval_mode = True
-            if self.start_steps > self.steps and False:
+            if self.start_steps > self.steps:
                 action = self.env.action_space.sample()
                 critic_action = action
                 symbolic_action = action
