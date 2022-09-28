@@ -10,9 +10,9 @@ import torch
 from torch.optim import Adam
 
 from config import Config
-from agents.rl.sac_discrete import BaseAgent
-from agents.rl.sac_discrete import DQNBase, TwinnedQNetwork, CateoricalPolicy
-from agents.rl.sac_discrete import disable_gradients
+from SAC.sac_discrete import BaseAgent
+from SAC.sac_discrete import DQNBase, TwinnedQNetwork, CateoricalPolicy
+from SAC.sac_discrete import disable_gradients
 
 
 class SharedSacdAgent(BaseAgent):

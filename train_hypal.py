@@ -8,8 +8,10 @@ from multiprocessing import Process
 
 
 from agents.rl.sac_discrete import SacdAgent
-from hylear.hypal_agent import SharedSacdAgent
-from environment import GIDASBenchmark
+from hypal.hypal_agent import SharedSacdAgent
+from benchmark.environment import GIDASBenchmark
+from hypal.hypal_controller import HyPAL
+from utils.connector import Connector
 from config import Config
 
 
@@ -20,9 +22,11 @@ def run(args):
 
     # Create environments.
     env = GIDASBenchmark(port=Config.port)
-    print("Planning Agent: {}".format(args.agent))
-    env.reset_agent(args.agent)
-    test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
+    conn = Connector(Config.despot_port)
+    eval_mode = False
+    agent = HyPAL(env.world, env.map, env.scene, conn, eval_mode)
+    env.reset_agent(agent)
+    # test_env = GIDASBenchmark(port=Config.port + 100, setting="special")
 
     # Specify the directory to log.
     name = args.config.split('/')[-1].rstrip('.yaml')
@@ -35,7 +39,7 @@ def run(args):
     # Create the agent.
     Agent = SacdAgent if not args.shared else SharedSacdAgent
     agent = Agent(
-        env=env, test_env=test_env, log_dir=log_dir, cuda=args.cuda,
+        env=env, test_env=env, log_dir=log_dir, cuda=args.cuda,
         seed=args.seed, **config)
     agent.run()
 
