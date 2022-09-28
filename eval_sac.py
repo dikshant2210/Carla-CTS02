@@ -49,7 +49,7 @@ def run_server():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--config', type=str, default=os.path.join('agents/rl/sac_discrete/config', 'sacd.yaml'))
+        '--config', type=str, default=os.path.join('SAC/sac_discrete/config', 'sacd.yaml'))
     parser.add_argument('--shared', action='store_true')
     parser.add_argument('--env_id', type=str, default='GIDASBenchmark')
     parser.add_argument('--agent', type=str, default='sac')
