@@ -6,13 +6,13 @@ Before running the code make sure your working directory is `Carla-CTS02`
 
 `--shared` parameter enables sharing of weights between actor and critic networks of the learner in HyLEAR, `--cuda` switches pyotrch to use cuda, `port=200` defines the carla port
 
-* For testing run `python eval_hylear.py --port=2000 --agent=hylear --test="12"`
+* For testing run `python eval_hylear.py --shared --port=2000 --agent=hylear --test="12"`
 
 `--port=2000` defines carla port, `--test="12"` is an optional parameter and can be used if testing on a single scenario, by default tetsing will be done on all scenarios.
 
 ### NavSAC-p
-* For training run `python train_sac.py --cuda --port=2000`
-* For testing run `python eval_sac.py --port=2000 --test="11"`
+* For training run `python train_sac.py --shared --cuda --port=2000`
+* For testing run `python eval_sac.py --shared --port=2000 --test="11"`
 
 `--test="11"` is an optional parameter required only if testing on a single scenario
 
@@ -38,4 +38,17 @@ similar to testing for HyLEAR, `--test` is an optional parameter required only i
 
 ### HyPAL
 * For training run `python train_hypal.py --shared --cuda --port=2000`
-* For testing run `python eval.py --port=2000 --agent=hypal --test="11"`
+* For testing run `python eval.py --shared --port=2000 --agent=hypal --test="11"`
+
+
+## License
+Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
