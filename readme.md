@@ -1,3 +1,31 @@
+## Installation and Pre-requisites
+
+#### Install CARLA
+
+See here - https://carla.readthedocs.io/en/0.9.12/start_quickstart/
+
+##### Important: The code is cimpatible with CARLA version 0.9.12
+
+#### IS-DESPOT-p
+
+1) A C++11 compatible compiler is required. IS-DESPOT-p has been developed using g++ 7.3.0. Newer version might work too.
+
+    `sudo apt-get install build-essential `
+
+2) Makefile
+
+    `sudo apt-get install make`
+   
+3) Navigate to `Carla-CTS02/ISDESPOT/isdespot-ped-pred/is-despot/` and run `make`
+
+4) Navigate to `Carla-CTS02/ISDESPOT/isdespot-ped-pred/is-despot/problems/isdespotp_car` and run `make`. This will create a binary `car`.
+
+#### Python environment
+
+Run `pip install -r requirements.txt`
+
+#
+
 In order to replicate the results from our experiments, the train and test files need to be executed.
 
 Before running the code make sure your working directory is `Carla-CTS02`
