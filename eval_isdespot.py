@@ -14,6 +14,7 @@ from datetime import datetime
 
 from config import Config
 from ISDESPOT.isdespot import ISDespotP
+from hypal.isdespot_star import ISDespotPStar
 from utils.connector import Connector
 from benchmark.environment import GIDASBenchmark
 
@@ -33,7 +34,10 @@ def eval_isdespot(arg):
     print("Environment port: {}".format(Config.port))
     env = GIDASBenchmark(port=Config.port)
     conn = Connector(Config.despot_port)
-    agent = ISDespotP(env.world, env.map, env.scene, conn)
+    if arg.agent == "isdespot*":
+        agent = ISDespotPStar(env.world, env.map, env.scene, conn)
+    else:
+        agent = ISDespotP(env.world, env.map, env.scene, conn)
     env.reset_agent(agent)
     env.eval(arg.episode)
     ##############################################################
