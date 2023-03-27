@@ -250,7 +250,7 @@ class SharedSacdAgent(BaseAgent):
 
         # Cross entropy loss
         # print(log_action_probs.size(), actions.size())
-        if self.steps < Config.pre_train_steps or True:
+        if self.steps < Config.pre_train_steps:
             loss = torch.nn.NLLLoss()
             ce_loss = loss(log_action_probs, actions.squeeze())
         else:
@@ -258,7 +258,7 @@ class SharedSacdAgent(BaseAgent):
 
         # Policy objective is maximization of (Q + alpha * entropy) with
         # priority weights.
-        policy_loss = (weights * (- q - self.alpha * entropies)).mean() + ce_loss
+        policy_loss = (weights * (- q - self.alpha * entropies)).mean()
 
         return policy_loss, entropies.detach()
 
